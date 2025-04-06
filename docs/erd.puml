@@ -1,0 +1,71 @@
+@startuml ERD
+entity "users" as U {
+  + id : UUID [PK]
+  --
+  username : string
+  email : string [UNIQUE]
+  password_hash : string
+  name : string
+  phone : string
+  birth_date : date
+  sex : enum(male, female)
+  address : string
+  avatar_url : string
+  otp_secret : string
+  is_email_verified : boolean
+  role : enum(admin, user)
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "rooms" as R {
+  + id : UUID [PK]
+  --
+  name : string
+  description  : string
+  html_description : string
+  price : float
+  capacity : int
+  location_name : string
+  latitude : float
+  longitude : float
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "bookings" as B {
+  + id : UUID [PK]
+  --
+  room_id  : UUID [FK -> rooms.id]
+  user_id  : UUID [FK -> users.id]
+  start_date  : timestamp
+  end_date  : timestamp
+  status : enum('pending', 'confirmed', 'cancelled')
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "reviews" as RE {
+  + id : UUID [PK]
+  --
+  room_id  : UUID [FK -> rooms.id]
+  user_id  : UUID [FK -> users.id]
+  rating : int
+  comment : string
+  created_at : timestamp
+}
+
+entity "images" as I {
+  + id : UUID [PK]
+  --
+  room_id  : UUID [FK -> rooms.id]
+  image_url : string
+  created_at : timestamp
+}
+
+U ||--o{ B : "has"
+R ||--o{ B : "has"
+R ||--o{ I : "has"
+U ||--o{ RE : "writes"
+R ||--o{ RE : "has"
+@enduml
