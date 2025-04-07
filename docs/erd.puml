@@ -40,9 +40,18 @@ entity "bookings" as B {
   user_id  : UUID [FK -> users.id]
   start_date  : timestamp
   end_date  : timestamp
-  status : enum('pending', 'confirmed', 'cancelled')
+  status : enum('pending', 'confirmed', 'cancelled', 'checked_in', 'checked_out', 'no_show')
   created_at : timestamp
   updated_at : timestamp
+}
+
+entity "booking_status_history" as BS {
+  + id : UUID [PK]
+  --
+  booking_id : UUID [PK] [FK -> bookings.id]
+  status : enum('pending', 'confirmed', 'cancelled', 'checked_in', 'checked_out', 'no_show')
+  changed_at : timestamp
+  note : string
 }
 
 entity "reviews" as RE {
@@ -60,6 +69,7 @@ entity "images" as I {
   --
   room_id  : UUID [FK -> rooms.id]
   image_url : string
+  is_primary : boolean
   created_at : timestamp
 }
 
@@ -68,4 +78,5 @@ R ||--o{ B : "has"
 R ||--o{ I : "has"
 U ||--o{ RE : "writes"
 R ||--o{ RE : "has"
+B ||--o{ BS : "status history"
 @enduml
