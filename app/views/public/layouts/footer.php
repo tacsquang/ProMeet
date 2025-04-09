@@ -10,7 +10,7 @@
 
             <!-- Right -->
             <div class="social-icon">
-                <a href="https://lms.hcmut.edu.vn/login/index.php" class="text-white me-4 text-decoration-none">
+                <a href="https://www.facebook.com/tacsquang/" class="text-white me-4 text-decoration-none">
                 <i class="fab fa-facebook-f fa-lg"></i>
                 </a>
                 <a href="" class="text-white me-4 text-decoration-none">
@@ -25,7 +25,7 @@
                 <a href="" class="text-white me-4 text-decoration-none">
                 <i class="fab fa-linkedin fa-lg"></i>
                 </a>
-                <a href="" class="text-white me-4 text-decoration-none">
+                <a href="https://github.com/tacsquang" class="text-white me-4 text-decoration-none">
                 <i class="fab fa-github fa-lg"></i>
                 </a>
             </div>
@@ -87,7 +87,7 @@
     
         <!-- Copyright -->
         <div class="text-center p-3" style="background-color: rgba(0, 0, 0, 0.2)">
-            © 2025 By TacsQuang</a>
+            © 2025 ProMeet. All rights reserved.</a>
         </div>
         <!-- End Copyright -->
     </footer>
