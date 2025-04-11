@@ -222,7 +222,8 @@
 
         <!-- Nút đặt -->
         <div class="d-flex justify-content-end">
-          <button class="btn btn-success px-4" id="book-btn">Đặt phòng ngay</button>
+          <!-- <button class="btn btn-success px-4" id="book-btn">Đặt phòng ngay</button> -->
+          <a href="./roomPayment.php" class="btn btn-success px-4" id="book-btn">Đặt phòng ngay</a>
         </div>
       </div>
     </div>
