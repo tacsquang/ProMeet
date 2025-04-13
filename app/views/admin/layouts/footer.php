@@ -11,11 +11,11 @@
 </footer>
         </div>
     </div>
-    <script src="../../../public/mazer/assets/static/js/components/dark.js"></script>
-    <script src="../../../public/mazer/assets/extensions/perfect-scrollbar/perfect-scrollbar.min.js"></script>
+    <script src="<?= BASE_URL ?>/mazer/assets/static/js/components/dark.js"></script>
+    <script src="<?= BASE_URL ?>/mazer/assets/extensions/perfect-scrollbar/perfect-scrollbar.min.js"></script>
     
     
-    <script src="../../../public/mazer/assets/compiled/js/app.js"></script>
+    <script src="<?= BASE_URL ?>/mazer/assets/compiled/js/app.js"></script>
     
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>

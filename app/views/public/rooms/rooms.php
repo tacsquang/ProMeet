@@ -1,11 +1,7 @@
-<?php include 'layouts/header.php'; ?>
 
-<body class="page-rooms">
-    <title>ProMeet | Room</title>
-    <?php include 'layouts/navbar.php'; ?>
     
     <style>
-        .page-rooms {
+        /* .page-rooms {
             background-color: rgb(182, 190, 192) !important;
             font-size: 16px;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
@@ -14,7 +10,7 @@
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            background-attachment: fixed; /* Scroll mượt */
+            background-attachment: fixed; /* Scroll mượt 
             min-height: 100vh;
 
         }
@@ -23,9 +19,9 @@
             content: "";
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(69, 96, 102, 0.75); /* trắng mờ */
+            background-color: rgba(69, 96, 102, 0.75); /* trắng mờ 
             z-index: -1;
-        }
+        } */
 
 
         .room-card img {
@@ -174,7 +170,7 @@
                   
                 
                   <div class="d-flex align-items-center justify-content-between mt-3">
-                    <a href="./roomDetail.php" class="btn btn-primary flex-grow-1 me-2">Đặt ngay</a>
+                    <a href="<?php echo BASE_URL; ?>/rooms/detail/id=1" class="btn btn-primary flex-grow-1 me-2">Đặt ngay</a>
                     
                     <a href="./roomDetail.php" class="btn btn-outline-secondary d-flex align-items-center justify-content-center" style="width: 44px; height: 38px;">
                       <i class="bi bi-eye-fill fs-5 m-0 p-0"></i>
@@ -404,4 +400,3 @@
         });
     </script>
       
-<?php include 'layouts/footer.php'; ?>

@@ -1,15 +1,15 @@
 <div class="sidebar-menu">
         <ul class="menu">
             <li class="sidebar-title">Main</li>
-            <li class="sidebar-item">
-                <a href="#" class='sidebar-link'>
+            <li class="sidebar-item <?php echo ($currentPage === 'Dashboard' ? 'active' : ''); ?>">
+                <a href="#" class='sidebar-link '>
                     <i class="bi bi-grid-fill"></i>
                     <span>Dashboard</span>
                 </a>
             </li>
     
             <li class="sidebar-title">Products & Orders</li>
-            <li class="sidebar-item">
+            <li class="sidebar-item ">
                 <a href="#" class='sidebar-link'>
                     <i class="bi bi-box-seam"></i>
                     <span>Rooms</span>

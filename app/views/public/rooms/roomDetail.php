@@ -1,29 +1,6 @@
-<?php include 'layouts/header.php'; ?>
-<body class=room-detail>
-  <title>ProMeet | Room</title>
+
   <style>
-      .room-detail {
-          background-color: rgb(182, 190, 192) !important;
-          font-size: 16px;
-          font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-          
-          background-image: url('../../../public/assets/images/rooms-page-bg.jpg');
-          background-size: cover;
-          background-position: center;
-          background-repeat: no-repeat;
-          background-attachment: fixed; /* Scroll mượt */
-          min-height: 100vh;
-          
 
-      }
-
-      .room-detail::before {
-          content: "";
-          position: fixed;
-          top: 0; left: 0; width: 100%; height: 100%;
-          background-color: rgba(69, 96, 102, 0.75); /* trắng mờ */
-          z-index: -1;
-      }
 
       .text-truncate-multiline {
         display: -webkit-box;
@@ -61,9 +38,6 @@
 
   </style>
 
-  <!-- Navbar -->
-  <?php include 'layouts/navbar.php'; ?>
-  <!-- End Navbar -->
     
   <!-- Main Content -->
   <div class="container py-5">
@@ -223,7 +197,7 @@
         <!-- Nút đặt -->
         <div class="d-flex justify-content-end">
           <!-- <button class="btn btn-success px-4" id="book-btn">Đặt phòng ngay</button> -->
-          <a href="./roomPayment.php" class="btn btn-success px-4" id="book-btn">Đặt phòng ngay</a>
+          <a href="<?php echo BASE_URL; ?>/rooms/payment/id=1" class="btn btn-success px-4" id="book-btn">Đặt phòng ngay</a>
         </div>
       </div>
     </div>
@@ -346,5 +320,3 @@
     });
   </script>
       
-
-<?php include 'layouts/footer.php'; ?>

@@ -1,29 +1,6 @@
-<?php include 'layouts/header.php'; ?>
-<body class=room-payment>
-    <title>ProMeet | Room</title>
+
     <style>
-        .room-payment {
-            background-color: rgb(182, 190, 192) !important;
-            font-size: 16px;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-            
-            background-image: url('../../../public/assets/images/rooms-page-bg.jpg');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed; /* Scroll mượt */
-            min-height: 100vh;
-            
 
-        }
-
-        .room-payment::before {
-            content: "";
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(69, 96, 102, 0.75); /* trắng mờ */
-            z-index: -1;
-        }
 
         .stepper-wrapper {
             display: flex;
@@ -88,10 +65,7 @@
 
     </style>
 
-    <!-- Navbar -->
-    <?php include 'layouts/navbar.php'; ?>
-    <!-- End Navbar -->
-        
+
     <!-- Main Content -->
     <div class="container py-5">
         <!-- Tiêu đề + đồng hồ -->
@@ -241,4 +215,3 @@
     </script>
       
 
-<?php include 'layouts/footer.php'; ?>

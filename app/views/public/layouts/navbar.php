@@ -23,7 +23,7 @@
                 </a>
                 </li>
                 <li class="nav-item px-3">
-                <a class="nav-link" href="#">Rooms</a>
+                <a class="nav-link <?php echo ($currentPage === 'rooms' ? 'active' : ''); ?>" href="<?php echo BASE_URL; ?>/rooms">Rooms</a>
                 </li>
                 <li class="nav-item px-3">
                 <a class="nav-link" href="#">Blog</a>
