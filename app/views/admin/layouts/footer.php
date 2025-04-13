@@ -32,7 +32,7 @@
                 cancelButtonText: "Cancel"
             }).then((result) => {
                 if (result.isConfirmed) {
-                    window.location.href = "<?= ROOT ?>logout";
+                    window.location.href = "<?= BASE_URL ?>/auth/logout";
                 }
             });
         });

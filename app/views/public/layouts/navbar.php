@@ -56,7 +56,10 @@
                     <li><a class="dropdown-item" href="#">Lịch sử đặt phòng</a></li>
                     <li><a class="dropdown-item" href="#">Cài đặt</a></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item text-danger" href="#">Đăng xuất</a></li>
+                    <li>
+                        <a class="dropdown-item text-danger" href="#" id="logoutBtn">Đăng xuất</a>
+                    </li>
+
                     </ul>
                 </div>
             </div>
@@ -64,3 +67,24 @@
     </div>
 </nav>
 <!-- End Navbar -->
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.getElementById("logoutBtn")?.addEventListener("click", function (e) {
+        e.preventDefault(); // Ngăn chuyển trang ngay lập tức
+        Swal.fire({
+            title: "Bạn có chắc muốn đăng xuất?",
+            text: "Phiên làm việc sẽ kết thúc và bạn phải đăng nhập lại.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Đăng xuất",
+            cancelButtonText: "Hủy"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = "<?= BASE_URL ?>/auth/logout";
+            }
+        });
+    });
+</script>
