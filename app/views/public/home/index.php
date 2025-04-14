@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -10,7 +11,7 @@
 
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Font Awesome -->
+   Font Awesome 
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 
   <style>
@@ -125,9 +126,10 @@
     
   </style>
 </head>
-<body>
+<body> -->
+    
 
-    <!-- Navbar -->
+    <!-- Navbar
     <nav class="navbar navbar-expand-md">
         <div class="container-fluid px-4 px-lg-5">
             <a class="navbar-brand fw-bold" href="#">
@@ -193,17 +195,17 @@
     <h1>Hello</h1>
     <!-- ... -->
 
-    <!-- Footer -->
+    <!-- Footer 
     <footer class="text-center text-lg-start text-white" style="background-color: #1c2331">
-        <!-- Section: Social media -->
+         Section: Social media 
         <section class="d-flex flex-column flex-md-row justify-content-between align-items-center text-center p-3 px-md-5"
                     style="background: linear-gradient(to right, #06163f, #15436b)">
-            <!-- Left -->
+            <!-- Left 
             <div class="me-5 mb-3 mb-md-0">
                 <span>Get connected with us on social networks:</span>
             </div>
 
-            <!-- Right -->
+            <!-- Right -
             <div class="social-icon">
                 <a href="https://www.facebook.com/tacsquang/" class="text-white me-4 text-decoration-none">
                 <i class="fab fa-facebook-f fa-lg"></i>
@@ -225,28 +227,28 @@
                 </a>
             </div>
         </section>
-        <!-- End Section: Social media -->
+        <!-- End Section: Social media --
     
-        <!-- Section: Links  -->
+        <!-- Section: Links  --
         <section class="">
             <div class="container text-center text-md-start mt-5">
                 <div class="row mt-3">
-                    <!-- Company Info -->
+                    <!-- Company Info --
                     <div class="col-12 col-sm-6 col-md-6 col-lg-4 col-xl-3 mx-auto mb-4 text-center text-lg-start">
-                        <!-- Logo -->
+                        <!-- Logo --
                         <div class="mb-3">
                         <img src="<?= BASE_URL ?>/assets/images/logoProMEET_US_light.svg" alt="ProMeet Logo" height="60" class="mb-2">
                         <hr class="mx-auto mx-lg-0" style="width: 60px; background-color: #7c4dff; height: 2px">
                         </div>
                     
-                        <!-- Nội dung -->
+                        <!-- Nội dung --
                         <p class="text-justify">
                             ProMeet – Nền tảng đặt phòng họp linh hoạt, hiện đại và tiện lợi cho cá nhân & doanh nghiệp. 
                             Kết nối bạn với không gian làm việc lý tưởng chỉ trong vài bước.
                         </p>
                     </div>
                     
-                    <!-- Products -->
+                    <!-- Products --
                     <div class="col-6 col-sm-6 col-md-3 col-lg-2 col-xl-2 mx-auto mb-4">
                         <h6 class="text-uppercase fw-bold">Menu</h6>
                         <hr class="mb-4 mt-0 d-inline-block mx-auto" style="width: 60px; background-color: #7c4dff; height: 2px"/>
@@ -256,7 +258,7 @@
                         <p><a href="#!" class="text-white">Contact</a></p>
                     </div>
             
-                    <!-- Useful Links -->
+                    <!-- Useful Links --
                     <div class="col-6 col-sm-6 col-md-3 col-lg-2 col-xl-2 mx-auto mb-4">
                         <h6 class="text-uppercase fw-bold">Useful links</h6>
                         <hr class="mb-4 mt-0 d-inline-block mx-auto" style="width: 60px; background-color: #7c4dff; height: 2px"/>
@@ -266,7 +268,7 @@
                         <p><a href="#!" class="text-white">Help</a></p>
                     </div>
             
-                    <!-- Contact -->
+                    <!-- Contact --
                     <div class="col-12 col-sm-12 col-md-6 col-lg-4 col-xl-3 mx-auto mb-md-0 mb-4">
                         <h6 class="text-uppercase fw-bold">Contact</h6>
                         <hr class="mb-4 mt-0 d-inline-block mx-auto" style="width: 60px; background-color: #7c4dff; height: 2px"/>
@@ -278,23 +280,23 @@
                 </div>
             </div>
         </section>  
-        <!-- End Section: Links  -->
+        <!-- End Section: Links  --
     
-        <!-- Copyright -->
+        <!-- Copyright --
         <div class="text-center p-3" style="background-color: rgba(0, 0, 0, 0.2)">
             © 2025 ProMeet. All rights reserved.</a>
         </div>
-        <!-- End Copyright -->
+        <!-- End Copyright --
     </footer>
     <!-- End Footer -->
     
-    <!-- Back to top -->
+    <!-- Back to top --
     <a href="#" class="back-to-top shadow d-flex align-items-center justify-content-center">
         <i class="fas fa-chevron-up"></i>
     </a>
     <!-- End Back to top -->
 
-    <!-- Bootstrap JS & Icons -->
+    <!-- Bootstrap JS & Icons --
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 

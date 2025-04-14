@@ -8,7 +8,7 @@ use App\Core\LogService;
 class AuthController
 {
     public function login() {
-        var_dump($_SESSION);
+        #var_dump($_SESSION);
 
         if (isset($_SESSION['user'])) {
             // Nếu đã đăng nhập, redirect về trang chính (hoặc dashboard)

@@ -18,7 +18,7 @@
             font-size: 16px;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 
-            background-image: url('../../../public/assets/images/rooms-page-bg.jpg');
+            background-image: url('<?= BASE_URL ?>/assets/images/rooms-page-bg.jpg');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
