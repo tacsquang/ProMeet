@@ -39,9 +39,19 @@
                 
                 <!-- Login/Signup -->
                 <div class="auth-buttons d-flex gap-2 mb-2 mb-lg-0">
-                    <a href="<?php echo BASE_URL; ?>/auth/login" class="btn btn-outline-light">Join now</a>
+                    <a href="<?php echo BASE_URL; ?>/auth/login" class="btn btn-outline-light" onclick="saveRedirectUrl()">Join now</a>
                 </div>
             </div>
         </div>
     </nav>
     <!-- End Navbar -->
+    <script>
+        function saveRedirectUrl() {
+            // Lưu URL hiện tại vào session bằng AJAX
+            fetch('<?php echo BASE_URL; ?>/auth/saveRedirectUrl', {
+                method: 'POST',
+                body: JSON.stringify({redirect_url: window.location.href}),
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
+    </script>

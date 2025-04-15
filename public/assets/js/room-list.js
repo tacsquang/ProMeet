@@ -64,6 +64,22 @@ function loadRooms(page = 1) {
 
             let html = '';
             response.rooms.forEach(function(room) {
+            
+                let stars = '';
+                let fullStars = Math.floor(room.review);  // số sao đầy
+                let hasHalfStar = (room.review - fullStars) >= 0.5;  // nửa sao
+                let emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);  // số sao rỗng
+            
+                for (let i = 0; i < fullStars; i++) {
+                    stars += '<i class="bi bi-star-fill text-warning me-1"></i>';
+                }
+                if (hasHalfStar) {
+                    stars += '<i class="bi bi-star-half text-warning me-1"></i>';
+                }
+                for (let i = 0; i < emptyStars; i++) {
+                    stars += '<i class="bi bi-star text-warning me-1"></i>';
+                }
+            
                 html += `
                 <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
                     <div class="card room-card position-relative">
@@ -71,7 +87,10 @@ function loadRooms(page = 1) {
                         <img src="${room.image}" class="card-img-top" alt="${room.name}" />
                         <div class="card-body">
                             <h5 class="card-title text-truncate" style="max-width: 100%;">${ room.name }</h5>
-                            <div class="text-muted fst-italic small">${room.review}</div>
+                            <div class="d-flex align-items-center mb-2">
+                                ${stars} 
+                                <small class="text-muted ms-1">(${room.review})</small>
+                            </div>
                             <p class="card-text text-truncate" style="max-width: 100%;">${ room.location }</p>
                             <p class="card-text fw-semibold d-flex justify-content-between align-items-center">
                                 <span class="text-primary d-flex align-items-center">
@@ -83,10 +102,7 @@ function loadRooms(page = 1) {
                             </p>
                             <div class="d-flex align-items-center justify-content-between mt-3">
                                 <a href="./rooms/detail/${room.id}" class="btn btn-primary flex-grow-1 me-2">Đặt ngay</a>
-                                <a href="./roomDetail.php?id=${room.id}" class="btn btn-outline-secondary d-flex align-items-center justify-content-center" style="width: 44px; height: 38px;">
-                                    <i class="bi bi-eye-fill fs-5 m-0 p-0"></i>
-                                </a>
-                                <button class="btn btn-outline-secondary wishlist-btn d-flex align-items-center justify-content-center ms-2" style="width: 44px; height: 38px;">
+                                <button class="btn btn-outline-secondary wishlist-btn d-flex align-items-center justify-content-center ms-2" style="width: 44px; height: 38px;" data-room-id="${room.id}">
                                     <i class="bi bi-heart fs-5 m-0 p-0"></i>
                                 </button>
                             </div>
@@ -99,6 +115,44 @@ function loadRooms(page = 1) {
             renderPagination(response.totalPages, page);
 
             window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Sau khi render xong, thêm sự kiện cho các nút "tym"
+            document.querySelectorAll('.wishlist-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const icon = this.querySelector('i');
+                    const roomId = this.getAttribute('data-room-id');
+
+                    // Lấy danh sách phòng đã tym từ localStorage
+                    let likedRooms = JSON.parse(localStorage.getItem('likedRooms')) || [];
+
+                    if (icon.classList.contains('bi-heart')) {
+                        // Nếu chưa tym, thêm phòng vào danh sách yêu thích
+                        likedRooms.push(roomId);
+                        localStorage.setItem('likedRooms', JSON.stringify(likedRooms));
+                        icon.classList.remove('bi-heart');
+                        icon.classList.add('bi-heart-fill', 'text-danger');
+                    } else {
+                        // Nếu đã tym, xóa phòng khỏi danh sách yêu thích
+                        likedRooms = likedRooms.filter(id => id !== roomId);
+                        localStorage.setItem('likedRooms', JSON.stringify(likedRooms));
+                        icon.classList.remove('bi-heart-fill', 'text-danger');
+                        icon.classList.add('bi-heart');
+                    }
+                });
+            });
+
+            // Kiểm tra trạng thái yêu thích khi tải lại trang
+            document.querySelectorAll('.wishlist-btn').forEach(btn => {
+                const roomId = btn.getAttribute('data-room-id');
+                let likedRooms = JSON.parse(localStorage.getItem('likedRooms')) || [];
+
+                if (likedRooms.includes(roomId)) {
+                    const icon = btn.querySelector('i');
+                    icon.classList.remove('bi-heart');
+                    icon.classList.add('bi-heart-fill', 'text-danger');
+                }
+            });
+
         },
         error: function(xhr, status, error) {
             console.error("[DEBUG] AJAX Error:", { status: status, error: error, xhr: xhr });

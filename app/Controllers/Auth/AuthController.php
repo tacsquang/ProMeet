@@ -36,7 +36,26 @@ class AuthController
                 ];
 
                 $log->logInfo("User '{$user->username}' (ID: {$user->id}) logged in successfully.");
-                header('Location: /BTL_LTW/ProMeet/public/home/index');
+
+                // Kiểm tra nếu là admin thì không cần chuyển hướng về URL đã lưu
+                if ($user->role === 'admin') {
+                    // Chuyển hướng admin đến trang quản trị
+                    $redirectUrl = '/BTL_LTW/ProMeet/public/home/index'; // Hoặc trang quản trị khác
+                } else {
+                    // Nếu có lưu URL trong session, chuyển hướng về đó
+                    if (isset($_SESSION['redirect_url'])) {
+                        $redirectUrl = $_SESSION['redirect_url'];
+                        unset($_SESSION['redirect_url']);  // Xóa URL khỏi session sau khi chuyển hướng
+                    } else {
+                        $redirectUrl = '/BTL_LTW/ProMeet/public/home/index';  // Nếu không có URL, chuyển về trang mặc định
+                    }
+                }
+
+                // Chuyển hướng về URL đã lưu
+                header("Location: $redirectUrl");
+
+
+                // header('Location: /BTL_LTW/ProMeet/public/home/index');
                 exit;
             } else {
                 $log->logWarning("Login failed for email: '{$email}'");
@@ -61,5 +80,18 @@ class AuthController
         session_destroy();
         header('Location: /BTL_LTW/ProMeet/public/home/index');
         exit;
+    }
+
+    public function saveRedirectUrl() {
+        var_dump($_SESSION);
+        // Xử lý AJAX lưu redirect URL
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Đọc dữ liệu từ request body
+            $data = json_decode(file_get_contents('php://input'), true);
+            if (isset($data['redirect_url'])) {
+                $_SESSION['redirect_url'] = $data['redirect_url']; // Lưu URL vào session
+            }
+            exit;
+        }
     }
 }
