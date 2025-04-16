@@ -8,7 +8,7 @@ use App\Core\LogService;
 class AuthController
 {
     public function login() {
-        #var_dump($_SESSION);
+        var_dump($_SESSION);
 
         if (isset($_SESSION['user'])) {
             // Nếu đã đăng nhập, redirect về trang chính (hoặc dashboard)
@@ -84,7 +84,10 @@ class AuthController
     }
 
     public function saveRedirectUrl() {
+        $log = new LogService();
+        $log->logInfo("Bắt đầu lưu redirect URL");
         var_dump($_SESSION);
+
         // Xử lý AJAX lưu redirect URL
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Đọc dữ liệu từ request body

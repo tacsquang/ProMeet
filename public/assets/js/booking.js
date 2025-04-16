@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const totalAmount = document.getElementById('total-amount');
     const bookBtn = document.getElementById('book-btn');
     const errorBox = document.getElementById('booking-error');
+    const successBox = document.getElementById('successBox');
     const csrfToken = document.getElementById('csrf_token').value;
     const roomId = window.CURRENT_ROOM_ID;
 
@@ -114,15 +115,40 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('Server Response:', response); // Kiểm tra toàn bộ dữ liệu từ server
             
                 if (response && response.success) {
-                    alert('Đặt phòng thành công!');
-                    window.location.href = `${BASE_URL}/rooms/payment/${response.booking_id}`;// + response.booking_id;
+                    successBox.textContent = 'Đặt phòng thành công! Đang chuyển sang trang thanh toán...';
+                    successBox.classList.remove('hidden');
+                    errorBox.classList.add('hidden');
+
+                    setTimeout(function() {
+                        window.location.href = `${BASE_URL}/rooms/payment/${response.booking_id}`;
+                    }, 2500);
+                    // + response.booking_id;
                 } else {
                     // Nếu không có success hoặc có lỗi khác
                     errorBox.textContent = 'Có lỗi xảy ra khi đặt phòng. Vui lòng thử lại.';
                 }
             },            
             error: function(xhr, status, error) {
-                if (xhr.status === 409) {
+                if (xhr.status === 401) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        if (response.error) {
+                            errorBox.textContent = response.error;
+                        } else {
+                            errorBox.textContent = "Bạn chưa đăng nhập!";
+                        }
+                    } catch (e) {
+                        errorBox.textContent = "Bạn chưa đăng nhập!";
+                    }
+
+                    saveRedirectUrl()
+            
+                    // Đợi 2.5s rồi chuyển sang trang login
+                    setTimeout(function() {
+                        window.location.href = BASE_URL + "/auth/login";
+                    }, 2500);
+                }
+                else if (xhr.status === 409) {
                     try {
                         const response = JSON.parse(xhr.responseText);
                         if (response.error) {
@@ -137,8 +163,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     errorBox.textContent = "Có lỗi xảy ra khi đặt phòng. Vui lòng thử lại.";
                 }
             }
+            
         });
     });
 
     fetchUnavailableSlots(selectedDate);
 });
+
+function saveRedirectUrl() {
+    fetch(BASE_URL + '/auth/saveRedirectUrl', {
+        method: 'POST',
+        body: JSON.stringify({ redirect_url: `${BASE_URL}/rooms/payments/${roomId}` }),
+        headers: { 'Content-Type': 'application/json' }
+    });
+}

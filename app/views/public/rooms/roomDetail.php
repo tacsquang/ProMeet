@@ -226,6 +226,7 @@
         <div class="p-4 d-flex justify-content-end align-items-center flex-wrap gap-2">
           <a href="<?php echo BASE_URL; ?>/rooms/payment/id=1" class="btn btn-success px-4 order-1 order-md-2" id="book-btn">Đặt phòng ngay</a>
           <div id="booking-error" class="text-danger fw-semibold order-2 order-md-1"></div>
+          <div id="successBox" class="hidden text-success font-semibold"></div>
         </div>
       </div>
     </div>

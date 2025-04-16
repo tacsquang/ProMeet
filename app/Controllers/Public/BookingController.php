@@ -25,10 +25,9 @@ class BookingController
     
         //session_start();
         if (!isset($_SESSION['user'])) {
-            // Chưa đăng nhập, chuyển về trang login
-
-            header('Location: /BTL_LTW/ProMeet/public/auth/login');
-            exit();
+            http_response_code(401);  // 401 Unauthorized
+            echo json_encode(['error' => 'Vui lòng đăng nhập để tiếp tục đặt phòng!']);
+            return;
         }
     
         $userId = $_SESSION['user']['id'] ?? null;

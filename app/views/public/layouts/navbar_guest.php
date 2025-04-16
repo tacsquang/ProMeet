@@ -45,13 +45,3 @@
         </div>
     </nav>
     <!-- End Navbar -->
-    <script>
-        function saveRedirectUrl() {
-            // Lưu URL hiện tại vào session bằng AJAX
-            fetch('<?php echo BASE_URL; ?>/auth/saveRedirectUrl', {
-                method: 'POST',
-                body: JSON.stringify({redirect_url: window.location.href}),
-                headers: { 'Content-Type': 'application/json' }
-            });
-        }
-    </script>
