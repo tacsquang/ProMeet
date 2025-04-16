@@ -68,6 +68,7 @@ class AuthController
                 ]);
             }
         } else { // GET
+            $log->logInfo("Login attempt");
             $view = new View();
             $view->setLayout(null);
             $view->render('public/auth/login', [

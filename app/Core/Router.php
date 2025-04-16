@@ -1,11 +1,15 @@
 <?php
 
 namespace App\Core;
+use App\Core\LogService;
 
 class Router
 {
     public function dispatch()
     {
+        $log = new LogService();
+        //$log->logInfo("GET Parameters: " . json_encode($_GET));
+
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
@@ -13,6 +17,9 @@ class Router
         $url = $_GET['url'] ?? 'home/index';
         $url = trim($url, '/');
         $segments = explode('/', $url);
+       $log->logInfo("URL gốc: $url");
+
+        //$log->logInfo("URLLLL: $segments[0]");
 
         if (strtolower($segments[0]) === 'auth') {
             $controllerName = ucfirst($segments[0]) . 'Controller';
@@ -41,6 +48,7 @@ class Router
 
             $controllerClass = "App\\Controllers\\$roleNamespace\\$controllerName";
         }
+        //$log->logInfo("ControllerClass:  $controllerClass");
 
         // 🚨 Phân quyền truy cập
         if (isset($_SESSION['user'])) {
@@ -71,9 +79,11 @@ class Router
             if (method_exists($controller, $methodName)) {
                 call_user_func_array([$controller, $methodName], $params);
             } else {
+                $log->logError("Method [$methodName] not found in [$controllerClass].");
                 echo "Method [$methodName] not found in [$controllerClass].";
             }
         } else {
+            $log->logError("Controller [$controllerClass] not found.");
             echo "Controller [$controllerClass] not found.";
         }
     }

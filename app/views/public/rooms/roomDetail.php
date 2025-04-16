@@ -13,6 +13,13 @@
         text-overflow: ellipsis;
       }
 
+      .text-truncate-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2; /* Giới hạn 2 dòng */
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
       /* Điều chỉnh cho màn hình nhỏ */
       @media (max-width: 991px) {
       .carousel.slide {
@@ -38,6 +45,9 @@
 
   </style>
 
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.11.0/mapbox-gl.css" rel="stylesheet" />
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.11.0/mapbox-gl.js"></script>
+
     
   <!-- Main Content -->
   <div class="container py-5">
@@ -45,19 +55,29 @@
     <div class="container">
       <div class="row g-4 align-items-stretch">
         <!-- Cột trái: carousel -->
-        <div class="col-12 col-md-7 col-lg-8  d-flex">
+        <div class="col-12 col-md-7 col-lg-8 d-flex">
           <div class="carousel slide rounded-4 overflow-hidden shadow w-100" id="roomCarousel" data-bs-ride="carousel"
-                style="aspect-ratio: 16 / 9; max-height: 700px;">
+              data-bs-interval="3000" style="aspect-ratio: 16 / 9; max-height: 700px;">
             <div class="carousel-inner h-100">
-              <div class="carousel-item active h-100">
-                <img src="https://cgvtelecom.vn/wp-content/uploads/2020/02/LOGITECH-RALLY-CGV.jpg"
-                      class="img-fluid h-100 w-100" style="object-fit: cover;" alt="Ảnh phòng họp">
-              </div>
-              <div class="carousel-item h-100">
-                <img src="https://s3-media0.fl.yelpcdn.com/bphoto/JCKxxzhmNUdT5SQ2rAdV0Q/o.jpg"
-                      class="img-fluid h-100 w-100" style="object-fit: cover;" alt="Ảnh phòng họp">
-              </div>
+
+              <?php if (!empty($room['images'])): ?>
+                <?php foreach ($room['images'] as $index => $image): ?>
+                  <div class="carousel-item <?= $index === 0 ? 'active' : '' ?> h-100">
+                    <img src="<?= htmlspecialchars($image) ?>" class="img-fluid h-100 w-100" style="object-fit: cover;" alt="Ảnh phòng họp">
+                  </div>
+                <?php endforeach; ?>
+              <?php else: ?>
+                <div class="carousel-item active h-100">
+                  <img src= "<?= BASE_URL?>/assets/images/placeholder.jpeg" class="img-fluid h-100 w-100" style="object-fit: cover;" alt="Placeholder">
+                </div>
+
+                <div class="carousel-item h-100">
+                  <img src= "<?= BASE_URL?>/assets/images/placeholder.jpeg" class="img-fluid h-100 w-100" style="object-fit: cover;" alt="Placeholder">
+                </div>
+              <?php endif; ?>
+
             </div>
+
             <button class="carousel-control-prev" type="button" data-bs-target="#roomCarousel" data-bs-slide="prev">
               <span class="carousel-control-prev-icon"></span>
             </button>
@@ -66,86 +86,94 @@
             </button>
           </div>
         </div>
-    
-        <!-- Cột phải: thông tin + bản đồ -->
-        <div class="col-12 col-md-5 col-lg-4  d-flex">
-          <div class="bg-white rounded-4 shadow-sm p-4 w-100 d-flex flex-column justify-content-between">
-            <!-- Nội dung info -->
-            <div class="flex-grow-1">
 
-              <!-- Nhãn nổi bật -->
+
+        <!-- Cột phải: thông tin + bản đồ -->
+        <div class="col-12 col-md-5 col-lg-4 d-flex">
+          <div class="bg-white rounded-4 shadow-sm p-4 w-100 d-flex flex-column justify-content-between">
+            <div class="flex-grow-1">
               <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="badge bg-primary px-3 py-2 fs-6 rounded-pill text-uppercase">
-                  <i class="bi bi-star-fill me-1"></i> Basic
+                <span class="badge <?= $room['label_color'] ?> px-3 py-2 fs-6 rounded-pill text-uppercase">
+                  <i class="bi bi-star-fill me-1"></i> <?= htmlspecialchars($room['label']) ?>
                 </span>
-                <!-- Nút yêu thích -->
-                <button class="btn btn-light rounded-circle shadow-sm favorite-btn" title="Yêu thích">
-                  <i class="bi bi-heart fs-5 text-danger"></i>
+                <button class="btn btn-light rounded-circle shadow-sm favorite-btn" 
+                        data-room-id="<?= $room['id'] ?>" 
+                        title="Yêu thích">
+                    <i class="bi bi-heart fs-5 text-danger"></i>
                 </button>
               </div>
-            
-              <!-- Tên phòng -->
-              <h2 class="fw-bold mb-1">Phòng A1 - Tower City</h2>
-            
-              <!-- Vị trí -->
-              <p class="text-muted mb-1">Tầng 2 - Tòa nhà A</p>
-            
-              <!-- Giá, sức chứa, đánh giá -->
-              <!-- Thông tin chi tiết (giá - sức chứa - đánh giá) -->
-              <!-- Thông tin chi tiết (giá - sức chứa - đánh giá) -->
+
+              <h2 class="fw-bold mb-1 text-truncate-2"><?= htmlspecialchars($room['name']) ?></h2>
+              <p class="text-muted mb-1 text-truncate-2"><?= htmlspecialchars($room['address']) ?></p>
+
               <div class="d-flex justify-content-between mb-4 flex-wrap gap-2">
-                <!-- Giá -->
                 <div class="info-box text-center bg-light rounded-3 px-3 py-2 shadow-sm flex-grow-1" style="min-width: 100px;">
                   <div class="text-success fw-semibold small">
-                    <i class="bi bi-cash-coin me-1"></i> 350.000đ /giờ
+                    <i class="bi bi-cash-coin me-1"></i> <?= number_format($room['price']) ?>đ /giờ
                   </div>
                 </div>
 
-                <!-- Sức chứa -->
                 <div class="info-box text-center bg-light rounded-3 px-3 py-2 shadow-sm flex-grow-1" style="min-width: 100px;">
                   <div class="fw-semibold small">
-                    <i class="bi bi-people-fill me-1 text-primary"></i> 12 người
+                    <i class="bi bi-people-fill me-1 text-primary"></i> <?= $room['capacity'] ?> người
                   </div>
                 </div>
 
-                <!-- Đánh giá -->
                 <div class="info-box text-center bg-light rounded-3 px-3 py-2 shadow-sm flex-grow-1" style="min-width: 100px;">
-                  <div class="text-warning small">★★★★☆
-                    <small class="text-muted">(24 đánh giá)</small>
+                  <div class="text-warning small">
+                    <?= str_repeat('★', $room['rating']) ?><?= str_repeat('☆', 5 - $room['rating']) ?>
+                    <small class="text-muted">(<?= $room['review_count'] ?> đánh giá)</small>
                   </div>
                 </div>
               </div>
 
-            
-              <!-- Nút đặt -->
               <a href="#booking" class="btn btn-primary w-100">
                 <i class="bi bi-calendar-check me-2"></i> Đặt ngay
               </a>
-            
             </div>
-            
-    
-            <!-- Bản đồ -->
-            <div class="rounded-4 overflow-hidden shadow-sm mt-4" style="height: 250px;">
-              <iframe 
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.5152767505163!2d106.67998361480062!3d10.7717287923265!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752ec9d9f01929%3A0xc7f9cfc03c81869!2zSOG7jWMgdmnhu4d0IE5n4buNYyBMYW5nIElUIFTDom4gUGjhuqFt!5e0!3m2!1svi!2s!4v1611123456789!5m2!1svi!2s"
-                width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy">
-              </iframe>
+
+            <div id="map" class="rounded-4 overflow-hidden shadow-sm mt-4"
+                style="height: 250px;"
+                data-lat="<?= $room['lat'] ?>"
+                data-lng="<?= $room['lng'] ?>">
             </div>
           </div>
         </div>
 
+        <script>
+          const mapDiv = document.getElementById('map');
+          const lat = parseFloat(mapDiv.getAttribute('data-lat'));
+          const lng = parseFloat(mapDiv.getAttribute('data-lng'));
+
+          mapboxgl.accessToken = 'k.eyJ1IjoidGFjc3F1YW5nIiwiYSI6ImNtOWk2dm4yejBkYTEycHF2end2cThmNnQifQ.aylaQoQC8BjgWhbUEcHy9w';
+          const map = new mapboxgl.Map({
+              container: 'map',
+              style: 'mapbox://styles/mapbox/streets-v11',
+              center: [lng, lat],
+              zoom: 15
+          });
+
+          const marker = new mapboxgl.Marker().setLngLat([lng, lat]).addTo(map);
+
+          marker.getElement().addEventListener('click', function() {
+              map.flyTo({
+                  center: [lng, lat],
+                  zoom: 18,
+                  speed: 1.2,
+                  curve: 1,
+                  easing: t => t
+              });
+              window.open(`https://www.google.com/maps?q=${lat},${lng}`, "_blank");
+          });
+        </script>
       </div>
     </div>
-  
+
     <!-- Mô tả chi tiết -->
     <div class="container mt-5">
       <div class="bg-white rounded-4 shadow p-4">
         <h4 class="fw-bold mb-3"> <i class="bi bi-info-circle text-primary me-2"></i> Mô tả chi tiết</h4>
-        <p class="mb-0 text-muted">
-          Phòng họp A1 nằm tại tầng 2, được trang bị đầy đủ thiết bị hiện đại như máy chiếu, bảng trắng, micro không dây.
-          Không gian yên tĩnh, phù hợp cho các buổi họp nhóm, đào tạo hoặc thuyết trình.
-        </p>
+        <?= htmlspecialchars_decode($room['html_description']) ?>
       </div>
     </div>
 
@@ -157,166 +185,135 @@
         <!-- Chọn ngày -->
         <div class="mb-4">
           <label class="form-label fw-semibold">Chọn ngày</label>
-          <input type="date" class="form-control w-auto" id="booking-date">
+          <input type="date" class="form-control w-auto" id="booking-date" value="<?= date('Y-m-d'); ?>"> <!-- Mặc định ngày hôm nay -->
         </div>
 
         <!-- Chọn khung giờ -->
         <div class="mb-4">
           <label class="form-label fw-semibold">Chọn khung giờ</label>
           <div class="d-flex flex-wrap gap-2" id="time-slot-container">
-            <button class="btn btn-outline-primary time-slot">08:00</button>
-            <button class="btn btn-outline-primary time-slot">08:30</button>
-            <button class="btn btn-outline-secondary time-slot disabled">09:00</button>
-            <button class="btn btn-outline-primary time-slot">09:30</button>
-            <button class="btn btn-outline-primary flex-shrink-0 time-slot">07:30</button>
-            <button class="btn btn-outline-primary flex-shrink-0 time-slot">08:00</button>
-            <button class="btn btn-outline-primary flex-shrink-0 time-slot">08:30</button>
-            <button class="btn btn-outline-primary flex-shrink-0 time-slot">09:00</button>
-            <button class="btn btn-outline-primary flex-shrink-0 time-slot">09:30</button>
-            <button class="btn btn-outline-primary flex-shrink-0 time-slot">10:00</button>
-            <button class="btn btn-outline-primary flex-shrink-0 time-slot">10:30</button>
-            <button class="btn btn-outline-primary flex-shrink-0 time-slot">11:00</button>
-            <button class="btn btn-outline-primary flex-shrink-0 time-slot">11:30</button>
-            <button class="btn btn-outline-primary flex-shrink-0 time-slot">12:00</button>
-            <button class="btn btn-outline-primary flex-shrink-0 time-slot">12:30</button>
-            <button class="btn btn-outline-secondary flex-shrink-0 time-slot disabled">13:00</button>
-            <button class="btn btn-outline-primary flex-shrink-0 time-slot">13:30</button>
-            <button class="btn btn-outline-primary flex-shrink-0 time-slot">14:00</button>
-            <button class="btn btn-outline-primary flex-shrink-0 time-slot">14:30</button>
-            <button class="btn btn-outline-secondary flex-shrink-0 time-slot disabled">15:00</button>
-            <button class="btn btn-outline-secondary flex-shrink-0 time-slot disabled">15:30</button>
-            <button class="btn btn-outline-secondary flex-shrink-0 time-slot disabled">16:00</button>
-            <button class="btn btn-outline-primary flex-shrink-0 time-slot">16:30</button>
-            <button class="btn btn-outline-primary flex-shrink-0 time-slot">17:00</button>
-            <button class="btn btn-outline-primary flex-shrink-0 time-slot">17:30</button>
-            <!-- Thêm giờ khác nếu cần -->
+            <button class="btn btn-outline-primary time-slot" data-time="08:00:00">08:00</button>
+            <button class="btn btn-outline-primary time-slot" data-time="08:30:00">08:30</button>
+            <button class="btn btn-outline-primary time-slot" data-time="09:00:00">09:00</button>
+            <button class="btn btn-outline-primary time-slot" data-time="09:30:00">09:30</button>
+            <button class="btn btn-outline-primary time-slot" data-time="10:00:00">10:00</button>
+            <button class="btn btn-outline-primary time-slot" data-time="10:30:00">10:30</button>
+            <button class="btn btn-outline-primary time-slot" data-time="11:00:00">11:00</button>
+            <button class="btn btn-outline-primary time-slot" data-time="11:30:00">11:30</button>
+            <button class="btn btn-outline-primary time-slot" data-time="12:00:00">12:00</button>
+            <button class="btn btn-outline-primary time-slot" data-time="12:30:00">12:30</button>
+            <button class="btn btn-outline-primary time-slot" data-time="13:00:00">13:00</button>
+            <button class="btn btn-outline-primary time-slot" data-time="13:30:00">13:30</button>
+            <button class="btn btn-outline-primary time-slot" data-time="14:00:00">14:00</button>
+            <button class="btn btn-outline-primary time-slot" data-time="14:30:00">14:30</button>
+            <button class="btn btn-outline-primary time-slot" data-time="15:00:00">15:00</button>
+            <button class="btn btn-outline-primary time-slot" data-time="15:30:00">15:30</button>
+            <button class="btn btn-outline-primary time-slot" data-time="16:00:00">16:00</button>
+            <button class="btn btn-outline-primary time-slot" data-time="16:30:00">16:30</button>
+            <button class="btn btn-outline-primary time-slot" data-time="17:00:00">17:00</button>
+            <button class="btn btn-outline-primary time-slot" data-time="17:30:00">17:30</button>
           </div>
           <small class="text-muted mt-2 d-block">* Các khung giờ đã bị đặt sẽ bị vô hiệu hóa.</small>
         </div>
 
+        <!-- Tổng tiền -->
+        <div class="rounded-4 p-4 d-flex justify-content-between align-items-center" style="background-color:rgb(239, 245, 252)">
+          <span class="fw-semibold">Tổng cộng:</span>
+          <span class="fw-bold fs-5 text-success" id="total-amount">0đ</span>
+        </div>
+
         <!-- Nút đặt -->
-        <div class="d-flex justify-content-end">
-          <!-- <button class="btn btn-success px-4" id="book-btn">Đặt phòng ngay</button> -->
-          <a href="<?php echo BASE_URL; ?>/rooms/payment/id=1" class="btn btn-success px-4" id="book-btn">Đặt phòng ngay</a>
+        <div class="p-4 d-flex justify-content-end align-items-center flex-wrap gap-2">
+          <a href="<?php echo BASE_URL; ?>/rooms/payment/id=1" class="btn btn-success px-4 order-1 order-md-2" id="book-btn">Đặt phòng ngay</a>
+          <div id="booking-error" class="text-danger fw-semibold order-2 order-md-1"></div>
         </div>
       </div>
     </div>
 
-    <!-- Tổng tiền -->
-    <div class="container mt-4">
-      <div class="bg-light rounded-4 p-4 d-flex justify-content-between align-items-center">
-        <span class="fw-semibold">Tổng cộng:</span>
-        <span class="fw-bold fs-5 text-success" id="total-amount">0đ</span>
-      </div>
-    </div>
 
     <!-- Đánh giá người dùng -->
     <div class="container my-5">
-      <div class="bg-white rounded-4 shadow p-4">
-        
-        <!-- Tiêu đề + Bộ lọc -->
-        <div class="row align-items-center mb-3">
-          <div class="col-md-6">
-            <h4 class="fw-bold mb-2 mb-md-0"><i class="bi bi-star-fill text-primary me-2"></i>Trải nghiệm người dùng</h4>
-          </div>
-          <div class="col-md-6 text-md-end">
-            <select class="form-select form-select-sm w-auto d-inline-block" style="min-width: 140px;">
-              <option>Mới nhất</option>
-              <option>Điểm cao nhất</option>
-              <option>Điểm thấp nhất</option>
-            </select>
-          </div>
+        <div class="bg-white rounded-4 shadow p-4">
+            <!-- Tiêu đề + Bộ lọc -->
+            <div class="row align-items-center mb-3">
+                <div class="col-md-6">
+                    <h4 class="fw-bold mb-2 mb-md-0"><i class="bi bi-star-fill text-primary me-2"></i>Trải nghiệm người dùng</h4>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <select class="form-select form-select-sm w-auto d-inline-block" style="min-width: 140px;" id="sortBy">
+                        <option value="date">Mới nhất</option>
+                        <option value="highest">Điểm cao nhất</option>
+                        <option value="lowest">Điểm thấp nhất</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Danh sách review -->
+            <div class="row g-3" id="reviews-container">
+                <!-- Review content will be dynamically loaded here -->
+            </div>
+
+            <!-- Phân trang -->
+            <nav class="mt-4 d-flex justify-content-center">
+                <ul class="pagination" id="pagination">
+                    <!-- Pagination will be dynamically loaded here -->
+                </ul>
+            </nav>
         </div>
-        
-
-        <!-- Danh sách 3 review -->
-        <div class="row g-3">
-          <!-- Review 1 -->
-          <div class="col-md-4">
-            <div class="card rounded-4 p-3 shadow-sm h-100">
-              <h6 class="fw-semibold mb-1">Nguyễn Văn A</h6>
-              <small class="text-muted">02/04/2025</small>
-              <div class="text-warning mb-2">★★★★☆</div>
-              <p class="mb-0 text-truncate-multiline" style="-webkit-line-clamp: 4;">
-                Phòng họp sạch sẽ, tiện nghi. Có đầy đủ thiết bị trình chiếu, âm thanh tốt. Nhân viên hỗ trợ chu đáo. Sẽ quay lại lần sau để thử thêm dịch vụ. Rất đáng tiền!
-              </p>
-            </div>
-          </div>
-
-          
-          <div class="col-md-4">
-            <div class="card rounded-4 p-3 shadow-sm h-100">
-              <h6 class="fw-semibold mb-1">Lê Thị B</h6>
-              <small class="text-muted">01/04/2025</small>
-              <div class="text-warning mb-2">★★★★★</div>
-              <p class="mb-0 text-truncate-multiline" style="-webkit-line-clamp: 4;">
-                Dịch vụ chuyên nghiệp, phòng đẹp, giá hợp lý. Có chỗ đậu xe tiện lợi và không gian riêng tư cho cuộc họp.
-              </p>
-            </div>
-          </div>
-
-        
-          <div class="col-md-4">
-            <div class="card rounded-4 p-3 shadow-sm h-100">
-              <h6 class="fw-semibold mb-1">Trần Văn C</h6>
-              <small class="text-muted">30/03/2025</small>
-              <div class="text-warning mb-2">★★★☆☆</div>
-              <p class="mb-0 text-truncate-multiline" style="-webkit-line-clamp: 4;">
-                Mọi thứ tạm ổn, tuy nhiên máy chiếu lúc đầu bị lỗi kỹ thuật. Sau đó được hỗ trợ kịp thời. Cần cải thiện dịch vụ check-in.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Phân trang -->
-        <nav class="mt-4 d-flex justify-content-center">
-          <ul class="pagination">
-            <li class="page-item disabled"><a class="page-link" href="#">‹</a></li>
-            <li class="page-item active"><a class="page-link" href="#">1</a></li>
-            <li class="page-item"><a class="page-link" href="#">2</a></li>
-            <li class="page-item"><a class="page-link" href="#">3</a></li>
-            <li class="page-item"><a class="page-link" href="#">›</a></li>
-          </ul>
-        </nav>
-
-      </div>
     </div>
   
   </div>
   <!-- End Main Content -->
-    
+  <input type="hidden" id="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+      const BASE_URL = "<?= BASE_URL ?>";
+  </script>
 
   <script>
-    const slotButtons = document.querySelectorAll('.time-slot:not(.disabled)');
-    const totalDisplay = document.getElementById('total-amount');
-    const PRICE_PER_SLOT = 175000; // 30 phút = 175.000đ
+      window.CURRENT_ROOM_ID = "<?= $room['id'] ?>";
+      
+  </script>
 
-    slotButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        btn.classList.toggle('active');
-        btn.classList.toggle('btn-outline-primary');
-        btn.classList.toggle('btn-primary');
-        updateTotal();
+  <script src="<?= BASE_URL ?>/assets/js/booking.js?v=<?= time() ?>"></script>
+  <script src="<?= BASE_URL ?>/assets/js/review.js?v=<?= time() ?>"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const btn = document.querySelector('.favorite-btn');
+      if (!btn) return;
+
+      const roomId = btn.getAttribute('data-room-id');
+      const icon = btn.querySelector('i');
+      let likedRooms = JSON.parse(localStorage.getItem('likedRooms')) || [];
+
+      // Hiển thị trạng thái khi tải trang
+      if (likedRooms.includes(roomId)) {
+          icon.classList.remove('bi-heart');
+          icon.classList.add('bi-heart-fill', 'text-danger');
+      }
+
+      // Xử lý khi click
+      btn.addEventListener('click', function() {
+          likedRooms = JSON.parse(localStorage.getItem('likedRooms')) || [];
+          if (likedRooms.includes(roomId)) {
+              likedRooms = likedRooms.filter(id => id !== roomId);
+          } else {
+              likedRooms.push(roomId);
+          }
+          localStorage.setItem('likedRooms', JSON.stringify(likedRooms));
+
+          // Cập nhật icon
+          if (likedRooms.includes(roomId)) {
+              icon.classList.remove('bi-heart');
+              icon.classList.add('bi-heart-fill', 'text-danger');
+          } else {
+              icon.classList.remove('bi-heart-fill', 'text-danger');
+              icon.classList.add('bi-heart');
+          }
       });
     });
 
-    function updateTotal() {
-      const activeCount = document.querySelectorAll('.time-slot.active').length;
-      const total = activeCount * PRICE_PER_SLOT;
-      totalDisplay.textContent = total.toLocaleString('vi-VN') + 'đ';
-    }
-
-
-    document.addEventListener('DOMContentLoaded', function () {
-      const favoriteButtons = document.querySelectorAll('.favorite-btn');
-    
-      favoriteButtons.forEach(button => {
-        button.addEventListener('click', function () {
-          const icon = this.querySelector('i');
-          icon.classList.toggle('bi-heart');
-          icon.classList.toggle('bi-heart-fill');
-        });
-      });
-    });
   </script>
       

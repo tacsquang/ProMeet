@@ -121,7 +121,54 @@ class RoomModel
     }
     
     
+    public function fetchRoomDetail($id) {
+        $log = new LogService();
     
+        $sql = "SELECT * FROM rooms WHERE id = :id LIMIT 1";
+        $room = $this->db->fetchOne($sql, [':id' => $id]);
     
+        if (!$room) {
+            $log->logError("Room not found: ID {$id}");
+            return null;
+        }
+    
+        // Lấy hình ảnh
+        $imageSql = "SELECT image_url FROM images WHERE room_id = :id ORDER BY is_primary DESC, id ASC";
+        $images = $this->db->fetchAll($imageSql, [':id' => $id]);
+        $imageUrls = [];
+        foreach ($images as $img) {
+            $imageUrls[] = $img->image_url;
+        }
+    
+        // Map màu cho badge
+        $colorMap = [
+            'Basic' => 'primary',
+            'Standard' => 'success',
+            'Premium' => 'warning'
+        ];
+        $badgeColor = $colorMap[$room->category] ?? 'primary';
+    
+        return [
+            'id' => $room->id,
+            'name' => $room->name,
+            'address' => $room->location_name,
+            'price' => $room->price,
+            'capacity' => $room->capacity,
+            'rating' => round($room->average_rating),
+            'review_count' => $room->review_count,
+            'lat' => $room->latitude,
+            'lng' => $room->longitude,
+            'label' => $room->category,
+            'label_color' => 'bg-' . $badgeColor,
+            'html_description' => $room->html_description,
+            'images' => $imageUrls
+        ];
+    }
+    
+    public function getRoomById($roomId)
+    {
+        $sql = "SELECT * FROM rooms WHERE id = :id LIMIT 1";
+        return $this->db->fetchOne($sql, ['id' => $roomId]);
+    }
     
 }

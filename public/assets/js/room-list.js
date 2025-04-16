@@ -39,8 +39,8 @@ function loadRooms(page = 1) {
     const location = $('#filterLocation').val();
     const roomType = $('#advancedFilters select').eq(0).val(); // loại phòng
     const sortBy = $('#advancedFilters select').eq(2).val();   // sắp xếp
-    console.log("[DEBUG] LoadRooms Params:");
-    console.log("[DEBUG] LoadRooms Params:", {page, keyword, location, roomType, sortBy});
+    //console.log("[DEBUG] LoadRooms Params:");
+    //console.log("[DEBUG] LoadRooms Params:", {page, keyword, location, roomType, sortBy});
 
     showSkeleton();
 
@@ -155,18 +155,18 @@ function loadRooms(page = 1) {
 
         },
         error: function(xhr, status, error) {
-            console.error("[DEBUG] AJAX Error:", { status: status, error: error, xhr: xhr });
+            //console.error("[DEBUG] AJAX Error:", { status: status, error: error, xhr: xhr });
             $('#roomList').html('<div class="col-12 text-center text-danger">Không thể tải phòng, vui lòng thử lại sau!</div>');
         }
     });
 }
 
 // function loadRooms(page = 1) {
-//     console.log("[DEBUG] loadRooms called. Page:", page);
+//     //console.log("[DEBUG] loadRooms called. Page:", page);
 
 //     showSkeleton();  // giữ chỗ loading
 
-//     console.log("[DEBUG] Sending AJAX request to:", BASE_URL + '/rooms/getRoomsApi', "with data:", { page: page });
+//     //console.log("[DEBUG] Sending AJAX request to:", BASE_URL + '/rooms/getRoomsApi', "with data:", { page: page });
 
 //     $.ajax({
 //         url: BASE_URL + '/rooms/getRoomsApi',        // URL PHP trả JSON
@@ -174,10 +174,10 @@ function loadRooms(page = 1) {
 //         data: { page: page },
 //         dataType: 'json',
 //         success: function(response) {
-//             console.log("[DEBUG] AJAX Success. Response:", response);
+//             //console.log("[DEBUG] AJAX Success. Response:", response);
 
 //             if (!response.rooms || response.rooms.length === 0) {
-//                 console.warn("[DEBUG] Không có phòng nào trong response.");
+//                 //console.warn("[DEBUG] Không có phòng nào trong response.");
 //                 $('#roomList').html('<div class="col-12 text-center text-warning">Không tìm thấy phòng!</div>');
 //                 renderPagination(1, 1);
 //                 return;
@@ -185,7 +185,7 @@ function loadRooms(page = 1) {
 
 //             let html = '';
 //             response.rooms.forEach(function(room) {
-//                 console.log(`[DEBUG] Rendering room: ${room.id} - ${room.name}`);
+//                 //console.log(`[DEBUG] Rendering room: ${room.id} - ${room.name}`);
 //                 html += `
 //                 <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
 //                     <div class="card room-card position-relative">
@@ -224,7 +224,7 @@ function loadRooms(page = 1) {
 //             window.scrollTo({ top: 0, behavior: 'smooth' });
 //         },
 //         error: function(xhr, status, error) {
-//             console.error("[DEBUG] AJAX Error:", { status: status, error: error, xhr: xhr });
+//             //console.error("[DEBUG] AJAX Error:", { status: status, error: error, xhr: xhr });
 //             $('#roomList').html('<div class="col-12 text-center text-danger">Không thể tải phòng, vui lòng thử lại sau!</div>');
 //         }
 //     });
@@ -237,18 +237,34 @@ function loadRooms(page = 1) {
 function renderPagination(totalPages, currentPage) {
     let pagination = '';
 
+    // Nút "Trang đầu"
+    pagination += `<li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
+        <a class="page-link" href="#" onclick="loadRooms(1); return false;">Đầu</a>
+    </li>`;
+
+    // Nút "Trang trước"
     pagination += `<li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
         <a class="page-link" href="#" onclick="loadRooms(${currentPage - 1}); return false;">Trước</a>
     </li>`;
 
-    for (let i = 1; i <= totalPages; i++) {
+    // Hiển thị các trang xung quanh trang hiện tại (ví dụ: từ currentPage - 2 đến currentPage + 2)
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, currentPage + 2);
+
+    for (let i = startPage; i <= endPage; i++) {
         pagination += `<li class="page-item ${currentPage == i ? 'active' : ''}">
             <a class="page-link" href="#" onclick="loadRooms(${i}); return false;">${i}</a>
         </li>`;
     }
 
+    // Nút "Trang sau"
     pagination += `<li class="page-item ${currentPage == totalPages ? 'disabled' : ''}">
         <a class="page-link" href="#" onclick="loadRooms(${currentPage + 1}); return false;">Sau</a>
+    </li>`;
+
+    // Nút "Trang cuối"
+    pagination += `<li class="page-item ${currentPage == totalPages ? 'disabled' : ''}">
+        <a class="page-link" href="#" onclick="loadRooms(${totalPages}); return false;">Cuối</a>
     </li>`;
 
     $('#paginationList').html(pagination);

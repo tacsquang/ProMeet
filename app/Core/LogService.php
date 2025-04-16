@@ -35,6 +35,7 @@ class LogService
     // Phương thức ghi log vào file
     private function writeLog($level, $message)
     {
+        date_default_timezone_set('Asia/Ho_Chi_Minh');  // Cố định múi giờ Việt Nam
         $timestamp = date('Y-m-d H:i:s');
         $logMessage = "[$timestamp] [$level] $message" . PHP_EOL;
         $logFile = $this->logDirectory . '/app_errors.log';

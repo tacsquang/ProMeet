@@ -18,13 +18,34 @@ class RoomsController
     }
 
     public function detail($id) {
+        //var_dump($_SESSION);
+        $roomModel = new \App\Models\RoomModel();
+        $room = $roomModel->fetchRoomDetail($id);  // gọi model lấy thông tin chi tiết
+    
+        if (!$room) {
+            // Nếu không tìm thấy phòng => chuyển sang trang 404
+            header("HTTP/1.0 404 Not Found");
+            $view = new View();
+            $view->render('errors/404', [
+                'pageTitle' => 'Không tìm thấy phòng họp',
+            ]);
+            return;
+        }
+
+        //session_start();
+        if (!isset($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        }
+    
         $view = new View();
         $view->render('public/rooms/roomDetail', [
-            'pageTitle' => 'ProMeet | Room Detail',
+            'pageTitle' => $room['name'] . ' | ProMeet',
             'currentPage' => 'rooms',
-            'roomId' => $id
+            'room' => $room,  // truyền toàn bộ dữ liệu phòng qua view
+            'isLoggedIn' => isset($_SESSION['user']),
         ]);
     }
+    
 
     public function payment($id) {
         $view = new View();
