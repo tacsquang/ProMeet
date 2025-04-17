@@ -69,6 +69,8 @@ function loadRooms(page = 1) {
                 let fullStars = Math.floor(room.review);  // số sao đầy
                 let hasHalfStar = (room.review - fullStars) >= 0.5;  // nửa sao
                 let emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);  // số sao rỗng
+                console.log(`image ${room.image}`);
+
             
                 for (let i = 0; i < fullStars; i++) {
                     stars += '<i class="bi bi-star-fill text-warning me-1"></i>';
@@ -79,6 +81,8 @@ function loadRooms(page = 1) {
                 for (let i = 0; i < emptyStars; i++) {
                     stars += '<i class="bi bi-star text-warning me-1"></i>';
                 }
+
+                room.image = BASE_URL + room.image;
             
                 html += `
                 <div class="col-12 col-sm-6 col-lg-4 col-xl-3">

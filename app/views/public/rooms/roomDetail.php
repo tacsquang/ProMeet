@@ -63,7 +63,7 @@
               <?php if (!empty($room['images'])): ?>
                 <?php foreach ($room['images'] as $index => $image): ?>
                   <div class="carousel-item <?= $index === 0 ? 'active' : '' ?> h-100">
-                    <img src="<?= htmlspecialchars($image) ?>" class="img-fluid h-100 w-100" style="object-fit: cover;" alt="Ảnh phòng họp">
+                    <img src="<?= BASE_URL . htmlspecialchars($image) ?>" class="img-fluid h-100 w-100" style="object-fit: cover;" alt="Ảnh phòng họp">
                   </div>
                 <?php endforeach; ?>
               <?php else: ?>
@@ -137,6 +137,7 @@
                 data-lat="<?= $room['lat'] ?>"
                 data-lng="<?= $room['lng'] ?>">
             </div>
+            
           </div>
         </div>
 
@@ -318,3 +319,11 @@
 
   </script>
       
+      <!-- <div id="map" class="rounded-4 overflow-hidden shadow-sm mt-4" style="height: 250px; position: relative;">
+            <iframe 
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1068.1793439442245!2d106.80507601231355!3d10.880066112070754!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3174d8a5568c997f%3A0xdeac05f17a166e0c!2zVHLGsOG7nW5nIMSQ4bqhaSBo4buNYyBCw6FjaCBraG9hIC0gxJBIUUcgVFAuSENN!5e0!3m2!1svi!2s!4v1744862245292!5m2!1svi!2s" 
+                style="border:0; position: absolute; top:0; left:0; width:100%; height:100%;" 
+                loading="lazy" 
+                referrerpolicy="no-referrer-when-downgrade">
+            </iframe>
+        </div> -->

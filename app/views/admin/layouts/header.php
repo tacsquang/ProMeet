@@ -14,10 +14,10 @@
     <link rel="stylesheet" href="<?= BASE_URL ?>/mazer/assets/extensions/simple-datatables/style.css">
 
 
-  <link rel="stylesheet" crossorigin href="<?= BASE_URL ?>/mazer/assets/compiled/css/app.css">
-  <link rel="stylesheet" crossorigin href="<?= BASE_URL ?>/mazer/assets/compiled/css/app-dark.css">
-  <link rel="stylesheet" crossorigin href="<?= BASE_URL ?>/mazer/assets/compiled/css/iconly.css">
-  <link rel="stylesheet" crossorigin href="<?= BASE_URL ?>/mazer/assets/compiled/css/table-datatable.css">
+    <link rel="stylesheet" crossorigin href="<?= BASE_URL ?>/mazer/assets/compiled/css/app.css">
+    <link rel="stylesheet" crossorigin href="<?= BASE_URL ?>/mazer/assets/compiled/css/app-dark.css">
+    <link rel="stylesheet" crossorigin href="<?= BASE_URL ?>/mazer/assets/compiled/css/iconly.css">
+    <link rel="stylesheet" crossorigin href="<?= BASE_URL ?>/mazer/assets/compiled/css/table-datatable.css">
 
   <style>
     /* CSS */

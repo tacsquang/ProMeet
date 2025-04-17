@@ -90,9 +90,9 @@ class BookingModel
     public function checkSlotConflicts($roomId, $bookingDate, $slots)
     {
         if (empty($slots)) return false;
-
+    
         $placeholders = implode(',', array_fill(0, count($slots), '?'));
-
+    
         $sql = "
             SELECT bs.* 
             FROM booking_slots bs
@@ -102,10 +102,13 @@ class BookingModel
             AND bs.time_slot IN ($placeholders)
             AND b.status != 'cancelled'
         ";
-
+    
         $params = array_merge([$roomId, $bookingDate], $slots);
+        $params = array_values($params);  // đảm bảo index từ 0
+    
         return $this->db->fetchAll($sql, $params);
     }
+    
 
     // public function getBookedSlots($roomId, $date) {
     //     $log = new LogService();

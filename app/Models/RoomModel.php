@@ -12,6 +12,51 @@ class RoomModel
         $this->db = new Database();
     }
 
+    public function insertRoom($data)
+    {
+        $sql = "
+            INSERT INTO rooms (id, name, price, capacity, category, location_name, latitude, longitude, html_description, created_at, updated_at) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        ";
+
+        $params = [
+            $data['id'],
+            $data['name'],
+            $data['price'],
+            $data['capacity'],
+            $data['category'],
+            $data['location_name'],
+            $data['latitude'],
+            $data['longitude'],
+            $data['html_description'],
+        ];
+
+        return $this->db->execute($sql, $params);
+    }
+
+    public function insertRoomImages($roomId, $images = [])
+    {
+        $sql = "INSERT INTO images (id, room_id, image_url, is_primary, created_at) VALUES (?, ?, ?, ?, NOW())";
+
+        foreach ($images as $image) {
+            $id = $this->generateUUID();
+            $params = [$id, $roomId, $image['url'], $image['is_primary']];
+            $this->db->execute($sql, $params);
+        }
+    }
+
+    private function generateUUID()
+    {
+        return sprintf(
+            '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+            mt_rand(0, 0xffff),
+            mt_rand(0, 0x0fff) | 0x4000,
+            mt_rand(0, 0x3fff) | 0x8000,
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+        );
+    }
+
     public function fetchRooms($offset = 0, $limit = 8, $filters = []) {
         $log = new LogService();
     
@@ -171,4 +216,78 @@ class RoomModel
         return $this->db->fetchOne($sql, ['id' => $roomId]);
     }
     
+    public function fetchRoomsForAdmin($offset = 0, $limit = 10, $search = '', $orderColumn = 'id', $orderDir = 'DESC') {
+        $log = new LogService();
+        $offset = intval($offset);
+        $limit = intval($limit);
+        $search = trim($search);
+        $orderDir = strtoupper($orderDir) === 'ASC' ? 'ASC' : 'DESC';
+    
+        // Ánh xạ cột hợp lệ để tránh SQL Injection
+        $allowedColumns = ['id', 'name', 'category', 'price', 'location_name', 'average_rating'];
+        if (!in_array($orderColumn, $allowedColumns)) {
+            $orderColumn = 'id';
+        }
+    
+        $log->logInfo("Admin fetching rooms | Offset: {$offset}, Limit: {$limit}, Search: '{$search}', Order: {$orderColumn} {$orderDir}");
+    
+        $whereClause = '';
+        if ($search !== '') {
+            $safeSearch = addslashes($search);
+            $whereClause = "WHERE name LIKE '%{$safeSearch}%' OR category LIKE '%{$safeSearch}%' OR location_name LIKE '%{$safeSearch}%'";
+        }
+    
+        $sql = "
+            SELECT id, name, category, price, location_name, average_rating
+            FROM rooms
+            {$whereClause}
+            ORDER BY {$orderColumn} {$orderDir}
+            LIMIT {$offset}, {$limit}
+        ";
+    
+        $rooms = $this->db->fetchAll($sql);
+    
+        if ($rooms === false) {
+            $log->logError("Admin room query failed.");
+            return [];
+        }
+    
+        return $rooms;
+    }
+    
+    
+    public function countAllRooms() {
+        $log = new LogService();
+        $log->logInfo("[BEGIN] countAllRooms");
+    
+        $sql = "SELECT COUNT(*) as total FROM rooms";
+        $result = $this->db->fetchOne($sql);
+    
+        if ($result === false) {
+            $log->logError("[ERROR] countAllRooms query failed");
+        } else {
+            $log->logInfo("[INFO] countAllRooms result: " . print_r($result, true)); // In ra kết quả
+        }
+    
+        $log->logInfo("[END] countAllRooms");
+    
+        return $result ? intval($result->total) : 0; // Sửa lại từ $result['total'] thành $result->total
+    }
+    
+    
+    
+    public function countFilteredRooms($search = '') {
+        $safeSearch = addslashes(trim($search));
+        $sql = "
+            SELECT COUNT(*) as total FROM rooms 
+            WHERE name LIKE '%{$safeSearch}%' OR category LIKE '%{$safeSearch}%' OR location_name LIKE '%{$safeSearch}%'
+        ";
+        $result = $this->db->fetchOne($sql);
+    
+        // Truy cập dữ liệu từ đối tượng stdClass
+        return $result ? intval($result->total) : 0; // Sửa lại từ $result['total'] thành $result->total
+    }
+        
+    
+
 }

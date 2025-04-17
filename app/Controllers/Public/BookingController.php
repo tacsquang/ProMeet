@@ -63,7 +63,7 @@ class BookingController
             echo json_encode(['error' => 'Phòng họp không tồn tại!']);
             return;
         }
-        $log->logError("Phòng tồn tại. room_id: {$roomId}");
+        $log->logInfo("Phòng tồn tại. room_id: {$roomId}");
     
         $model = new BookingModel();
     
@@ -76,6 +76,8 @@ class BookingController
                 echo json_encode(['error' => 'Một hoặc nhiều khung giờ đã bị người khác đặt! Vui lòng chọn lại.', 'conflicts' => $conflicts]);
                 return;
             }
+            $log->logInfo("checkSlotConflicts thành công");
+
     
             // Tạo booking
             $bookingId = $model->createBooking($roomId, $userId);
