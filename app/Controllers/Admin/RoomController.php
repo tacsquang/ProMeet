@@ -23,14 +23,41 @@ class RoomController {
         $layout = '/admin/layouts/main.php';
         $view->setLayout($layout);
         $view->render('admin/rooms/addRoom', [
-            'pageTitle' => 'ProMeet | Room',
+            'pageTitle' => 'ProMeet | AddRoom',
             'message' => 'Chào mừng bạn!',
             'currentPage' => 'Rooms',
             'currentSubPage' => 'AddRoom'
         ]);
     }
 
+    public function detail($id) {
 
+        $roomModel = new \App\Models\RoomModel();
+        $room = $roomModel->fetchRoomDetail($id); 
+
+        
+        if (!$room) {
+            // Nếu không tìm thấy phòng => chuyển sang trang 404
+            $view = new View();
+            $view->render('errors/404', [
+                'pageTitle' => 'Không tìm thấy phòng họp',
+            ]);
+            return;
+        }
+
+        #echo "This is global RoomController.";
+        $view = new \App\Core\View();
+        $layout = '/admin/layouts/main.php';
+        $view->setLayout($layout);
+        $view->render('admin/rooms/detail', [
+            'pageTitle' => 'ProMeet | AddRoom',
+            'message' => 'Chào mừng bạn!',
+            'currentPage' => 'Rooms',
+            'currentSubPage' => 'AddRoom',
+            'roomId' => $id,
+            'room' => $room
+        ]);
+    }
 
 
 
@@ -102,7 +129,7 @@ class RoomController {
     
     public function store()
     {
-        $log = new \App\Core\LogService();
+        $log = new LogService();
         $log->logInfo("=== [ROOM STORE] Start processing room creation ===");
     
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -111,40 +138,27 @@ class RoomController {
             exit;
         }
     
-        $uuid = $this->generateUUID(); // tự tạo UUID v4
+        $uuid = $this->generateUUID();
         $log->logInfo("[ROOM STORE] Generated UUID: {$uuid}");
     
-        $name = $_POST['name'] ?? '';
-        $price = $_POST['price'] ?? 0;
-        $capacity = $_POST['capacity'] ?? 1;
-        $category = $_POST['category'] ?? '';
-        $location_name = $_POST['location_name'] ?? '';
-        $latitude = $_POST['latitude'] ?? '';
-        $longitude = $_POST['longitude'] ?? '';
-        $html_description = $_POST['html_description'] ?? '';
-        $primaryIndex = $_POST['primary_index'] ?? '';
+        $roomData = [
+            'id' => $uuid,
+            'name' => $_POST['name'] ?? '',
+            'price' => $_POST['price'] ?? 0,
+            'capacity' => $_POST['capacity'] ?? 1,
+            'category' => $_POST['category'] ?? '',
+            'location_name' => $_POST['location_name'] ?? '',
+            'latitude' => $_POST['latitude'] ?? '',
+            'longitude' => $_POST['longitude'] ?? '',
+            'html_description' => $_POST['html_description'] ?? '',
+        ];
     
         $log->logInfo("[ROOM STORE] Received POST data: " . json_encode($_POST));
     
         $roomModel = new \App\Models\RoomModel();
-    
-        $roomData = [
-            'id' => $uuid,
-            'name' => $name,
-            'price' => $price,
-            'capacity' => $capacity,
-            'category' => $category,
-            'location_name' => $location_name,
-            'latitude' => $latitude,
-            'longitude' => $longitude,
-            'html_description' => $html_description,
-        ];
-    
         $log->logInfo("[ROOM STORE] Inserting room data: " . json_encode($roomData));
     
-        $success = $roomModel->insertRoom($roomData);
-    
-        if (!$success) {
+        if (!$roomModel->insertRoom($roomData)) {
             $log->logError("[ROOM STORE] Failed to insert room. Data: " . json_encode($roomData));
             header('Location: /BTL_LTW/ProMeet/public/room/addRoomPage?error=1');
             exit;
@@ -152,12 +166,165 @@ class RoomController {
     
         $log->logInfo("[ROOM STORE] Room inserted successfully. UUID: {$uuid}");
     
-        // Xử lý ảnh
-        $images = $_FILES['images'] ?? null;
-        $imagePaths = [];
+        // Upload slideshow images
+        $imagePaths = $this->handleRoomImageUpload($uuid, $_FILES['images'] ?? null, $_POST['primary_index'] ?? '', $log);
     
+        if (!empty($imagePaths)) {
+            $log->logInfo("[ROOM STORE] Inserting room images: " . json_encode($imagePaths));
+            $roomModel->insertRoomImages($uuid, $imagePaths);
+            $log->logInfo("[ROOM STORE] Images inserted for room: {$uuid}");
+        } else {
+            $log->logInfo("[ROOM STORE] No images to insert.");
+        }
+    
+        $log->logInfo("=== [ROOM STORE] Room creation process completed successfully ===");
+        header('Location: /BTL_LTW/ProMeet/public/room/detail?success=1');
+        exit;
+    }
+
+
+    public function uploadRoomImage()
+    {
+        $log = new LogService();
+        $log->logInfo("=== [UPLOAD ROOM IMAGE] Start uploading image ===");
+    
+        // Kiểm tra nếu là phương thức POST
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $log->logError("[UPLOAD ROOM IMAGE] Invalid request method: " . $_SERVER['REQUEST_METHOD']);
+            echo json_encode(['error' => 'Invalid request method']);
+            exit;
+        }
+    
+        // Kiểm tra xem có file ảnh được upload không
+        $image = $_FILES['file'] ?? null;
+        if ($image && $image['error'] === UPLOAD_ERR_OK) {
+            $log->logInfo("[UPLOAD ROOM IMAGE] File received: " . json_encode($image));
+    
+            // Lấy ID phòng từ POST hoặc URL nếu có
+            $roomId = $_POST['room_id'] ?? null;
+            if (!$roomId) {
+                $log->logError("[UPLOAD ROOM IMAGE] Missing room ID in POST data");
+                echo json_encode(['error' => 'Room ID is required']);
+                exit;
+            }
+            $log->logInfo("[UPLOAD ROOM IMAGE] Room ID: {$roomId}");
+    
+            // Tạo thư mục lưu trữ ảnh cho phòng nếu chưa tồn tại
+            $uploadDir = __DIR__ . '/../../../public/uploads/rooms/' . $roomId . '/slideshow/';
+            if (!is_dir($uploadDir)) {
+                if (mkdir($uploadDir, 0777, true)) {
+                    $log->logInfo("[UPLOAD ROOM IMAGE] Upload directory created: {$uploadDir}");
+                } else {
+                    $log->logError("[UPLOAD ROOM IMAGE] Failed to create upload directory: {$uploadDir}");
+                    echo json_encode(['error' => 'Failed to create upload directory']);
+                    exit;
+                }
+            }
+    
+            // Đặt tên file ảnh và xác định vị trí lưu trữ
+            $filename = time() . '_' . basename($image['name']);
+            $target = $uploadDir . $filename;
+            $log->logInfo("[UPLOAD ROOM IMAGE] Target file path: {$target}");
+    
+            // Di chuyển ảnh vào thư mục
+            if (move_uploaded_file($image['tmp_name'], $target)) {
+                $relativeUrl = '/uploads/rooms/' . $roomId . '/slideshow/' . $filename;
+                $log->logInfo("[UPLOAD ROOM IMAGE] Image uploaded successfully: {$relativeUrl}");
+    
+                // Trả về URL của ảnh
+                echo json_encode(['url' => $relativeUrl]);
+            } else {
+                $log->logError("[UPLOAD ROOM IMAGE] Failed to move uploaded file: {$image['tmp_name']} to {$target}");
+                echo json_encode(['error' => 'Failed to upload image']);
+            }
+        } else {
+            if (isset($image)) {
+                $log->logError("[UPLOAD ROOM IMAGE] Upload error: " . $image['error']);
+            } else {
+                $log->logError("[UPLOAD ROOM IMAGE] No file uploaded");
+            }
+            echo json_encode(['error' => 'No file uploaded or upload error']);
+        }
+    
+        $log->logInfo("=== [UPLOAD ROOM IMAGE] Image upload process completed ===");
+    }
+    
+    public function uploadRoomImageTiny()
+    {
+        $log = new LogService();
+        $log->logInfo("=== [UPLOAD ROOM IMAGE] Start uploading image ===");
+    
+        // Kiểm tra nếu là phương thức POST
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $log->logError("[UPLOAD ROOM IMAGE] Invalid request method: " . $_SERVER['REQUEST_METHOD']);
+            echo json_encode(['error' => 'Invalid request method']);
+            exit;
+        }
+    
+        // Kiểm tra xem có file ảnh được upload không
+        $image = $_FILES['file'] ?? null;
+        if ($image && $image['error'] === UPLOAD_ERR_OK) {
+            $log->logInfo("[UPLOAD ROOM IMAGE] File received: " . json_encode($image));
+    
+            // Lấy ID phòng từ POST hoặc URL nếu có
+            $roomId = $_POST['room_id'] ?? null;
+            if (!$roomId) {
+                $log->logError("[UPLOAD ROOM IMAGE] Missing room ID in POST data");
+                echo json_encode(['error' => 'Room ID is required']);
+                exit;
+            }
+            $log->logInfo("[UPLOAD ROOM IMAGE] Room ID: {$roomId}");
+    
+            // Tạo thư mục lưu trữ ảnh cho phòng nếu chưa tồn tại
+            $uploadDir = __DIR__ . '/../../../public/uploads/rooms/' . $roomId . '/description/';
+            if (!is_dir($uploadDir)) {
+                if (mkdir($uploadDir, 0777, true)) {
+                    $log->logInfo("[UPLOAD ROOM IMAGE] Upload directory created: {$uploadDir}");
+                } else {
+                    $log->logError("[UPLOAD ROOM IMAGE] Failed to create upload directory: {$uploadDir}");
+                    echo json_encode(['error' => 'Failed to create upload directory']);
+                    exit;
+                }
+            }
+    
+            // Đặt tên file ảnh và xác định vị trí lưu trữ
+            $filename = time() . '_' . basename($image['name']);
+            $target = $uploadDir . $filename;
+            $log->logInfo("[UPLOAD ROOM IMAGE tiny] Target file path: {$target}");
+    
+            // Di chuyển ảnh vào thư mục
+            if (move_uploaded_file($image['tmp_name'], $target)) {
+                $baseUrl = BASE_URL;
+                $relativeUrl = '/uploads/rooms/' . $roomId . '/description/' . $filename;
+                $fullUrl = $baseUrl . $relativeUrl;
+
+                $log->logInfo("[UPLOAD ROOM IMAGE TINY] Image uploaded successfully: {$fullUrl}");
+    
+                // Trả về URL của ảnh
+                echo json_encode(['url' => $fullUrl]);
+            } else {
+                $log->logError("[UPLOAD ROOM IMAGE] Failed to move uploaded file: {$image['tmp_name']} to {$target}");
+                echo json_encode(['error' => 'Failed to upload image']);
+            }
+        } else {
+            if (isset($image)) {
+                $log->logError("[UPLOAD ROOM IMAGE] Upload error: " . $image['error']);
+            } else {
+                $log->logError("[UPLOAD ROOM IMAGE] No file uploaded");
+            }
+            echo json_encode(['error' => 'No file uploaded or upload error']);
+        }
+    
+        $log->logInfo("=== [UPLOAD ROOM IMAGE] Image upload process completed ===");
+    }
+
+    
+    private function handleRoomImageUpload($roomId, $images, $primaryIndex, $log)
+    {
+        $imagePaths = [];
         if ($images && is_array($images['tmp_name'])) {
-            $uploadDir = __DIR__ . '/../../../public/uploads/rooms/';
+            $uploadDir = __DIR__ . "/../../../public/uploads/rooms/{$roomId}/slideshow/";
+    
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0777, true);
                 $log->logInfo("[ROOM STORE] Upload directory created: {$uploadDir}");
@@ -169,7 +336,7 @@ class RoomController {
                     $target = $uploadDir . $filename;
     
                     if (move_uploaded_file($tmp, $target)) {
-                        $relativeUrl = '/uploads/rooms/' . $filename;
+                        $relativeUrl = "/uploads/rooms/{$roomId}/slideshow/{$filename}";
                         $isPrimary = ($primaryIndex === (string)$key) ? 1 : 0;
     
                         $imagePaths[] = [
@@ -187,19 +354,10 @@ class RoomController {
             $log->logInfo("[ROOM STORE] No images uploaded or invalid format.");
         }
     
-        if (!empty($imagePaths)) {
-            $log->logInfo("[ROOM STORE] Inserting room images: " . json_encode($imagePaths));
-            $roomModel->insertRoomImages($uuid, $imagePaths);
-            $log->logInfo("[ROOM STORE] Images inserted for room: {$uuid}");
-        } else {
-            $log->logInfo("[ROOM STORE] No images to insert.");
-        }
-    
-        $log->logInfo("=== [ROOM STORE] Room creation process completed successfully ===");
-        header('Location: /BTL_LTW/ProMeet/public/room/addRoomPage?success=1');
-        exit;
+        return $imagePaths;
     }
-    
+
+
     
     private function generateUUID()
     {

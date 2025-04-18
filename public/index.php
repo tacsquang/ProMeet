@@ -3,6 +3,8 @@
 // Bắt đầu session
 session_set_cookie_params(0);
 session_start();
+
+
 // session_unset();  // Xóa hết session cũ
 // session_destroy();  // Kết thúc session
 // session_start();  // Bắt đầu lại session mới

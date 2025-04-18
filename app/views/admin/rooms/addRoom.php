@@ -65,7 +65,6 @@
                                     <option value="Basic">Basic</option>
                                     <option value="Standard">Standard</option>
                                     <option value="Premium">Premium</option>
-                                    <option value="Luxury">Luxury</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
@@ -240,7 +239,6 @@ form.addEventListener('input', validateForm);
 
 
 
-<!-- <script src="https://cdn.tiny.cloud/1/qi91abu47nwyexfxg4ruytyjffn9rxz50qsh94k6rligw5s9/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script> -->
 <script src="<?= BASE_URL ?>/assets/tinymce/tinymce.min.js"></script>
 
 <script>
@@ -261,9 +259,10 @@ tinymce.init({
             const file = this.files[0];
             const formData = new FormData();
             formData.append('file', file); // Đính kèm file để upload
+            formData.append('room_id', roomId); 
 
-            // Gửi file lên server của bạn (ví dụ endpoint '/upload')
-            fetch('/upload', {
+            // Gửi file lên server của bạn (ví dụ endpoint '/upload-room-image')
+            fetch('<?= BASE_URL ?>/room/uploadRoomImage', {
                 method: 'POST',
                 body: formData
             })

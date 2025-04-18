@@ -59,6 +59,7 @@
           <div class="carousel slide rounded-4 overflow-hidden shadow w-100" id="roomCarousel" data-bs-ride="carousel"
               data-bs-interval="3000" style="aspect-ratio: 16 / 9; max-height: 700px;">
             <div class="carousel-inner h-100">
+              
 
               <?php if (!empty($room['images'])): ?>
                 <?php foreach ($room['images'] as $index => $image): ?>

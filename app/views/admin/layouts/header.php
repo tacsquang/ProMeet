@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <title><?= $pageTitle ?? 'ProMeet'; ?></title>
+
     <link rel="shortcut icon" href="<?= BASE_URL ?>/assets/images/favicon.ico" type="image/x-icon">
 
     
@@ -49,7 +51,7 @@
     <div class="sidebar-header position-relative">
         <div class="d-flex justify-content-between align-items-center">
             <div class="logo">
-                <a href="index.html">
+                <a href="<?php echo BASE_URL; ?>/home/index">
                     <!-- Logo sáng -->
                     <img src="<?= BASE_URL ?>/assets/images/logoProMEET_US.png" alt="Logo Light" class="logo-light" style="height: 55px;">
                     <!-- Logo tối -->

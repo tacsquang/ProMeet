@@ -1,3 +1,5 @@
+<title>ProMeet Admin | Dashboard</title>
+
 <div id="main">
     <header class="mb-3">
         <a href="#" class="burger-btn d-block d-xl-none">
@@ -22,98 +24,129 @@
                 </div>
             </div>
         </div>
-        <section class="section">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title">
-                        Danh sách phòng
+<section class="section">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">Danh sách phòng</h5>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createRoomModal">
+                <i class="bi bi-plus-lg"></i> Thêm phòng mới
+            </button>
+        </div>
+        <div class="card-body">
+            <table class="table table-striped" id="table1">
+                <thead>
+                    <tr>
+                        <th>STT</th>
+                        <th>Tên phòng</th>
+                        <th>Loại phòng</th>
+                        <th>Giá/giờ</th>
+                        <th>Địa điểm</th>
+                        <th>Trung bình</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- dữ liệu sẽ render ở đây -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+</div>
+
+<!-- Modal thêm phòng mới -->
+<div class="modal fade" id="createRoomModal" tabindex="-1" aria-labelledby="createRoomModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <form action="<?php echo BASE_URL; ?>/room/store" method="POST" enctype="multipart/form-data" id="addRoomForm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createRoomModalLabel">
+                        <i class="bi bi-door-open me-1"></i> Thêm phòng họp mới
                     </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
                 </div>
-                <div class="card-body">
-                    <table class="table table-striped" id="table1">
-                        <thead>
-                            <tr>
-                                <th>STT</th>
-                                <th>Tên phòng</th>
-                                <th>Loại phòng</th>
-                                <th>Giá/giờ</th>
-                                <th>Địa điểm</th>
-                                <th>Trung bình</th>
-                                <th>Trạng thái</th>
-                                <th>Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- <tr>
-                                <td>1</td>
-                                <td>Ảnh + Phòng VIP A1</td>
-                                <td>Prenium</td>
-                                <td>300,000đ</td>
-                                <td>Quận 1, HCM</td>
-                                <td>120</td>
-                                <td>45</td>
-                                <td>4,8/5</td>
-                                <td>Hoạt động</td>
-                                <td>        
-                                    <div style="display: flex; gap: 10px;">
-                                        <button class="btn btn-primary btn-sm">
-                                            <i class="bi bi-eye"></i>
-                                        </button>
-                                        <button class="btn btn-danger btn-sm" >
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>2</td>
-                                <td>Phòng họp xịn xò</td>
-                                <td>Prenium</td>
-                                <td>300,000đ</td>
-                                <td>Tháp Tower, Bình Thạnh</td>
-                                <td>120</td>
-                                <td>45</td>
-                                <td>4,8/5</td>
-                                <td>Hoạt động</td>
-                                <td>        
-                                    <div style="display: flex; gap: 10px;">
-                                        <button class="btn btn-primary btn-sm">
-                                            <i class="bi bi-eye"></i>
-                                        </button>
-                                        <button class="btn btn-danger btn-sm" >
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>3</td>
-                                <td>Phòng VIP A1</td>
-                                <td>Prenium</td>
-                                <td>300,000đ</td>
-                                <td>Quận 1, HCM</td>
-                                <td>120</td>
-                                <td>45</td>
-                                <td>4,8/5</td>
-                                <td>Hoạt động</td>
-                                <td>        
-                                    <div style="display: flex; gap: 10px;">
-                                        <button class="btn btn-primary btn-sm">
-                                            <i class="bi bi-eye"></i>
-                                        </button>
-                                        <button class="btn btn-danger btn-sm" >
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr> -->
-                        </tbody>
-                    </table>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="name" class="form-label fw-semibold">Tên phòng</label>
+                            <input type="text" class="form-control" id="name" name="name" required placeholder="Nhập tên phòng">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="price" class="form-label fw-semibold">Giá (VNĐ / giờ)</label>
+                            <input type="number" class="form-control" id="price" name="price" required step="1000" min="0" placeholder="Ví dụ: 300000">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="capacity" class="form-label fw-semibold">Sức chứa</label>
+                            <input type="number" class="form-control" id="capacity" name="capacity" required min="1" placeholder="Tối đa bao nhiêu người?">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="category" class="form-label fw-semibold">Phân loại</label>
+                            <select class="form-select" id="category" name="category" required>
+                                <option value="">-- Chọn loại phòng --</option>
+                                <option value="Basic">Basic</option>
+                                <option value="Standard">Standard</option>
+                                <option value="Premium">Premium</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="location_name" class="form-label fw-semibold">Địa điểm</label>
+                            <input type="text" class="form-control" id="location_name" name="location_name" required placeholder="Tên địa điểm hiển thị">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="latitude" class="form-label fw-semibold">Vĩ độ (Latitude)</label>
+                            <input type="text" class="form-control" id="latitude" name="latitude" required placeholder="10.12345">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="longitude" class="form-label fw-semibold">Kinh độ (Longitude)</label>
+                            <input type="text" class="form-control" id="longitude" name="longitude" required placeholder="106.12345">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-3">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save me-1"></i> Lưu phòng
+                    </button>
                 </div>
             </div>
-
-        </section>
+        </form>
     </div>
+</div>
+
+
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content" data-bs-theme="light">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="confirmDeleteModalLabel">Xác nhận xoá phòng</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+      </div>
+      <div class="modal-body text-dark">
+        Bạn có chắc chắn muốn xoá phòng này không?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Huỷ</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Xoá</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999">
+  <div id="liveToast" class="toast align-items-center text-bg-success border-0" role="alert">
+    <div class="d-flex">
+      <div class="toast-body" id="toastMessage"></div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 
 
 
@@ -128,7 +161,86 @@
 <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
 
+<script>
 
+    const BASE_URL = "<?php echo BASE_URL; ?>";
+    function viewRoom(roomId) {
+        window.location.href = `${BASE_URL}/room/detail/${roomId}`;
+    }
+
+    // Xử lý nút Xóa phòng
+    function deleteRoom(roomId) {
+        Swal.fire({
+            title: "Bạn có chắc muốn xoá phòng này không?",
+            text: "Phòng sẽ bị xoá vĩnh viễn, không thể khôi phục!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Xoá phòng",
+            cancelButtonText: "Hủy"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Gửi request AJAX hoặc chuyển hướng đến URL xoá
+                $.ajax({
+                    url: `<?= BASE_URL ?>/room/delete/${roomId}`,
+                    type: 'DELETE',
+                    success: function(response) {
+                        // Thông báo xoá thành công
+                        Swal.fire({
+                            title: "Phòng đã được xoá!",
+                            icon: "success",
+                            confirmButtonText: "Đóng"
+                        }).then(() => {
+                            // Cập nhật lại danh sách phòng hoặc reload trang
+                            location.reload(); // Hoặc gọi lại DataTable reload
+                        });
+                    },
+                    error: function() {
+                        Swal.fire({
+                            title: "Lỗi!",
+                            text: "Không thể xoá phòng. Vui lòng thử lại sau.",
+                            icon: "error",
+                            confirmButtonText: "Đóng"
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+        if (!roomToDelete) return;
+
+        fetch(`${BASE_URL}/room/delete/${roomToDelete}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ id: roomToDelete })
+        })
+        .then(response => response.json())
+        .then(data => {
+            deleteModal.hide();
+            roomToDelete = null;
+
+            if (data.success) {
+                showToast('Xoá thành công!', 'success');
+                $('#table1').DataTable().ajax.reload();  // Reload lại bảng
+            } else {
+                showToast('Xoá thất bại: ' + data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            deleteModal.hide();
+            roomToDelete = null;
+            showToast('Đã có lỗi xảy ra khi xoá.', 'danger');
+            console.error('Error:', error);
+        });
+    });
+</script>
 
 <script>
 $(document).ready(function() {
@@ -168,10 +280,10 @@ $(document).ready(function() {
                 render: function(data) {
                     return `
                         <div class="d-flex gap-2">
-                            <button class="btn btn-primary btn-sm" onclick="viewRoom(${data})">
+                            <button class="btn btn-primary btn-sm btn-view-room" data-id="${data}">
                                 <i class="bi bi-eye"></i>
                             </button>
-                            <button class="btn btn-danger btn-sm" onclick="deleteRoom(${data})">
+                            <button class="btn btn-danger btn-sm btn-delete-room" data-id="${data}">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
@@ -194,6 +306,17 @@ $(document).ready(function() {
             zeroRecords: "Không có dữ liệu phù hợp"
         }
     });
+});
+
+
+$(document).on('click', '.btn-view-room', function() {
+    let id = $(this).data('id');
+    viewRoom(id);
+});
+
+$(document).on('click', '.btn-delete-room', function() {
+    let id = $(this).data('id');
+    deleteRoom(id);
 });
 
 </script>
