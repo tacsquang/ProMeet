@@ -178,11 +178,14 @@ class RoomModel
         }
     
         // Lấy hình ảnh
-        $imageSql = "SELECT image_url FROM images WHERE room_id = :id ORDER BY is_primary DESC, id ASC";
+        $imageSql = "SELECT id, image_url FROM images WHERE room_id = :id ORDER BY is_primary DESC, id ASC";
         $images = $this->db->fetchAll($imageSql, [':id' => $id]);
-        $imageUrls = [];
+        $imageList = [];
         foreach ($images as $img) {
-            $imageUrls[] = $img->image_url;
+            $imageList[] = [
+                'id' => $img->id,
+                'url' => $img->image_url
+            ];
         }
     
         // Map màu cho badge
@@ -206,7 +209,7 @@ class RoomModel
             'label' => $room->category,
             'label_color' => 'bg-' . $badgeColor,
             'html_description' => $room->html_description,
-            'images' => $imageUrls
+            'images' => $imageList
         ];
     }
     

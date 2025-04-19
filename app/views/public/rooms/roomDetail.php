@@ -64,7 +64,7 @@
               <?php if (!empty($room['images'])): ?>
                 <?php foreach ($room['images'] as $index => $image): ?>
                   <div class="carousel-item <?= $index === 0 ? 'active' : '' ?> h-100">
-                    <img src="<?= BASE_URL . htmlspecialchars($image) ?>" class="img-fluid h-100 w-100" style="object-fit: cover;" alt="Ảnh phòng họp">
+                    <img src="<?= BASE_URL . htmlspecialchars($image['url']) ?>" class="img-fluid h-100 w-100" style="object-fit: cover;" alt="Ảnh phòng họp">
                   </div>
                 <?php endforeach; ?>
               <?php else: ?>

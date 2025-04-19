@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers\Admin;
-use App\Models\roomModel;
+use App\Models\RoomModel;
+use App\Models\ImageModel;
 use App\Core\LogService;
 
 class RoomController {
@@ -319,6 +320,63 @@ class RoomController {
     }
 
     
+
+    public function uploadSlide() {
+        $log = new LogService();
+        header('Content-Type: application/json');
+    
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['images'])) {
+            $roomId = $_POST['room_id'];
+            $log->logInfo("Starting upload process for roomId: {$roomId}");
+    
+            $images = $_FILES['images'];
+            $uploadedImages = [];
+    
+            $uploadDir = __DIR__ . "/../../../public/uploads/rooms/{$roomId}/slideshow/";
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+                $log->logInfo("Created upload directory: {$uploadDir}");
+            }
+    
+            foreach ($images['tmp_name'] as $key => $tmpName) {
+                $fileName = time() . '_' . basename($images['name'][$key]);
+                $uploadFile = $uploadDir . $fileName;
+    
+                if (move_uploaded_file($tmpName, $uploadFile)) {
+                    $log->logInfo("Uploaded file: {$fileName} to {$uploadFile}");
+                    $uploadedImages[] = "/uploads/rooms/{$roomId}/slideshow/{$fileName}";
+                } else {
+                    $log->logError("Failed to upload file: {$fileName}");
+                    echo json_encode(['success' => false, 'message' => 'Tải ảnh thất bại.']);
+                    return;
+                }
+            }
+    
+            $imageModel = new ImageModel();
+            $imagesSaved = $imageModel->addImagesToRoom($roomId, $uploadedImages);
+    
+            if ($imagesSaved) {
+                $log->logInfo("Successfully saved images to database for roomId: {$roomId}");
+                echo json_encode(['success' => true, 'images' => $uploadedImages]);
+                return;
+            } else {
+                $log->logError("Failed to save images to database for roomId: {$roomId}");
+                echo json_encode(['success' => false, 'message' => 'Không thể lưu ảnh vào cơ sở dữ liệu.']);
+                return;
+            }
+        }
+    
+        $log->logWarning('No images uploaded for roomId: ' . ($_POST['room_id'] ?? 'unknown'));
+
+        echo json_encode(['success' => false, 'message' => 'Không có ảnh nào được tải lên.']);
+    }
+    
+    
+    
+    
+
+
+
     private function handleRoomImageUpload($roomId, $images, $primaryIndex, $log)
     {
         $imagePaths = [];
@@ -356,8 +414,6 @@ class RoomController {
     
         return $imagePaths;
     }
-
-
     
     private function generateUUID()
     {
