@@ -185,192 +185,202 @@
         </div>
 
         <div class="col-12">
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center flex-wrap border-bottom pb-2 mb-3">
-            <div class="flex-grow-1 mb-2 mb-md-0">
-                <h5 class="card-title mb-0">Ảnh slideshow</h5>
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center flex-wrap border-bottom pb-2 mb-3">
+                    <div class="flex-grow-1 mb-2 mb-md-0">
+                        <h5 class="card-title mb-0">Ảnh slideshow</h5>
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-primary" id="uploadSlideBtn">
+                            <i class="bi bi-upload"></i> Thêm ảnh
+                        </button>
+                        <input type="file" id="slideUploadInput" accept="image/*" class="d-none" multiple>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="row gallery" id="slideshowContainer">
+                        <?php if (!empty($room['images'])): ?>
+                            <?php foreach ($room['images'] as $index => $image): ?>
+                                <div class="col-6 col-sm-6 col-lg-3 mb-3" data-id="<?= $image['id'] ?>">
+                                    <div class="position-relative border rounded shadow-sm overflow-hidden h-100" style="aspect-ratio:6/4;">
+                                        <img class="view-image-btn w-100 h-100"
+                                            src="<?= BASE_URL . htmlspecialchars($image['url']) ?>"
+                                            data-url="<?= BASE_URL . htmlspecialchars($image['url']) ?>"
+                                            alt="Ảnh slideshow"
+                                            style="object-fit:cover; cursor:pointer;">
+                                        
+                                        <div class="position-absolute top-0 end-0 m-2">
+                                            <button type="button" class="btn btn-sm btn-danger delete-image-btn" data-id="<?= $image['id'] ?>">
+                                                <i class="bi bi-x"></i>
+                                            </button>
+                                        </div>
+
+                                        <div class="position-absolute top-0 start-0 m-2 d-flex gap-2">
+                                            <?php if ($index === 0): ?>
+                                                <i class="bi bi-star-fill text-warning fs-4"></i>
+                                            <?php else: ?>
+                                                <button class="btn btn-sm btn-light set-primary-btn" data-id="<?= $image['id'] ?>">
+                                                    <i class="bi bi-star"></i>
+                                                </button>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <div class="col-12 text-muted">Chưa có ảnh slideshow nào.</div>
+                        <?php endif; ?>
+                    </div>
+                </div>
             </div>
-            <div>
-                <button class="btn btn-sm btn-primary" id="uploadSlideBtn">
-                    <i class="bi bi-upload"></i> Thêm ảnh
-                </button>
-                <input type="file" id="slideUploadInput" accept="image/*" class="d-none" multiple>
+        </div>
+
+
+        <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title" id="imageModalLabel">Xem ảnh</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <img id="modalImage" src="" class="w-100 h-auto" alt="Ảnh lớn">
+                </div>
+                </div>
             </div>
         </div>
-
-        <div class="card-body">
-            <div class="row gallery" id="slideshowContainer">
-                <?php if (!empty($room['images'])): ?>
-                    <?php foreach ($room['images'] as $index => $image): ?>
-                        <div class="col-6 col-sm-6 col-lg-3 mb-3" data-id="<?= $image['id'] ?>">
-
-    <div class="position-relative border rounded shadow-sm overflow-hidden h-100" style="aspect-ratio:6/4;">
-        <img class="view-image-btn w-100 h-100"
-             src="<?= BASE_URL . htmlspecialchars($image['url']) ?>"
-             data-url="<?= BASE_URL . htmlspecialchars($image['url']) ?>"
-             alt="Ảnh slideshow"
-             style="object-fit:cover; cursor:pointer;">
-        
-        <div class="position-absolute top-0 end-0 m-2">
-            <button type="button" class="btn btn-sm btn-danger delete-image-btn" data-id="<?= $image['id'] ?>">
-                <i class="bi bi-x"></i>
-            </button>
-        </div>
-
-        <div class="position-absolute top-0 start-0 m-2 d-flex gap-2">
-            <?php if ($index === 0): ?>
-                <i class="bi bi-star-fill text-warning fs-4"></i>
-            <?php else: ?>
-                <button class="btn btn-sm btn-light set-primary-btn" data-id="<?= $image['id'] ?>">
-                    <i class="bi bi-star"></i>
-                </button>
-            <?php endif; ?>
-        </div>
-    </div>
-</div>
-
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <div class="col-12 text-muted">Chưa có ảnh slideshow nào.</div>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content">
-      <div class="modal-header border-0">
-        <h5 class="modal-title" id="imageModalLabel">Xem ảnh</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
-      </div>
-      <div class="modal-body p-0">
-        <img id="modalImage" src="" class="w-100 h-auto" alt="Ảnh lớn">
-      </div>
-    </div>
-  </div>
-</div>
 
 
 
 <script>
-const BASE_URL = "<?php echo BASE_URL; ?>";
+    const BASE_URL = "<?php echo BASE_URL; ?>";
 
-document.getElementById('uploadSlideBtn').addEventListener('click', function() {
-    document.getElementById('slideUploadInput').click();
-});
+    document.getElementById('uploadSlideBtn').addEventListener('click', function() {
+        document.getElementById('slideUploadInput').click();
+    });
 
-document.getElementById('slideUploadInput').addEventListener('change', function(e) {
-    const files = e.target.files;
-    if (files.length === 0) return;
+    document.getElementById('slideUploadInput').addEventListener('change', function(e) {
+        const files = e.target.files;
+        if (files.length === 0) return;
 
-    const roomId = "<?php echo $room['id']; ?>";  // Lấy roomId từ PHP
-    
+        const roomId = "<?php echo $room['id']; ?>";  // Lấy roomId từ PHP
+        
 
-    const formData = new FormData();
-    formData.append('room_id', roomId);
-    for (let i = 0; i < files.length; i++) {
-        formData.append('images[]', files[i]);
-    }
+        const formData = new FormData();
+        formData.append('room_id', roomId);
+        for (let i = 0; i < files.length; i++) {
+            formData.append('images[]', files[i]);
+        }
 
-    fetch(BASE_URL + '/room/uploadSlide', {
-        method: 'POST',
-        body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
-        console.log(data);
-        if (data.success) {
-            alert('Tải ảnh thành công!');
+        fetch(BASE_URL + '/room/uploadSlide', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            console.log(data);
+            if (data.success) {
+                alert('Tải ảnh thành công!');
 
-            // Xử lý ảnh mới, thêm tất cả ảnh vào UI
-            data.images.forEach(image => {
-                const newImage = `
-                    <div class="col-6 col-sm-6 col-lg-3 mt-2 mt-md-0 mb-md-0 mb-2">
-                        <div class="position-relative border rounded shadow-sm overflow-hidden h-100">
-                            <img class="w-100 view-image-btn" src="${BASE_URL + image}" data-url="${BASE_URL + image}" alt="Ảnh slideshow" style="cursor:pointer;">
-                            <div class="position-absolute top-0 start-0 m-2 d-flex gap-2">
-                                <button class="btn btn-sm btn-light set-primary-btn" data-id="0"> 
-                                    <i class="bi bi-star"></i>
-                                </button>
-                            </div>
-                            <div class="position-absolute top-0 end-0 m-2">
-                                <button type="button" class="btn btn-sm btn-danger delete-image-btn" data-id="0">
-                                    <i class="bi bi-x"></i>
-                                </button>
+                // Xử lý ảnh mới, thêm tất cả ảnh vào UI
+                data.images.forEach(image => {
+                    const newImage = `
+                        <div class="col-6 col-sm-6 col-lg-3 mb-3" data-id="${image.id}">
+                            <div class="position-relative border rounded shadow-sm overflow-hidden h-100" style="aspect-ratio:6/4;">
+                                <img class="view-image-btn w-100 h-100" 
+                                    src="${BASE_URL + image.url}" 
+                                    data-url="${BASE_URL + image.url}" 
+                                    alt="Ảnh slideshow"
+                                    style="object-fit:cover; cursor:pointer;">
+                                
+                                <div class="position-absolute top-0 end-0 m-2">
+                                    <button type="button" class="btn btn-sm btn-danger delete-image-btn" data-id="${image.id}">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+
+                                <div class="position-absolute top-0 start-0 m-2 d-flex gap-2">
+                                    <button class="btn btn-sm btn-light set-primary-btn" data-id="${image.id}">
+                                        <i class="bi bi-star"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                `;
+                    `;
+
+                    document.getElementById('slideshowContainer').insertAdjacentHTML('beforeend', newImage);
+                });
+            } else {
+                alert('Tải ảnh thất bại.');
+            }
+        });
+    });
 
 
-                
-                // Chèn ảnh mới vào gallery
-                document.getElementById('slideshowContainer').innerHTML += newImage;
+    // Xoá ảnh
+    const slideshowContainer = document.getElementById('slideshowContainer');
+
+    slideshowContainer.addEventListener('click', function(e) {
+        const deleteBtn = e.target.closest('.delete-image-btn');
+        if (deleteBtn) {
+            const imageId = deleteBtn.dataset.id;
+            if (!confirm('Xác nhận xoá ảnh này?')) return;
+
+            fetch(BASE_URL + '/room/deleteSlide', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ id: imageId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Đã xoá ảnh.');
+                    deleteBtn.closest('.col-6').remove();
+                } else {
+                    alert(data.message || 'Xoá ảnh thất bại.');
+                }
+            })
+            .catch(err => {
+                console.error('Lỗi khi xoá:', err);
+                alert('Có lỗi khi xoá ảnh.');
             });
-        } else {
-            alert('Tải ảnh thất bại.');
         }
     });
-});
 
 
-// Xoá ảnh
-document.querySelectorAll('.delete-image-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const imageId = this.dataset.id;
-        if (!confirm('Xác nhận xoá ảnh này?')) return;
 
-        fetch('your_delete_endpoint.php', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ id: imageId })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                alert('Đã xoá ảnh.');
-                location.reload();
-            } else {
-                alert('Xoá ảnh thất bại.');
-            }
+    // Đặt làm ảnh chính
+    document.querySelectorAll('.set-primary-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const imageId = this.dataset.id;
+            fetch('your_set_primary_endpoint.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ id: imageId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Đã đặt làm ảnh chính.');
+                    location.reload();
+                } else {
+                    alert('Đặt làm ảnh chính thất bại.');
+                }
+            });
         });
     });
-});
 
-// Đặt làm ảnh chính
-document.querySelectorAll('.set-primary-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const imageId = this.dataset.id;
-        fetch('your_set_primary_endpoint.php', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ id: imageId })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                alert('Đã đặt làm ảnh chính.');
-                location.reload();
-            } else {
-                alert('Đặt làm ảnh chính thất bại.');
-            }
-        });
+    // Xem ảnh lớn
+    document.getElementById('slideshowContainer').addEventListener('click', function(event) {
+        // Kiểm tra xem sự kiện có phải từ nút "Xem ảnh" không
+        if (event.target.classList.contains('view-image-btn')) {
+            const imageUrl = event.target.dataset.url;  // Lấy URL từ data-url
+            const modalImage = document.getElementById('modalImage');  // Lấy phần tử img trong modal
+            modalImage.src = imageUrl;  // Cập nhật ảnh trong modal
+            new bootstrap.Modal(document.getElementById('imageModal')).show();  // Hiển thị modal
+        }
     });
-});
-
-// Xem ảnh lớn
-document.getElementById('slideshowContainer').addEventListener('click', function(event) {
-    // Kiểm tra xem sự kiện có phải từ nút "Xem ảnh" không
-    if (event.target.classList.contains('view-image-btn')) {
-        const imageUrl = event.target.dataset.url;  // Lấy URL từ data-url
-        const modalImage = document.getElementById('modalImage');  // Lấy phần tử img trong modal
-        modalImage.src = imageUrl;  // Cập nhật ảnh trong modal
-        new bootstrap.Modal(document.getElementById('imageModal')).show();  // Hiển thị modal
-    }
-});
 
 
 </script>

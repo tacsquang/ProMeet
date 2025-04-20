@@ -23,10 +23,11 @@ class ImageModel
     
         foreach ($imageUrls as $imageUrl) {
             $log->logInfo("Inserting image: {$imageUrl} for roomId: {$roomId}");
+            $id = $this->generateUUID(); 
         
             $sql = "INSERT INTO images (id, room_id, image_url) VALUES (:id, :room_id, :image_url)";
             $params = [
-                ':id' => $this->generateUUID(),
+                ':id' => $id,
                 ':room_id' => $roomId,
                 ':image_url' => $imageUrl
             ];
@@ -35,7 +36,10 @@ class ImageModel
         
             if ($result) {
                 $log->logInfo("Insert success for: {$imageUrl}");
-                $uploadedImages[] = ['url' => $imageUrl];
+                $uploadedImages[] = [
+                    'id' => $id,
+                    'url' => $imageUrl
+                ];
             } else {
                 $log->logError("Insert FAILED for: {$imageUrl} | SQL: {$sql} | Params: " . json_encode($params));
             }
@@ -56,12 +60,43 @@ class ImageModel
         return $images;
     }
 
-    // Xóa ảnh khỏi phòng
-    public function deleteImage($imageId) {
-        $sql = "DELETE FROM images WHERE id = {$imageId}";
-        $result = $this->db->query($sql);
-        return $result;
+    // Lấy thông tin ảnh theo ID
+    public function getImageById($id) {
+        $log = new LogService();
+        $log->logInfo("Fetching image with ID: {$id}");
+    
+        $sql = "SELECT * FROM images WHERE id = :id";
+        $params = [':id' => $id];
+        $image = $this->db->fetchOne($sql, $params);
+    
+        if ($image) {
+            $log->logInfo("Image found: " . json_encode($image));
+        } else {
+            $log->logWarning("Image not found with ID: {$id}");
+        }
+    
+        return $image;
     }
+    
+
+    // Xoá ảnh trong database theo ID
+    public function deleteImageById($id) {
+        $log = new LogService();
+        $log->logInfo("Deleting image record with ID: {$id}");
+
+        $sql = "DELETE FROM images WHERE id = :id";
+        $params = [':id' => $id];
+        $deleted = $this->db->execute($sql, $params);
+
+        if ($deleted) {
+            $log->logInfo("Image record deleted successfully for ID: {$id}");
+        } else {
+            $log->logError("Failed to delete image record for ID: {$id}");
+        }
+
+        return $deleted;
+    }
+
 
     private function generateUUID() {
         return sprintf(

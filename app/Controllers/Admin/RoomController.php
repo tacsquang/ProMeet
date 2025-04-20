@@ -357,7 +357,7 @@ class RoomController {
     
             if ($imagesSaved) {
                 $log->logInfo("Successfully saved images to database for roomId: {$roomId}");
-                echo json_encode(['success' => true, 'images' => $uploadedImages]);
+                echo json_encode(['success' => true, 'images' => $imagesSaved ]);
                 return;
             } else {
                 $log->logError("Failed to save images to database for roomId: {$roomId}");
@@ -371,7 +371,64 @@ class RoomController {
         echo json_encode(['success' => false, 'message' => 'Không có ảnh nào được tải lên.']);
     }
     
+    public function deleteSlide() {
+        $log = new LogService();
+        header('Content-Type: application/json');
     
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $input = json_decode(file_get_contents('php://input'), true);
+            $imageId = $input['id'] ?? null;
+    
+            if (!$imageId) {
+                $log->logWarning("Missing image ID in deleteSlide request.");
+                echo json_encode(['success' => false, 'message' => 'Thiếu ID ảnh.']);
+                return;
+            }
+    
+            $imageModel = new ImageModel();
+            $image = $imageModel->getImageById($imageId);
+    
+            if (!$image) {
+                $log->logWarning("Image with ID {$imageId} not found.");
+                echo json_encode(['success' => false, 'message' => 'Ảnh không tồn tại.']);
+                return;
+            }
+
+            // Xoá file vật lý
+            $filePath = __DIR__ . "/../../../public" . $image->image_url;;
+            $log->logInfo("Full file path to delete: {$filePath}");
+            
+            if (file_exists($filePath)) {
+                $log->logInfo("File exists, attempting to delete...");
+                if (unlink($filePath)) {
+                    $log->logInfo("Deleted file: {$filePath}");
+                } else {
+                    $log->logError("Failed to delete file: {$filePath}");
+                    echo json_encode(['success' => false, 'message' => 'Không thể xoá file trên máy chủ.']);
+                    return;
+                }
+            } else {
+                $log->logWarning("File not found on server: {$filePath}");
+            }
+            
+    
+            // Xoá bản ghi trong database
+            $deleted = $imageModel->deleteImageById($imageId);
+    
+            if ($deleted) {
+                $log->logInfo("Deleted image record from database, ID: {$imageId}");
+                echo json_encode(['success' => true]);
+            } else {
+                $log->logError("Failed to delete image record from database, ID: {$imageId}");
+                echo json_encode(['success' => false, 'message' => 'Không thể xoá ảnh trong cơ sở dữ liệu.']);
+            }
+            return;
+        }
+    
+        $log->logWarning('Invalid request method for deleteSlide.');
+        echo json_encode(['success' => false, 'message' => 'Yêu cầu không hợp lệ.']);
+    }
+       
     
     
 
