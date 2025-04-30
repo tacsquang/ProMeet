@@ -3,6 +3,7 @@ namespace App\Controllers\Public;
 
 use App\Core\View;
 use App\Core\LogService;
+use App\Models\BookingModel;
 
 class RoomsController
 {
@@ -48,12 +49,43 @@ class RoomsController
     
 
     public function payment($id) {
+
+        $bookingModel = new BookingModel();
+        $booking = $bookingModel->findById($id);
+
+        if ($booking->status !== 'pending') {  // Sử dụng dấu '->' thay vì '[]'
+            // Điều hướng người dùng ra khỏi trang thanh toán
+            header("Location: /booking-success.php"); // Hoặc trang khác bạn muốn
+            exit;
+        }
+
         $view = new View();
         $view->render('public/rooms/roomPayment', [
             'pageTitle' => 'ProMeet | Room Payment',
             'currentPage' => 'rooms',
-            'roomId' => $id
+            'roomId' => $id,
+            'isLoggedIn' => isset($_SESSION['user']),
         ]);
+    }
+
+
+    public function deletePayment() {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $bookingId = $data['booking_id'] ?? null;
+
+        $log = new LogService();
+        $log->logError("Delete Payment: $bookingId");
+    
+        if (!$bookingId) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Missing booking_id']);
+            return;
+        }
+
+        $bookingModel = new BookingModel();
+        $success = $bookingModel->deleteBooking($bookingId);
+
+        echo json_encode(['success' => $success]);
     }
 
     public function getRoomsApi() {

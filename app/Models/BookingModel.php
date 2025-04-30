@@ -38,6 +38,132 @@ class BookingModel
         return $bookingId;
     }
 
+    public function deleteBooking($bookingId) {
+        $log = new LogService();
+        $log->logInfo("Vao deleteBooking Model | ID: $bookingId");
+    
+        try {
+            // Xoá lịch sử trạng thái
+            $sqlHistory = "DELETE FROM booking_status_history WHERE booking_id = :booking_id";
+            $params = [':booking_id' => $bookingId];
+            $log->logInfo("Xoá trạng thái booking | ID: $bookingId");
+    
+            $resultHistory = $this->db->execute($sqlHistory, $params);
+            if (!$resultHistory) {
+                $log->logError("Không thể xoá trạng thái booking với ID: $bookingId");
+                throw new Exception("Lỗi khi xoá trạng thái booking");
+            }
+    
+            // Xoá slot đã giữ
+            $sqlSlots = "DELETE FROM booking_slots WHERE booking_id = :booking_id";
+            $log->logInfo("Xoá slot booking | ID: $bookingId");
+    
+            $resultSlots = $this->db->execute($sqlSlots, $params);
+            if (!$resultSlots) {
+                $log->logError("Không thể xoá slot booking với ID: $bookingId");
+                throw new Exception("Lỗi khi xoá slot booking");
+            }
+    
+            // Xoá booking chính
+            $sqlBooking = "DELETE FROM bookings WHERE id = :booking_id";
+            $log->logInfo("Xoá booking chính | ID: $bookingId");
+    
+            $resultBooking = $this->db->execute($sqlBooking, $params);
+            if (!$resultBooking) {
+                $log->logError("Không thể xoá booking với ID: $bookingId");
+                throw new Exception("Lỗi khi xoá booking chính");
+            }
+    
+            // Log thông báo thành công
+            $log->logInfo("Đã xoá toàn bộ dữ liệu booking $bookingId thành công");
+            return true;
+    
+        } catch (Exception $e) {
+            // Log lỗi và ném lại exception
+            $log->logError("Lỗi khi xoá booking $bookingId: " . $e->getMessage());
+            throw $e;
+        }
+    }
+    
+    public function updatePaymentInfo($bookingId, $paymentMethod, $status, $note = null) {
+        $log = new LogService();
+    
+        // Ghi log ban đầu
+        $log->logInfo("Cập nhật thông tin thanh toán | bookingId: $bookingId | method: $paymentMethod | status: $status");
+    
+        // Câu lệnh UPDATE bookings
+        $sqlUpdate = "
+            UPDATE bookings 
+            SET payment_method = :payment_method, status = :status, updated_at = NOW() 
+            WHERE id = :booking_id
+        ";
+    
+        // Tham số cập nhật
+        $paramsUpdate = [
+            ':booking_id' => $bookingId,
+            ':payment_method' => $paymentMethod,
+            ':status' => $status
+        ];
+    
+        try {
+            // Thực hiện cập nhật trạng thái chính
+            $updated = $this->db->execute($sqlUpdate, $paramsUpdate);
+    
+            if (!$updated) {
+                $log->logError("Không thể cập nhật trạng thái booking ID: $bookingId");
+                throw new Exception("Lỗi cập nhật trạng thái chính");
+            }
+    
+            // Tạo ID mới cho lịch sử
+            $historyId = $this->generateUUID();
+    
+            // Câu lệnh INSERT lịch sử trạng thái
+            $sqlHistory = "
+                INSERT INTO booking_status_history (id, booking_id, status, changed_at, note) 
+                VALUES (:id, :booking_id, :status, NOW(), :note)
+            ";
+    
+            $paramsHistory = [
+                ':id' => $historyId,
+                ':booking_id' => $bookingId,
+                ':status' => $status,
+                ':note' => $note
+            ];
+    
+            // Ghi log rồi insert
+            $log->logInfo("Ghi lịch sử trạng thái | ID: $historyId | Booking: $bookingId | Status: $status");
+    
+            $inserted = $this->db->execute($sqlHistory, $paramsHistory);
+    
+            if (!$inserted) {
+                $log->logError("Không thể ghi lịch sử trạng thái cho booking ID: $bookingId");
+                throw new Exception("Lỗi ghi lịch sử trạng thái");
+            }
+    
+            $log->logInfo("Cập nhật thông tin và ghi lịch sử thành công cho booking ID: $bookingId");
+    
+            return true;
+    
+        } catch (Exception $e) {
+            $log->logError("Lỗi trong updatePaymentInfo | Booking ID: $bookingId | " . $e->getMessage());
+            throw $e;
+        }
+    }
+    
+    public function findById($bookingId) {
+        $sql = "SELECT * FROM bookings WHERE id = :id LIMIT 1";
+        $params = [':id' => $bookingId];
+    
+        try {
+            return $this->db->fetchOne($sql, $params);
+        } catch (Exception $e) {
+            $log = new LogService();
+            $log->logError("Lỗi khi tìm booking theo ID: $bookingId | " . $e->getMessage());
+            return null;
+        }
+    }
+    
+
     public function addBookingSlots($bookingId, $date, array $slots) {
         $log = new LogService();
         $log->logInfo("Hello : $bookingId, day: $date");

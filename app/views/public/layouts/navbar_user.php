@@ -37,7 +37,7 @@
             <!-- User -->
             <div class="auth-buttons d-flex  gap-1 mb-2 mb-lg-0 ms-3 ms-md-0">
                 <!-- Giỏ đặt phòng -->
-                <a href="cart.html" class="btn text-light position-relative d-flex align-items-center p-0">
+                <a href="<?php echo BASE_URL; ?>/booking" class="btn text-light position-relative d-flex align-items-center p-0">
                     <i class="bi bi-calendar-check fs-4 position-relative">
                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">
                         2

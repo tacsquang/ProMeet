@@ -291,6 +291,5 @@ class RoomModel
         return $result ? intval($result->total) : 0; // Sửa lại từ $result['total'] thành $result->total
     }
         
-    
 
 }
