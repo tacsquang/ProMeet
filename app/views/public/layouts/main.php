@@ -10,7 +10,7 @@
 <?php endif; ?>
 <!-- End Navbar -->
 
-<div class="content">
+<div class="content" id="main">
     <?= $content ?>
 </div>
 

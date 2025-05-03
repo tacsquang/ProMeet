@@ -1,5 +1,5 @@
 <!-- Navbar -->
-<nav class="navbar navbar-expand-md">
+<nav class="navbar navbar-expand-md fixed-top">
     <div class="container-fluid px-4 px-lg-5">
         <a class="navbar-brand fw-bold" href="#">
             <a class="navbar-brand" href="<?php echo BASE_URL; ?>/home">

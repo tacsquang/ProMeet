@@ -265,6 +265,7 @@ class BookingModel
                     status = :status, 
                     contact_name = :contact_name, 
                     contact_email = :contact_email, 
+                    contact_phone = :contact_phone,
                     updated_at = NOW()
                 WHERE id = :booking_id
             ";
@@ -274,7 +275,8 @@ class BookingModel
                 ':payment_method' => $paymentMethod,
                 ':status' => $status,
                 ':contact_name' => $contactName,
-                ':contact_email' => $contactEmail
+                ':contact_email' => $contactEmail,
+                ':contact_phone' => $contactPhone,
             ];
     
             $log->logInfo("Params cập nhật: " . var_export($paramsUpdate, true));
@@ -563,7 +565,7 @@ class BookingModel
             'cancelTime' => date('H:i – d/m/Y', strtotime($changedAt)),
         ];
     
-        if (preg_match('/Người hủy:\s*(.*?)\s*\|\s*Lý do:\s*(.*)/', $note, $matches)) {
+        if (preg_match('/Người huỷ:\s*(.*?)\.\s*Lý do:\s*(.*)/', $note, $matches)) {
             $info['cancelBy'] = trim($matches[1]);
             $info['cancelReason'] = trim($matches[2]);
         }

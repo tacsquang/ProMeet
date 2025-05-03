@@ -1,7 +1,5 @@
 
   <style>
-    
-
       .text-truncate-multiline {
         display: -webkit-box;
         display: box; /* Fallback */
@@ -50,7 +48,7 @@
 
     
   <!-- Main Content -->
-  <div class="container py-5">
+  <div class="container py-4">
     <!-- Slideshow + Thông tin/Bản đồ -->
     <div class="container">
       <div class="row g-4 align-items-stretch">

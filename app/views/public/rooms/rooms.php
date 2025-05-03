@@ -43,11 +43,11 @@
     </style>
 
 
-<div class="container py-5">
+<div class="container py-4">
 
 
     <!-- BỘ LỌC -->
-    <div class="filter-bar bg-white p-4 rounded-4 shadow-sm mb-5">
+    <div class="filter-bar bg-white p-4 rounded-4 shadow-sm mb-4">
         <div class="row gy-3 gx-3 align-items-center">
 
             <div class="col-lg-9 col-md-8 col-12">

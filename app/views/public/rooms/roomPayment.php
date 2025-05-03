@@ -195,8 +195,6 @@
         </div>
     </div>
 
-    <div id="notification" class="alert alert-warning position-fixed top-0 start-50 translate-middle-x mt-3 px-4 py-2 d-none" style="z-index: 1050; max-width: 400px;"></div>
-
     <div aria-live="polite" aria-atomic="true" class="position-fixed top-0 end-0 p-3" style="z-index: 2000">
         <div id="notification-toast" class="toast align-items-center text-white bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="d-flex">

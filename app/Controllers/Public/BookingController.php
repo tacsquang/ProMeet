@@ -73,7 +73,7 @@ class BookingController
         $room = $roomModel->getRoomById($booking->room_id);
     
         $timeSlots = $bookingModel->getTimeSlots($bookingId); // Trả về mảng thời gian
-        $timeline = $bookingModel->getTimeline($bookingId);   // Trả về danh sách sự kiện
+        $timeline = $bookingModel->getBookingTimeline($bookingId);   // Trả về danh sách sự kiện
         $canceled = $booking->status === 'canceled' ? $bookingModel->getCancelInfo($bookingId) : null;
         $completedTimes = $booking->status === 'canceled' ? null : $bookingModel->getCompletedTimestamps($bookingId);
     
@@ -90,10 +90,12 @@ class BookingController
             'booking_code' => $booking->booking_code,
             'roomId' =>$room->id,
             'roomName' => $room->name,
+            'roomLocation' => $room->location_name,
             'status' => $booking->status,
             'timeSlots' => $timeSlots,
             'userName' => $booking->contact_name,
             'userEmail' => $booking->contact_email,
+            'userPhone' => $booking->contact_phone,
             'totalPrice' => $booking->total_price,
             'paymentMethod' => $booking->payment_method,
             'timeline' => $timeline,
@@ -295,7 +297,10 @@ class BookingController
                 return;
             }
     
-            $model->cancelBooking($bookingId, $userFullName, $reason);
+            $note = "Người huỷ: Người dùng. Lý do: " . $reason;
+            $label = "Đã huỷ lịch đặt phòng";
+            $result = $model->updateBookingStatus($bookingId, 'canceled', $note, $label);
+
             $log->logInfo("Huỷ booking {$bookingId} thành công.");
     
             http_response_code(200);
@@ -322,8 +327,8 @@ class BookingController
             $bookingId = $data['bookingId'] ?? null;
             $contactName = $data['name'] ?? null;
             $contactEmail = $data['email'] ?? null;
-            $contactPhone = $data['email'] ?? null;
-            $paymentMethod = $data['phone'] ?? null;
+            $contactPhone = $data['phone'] ?? null;
+            $paymentMethod = $data['paymentMethod'] ?? null;
             $status = $data['status'] ?? '';  // mặc định là confirmed
             $note = $data['note'] ?? null;
     
@@ -390,6 +395,4 @@ class BookingController
         echo json_encode(['slots' => $slots]);
     }
 
-
-    
 }

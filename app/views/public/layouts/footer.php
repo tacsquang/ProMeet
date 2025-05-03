@@ -104,6 +104,26 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
     <script>
+document.addEventListener('DOMContentLoaded', function () {
+    const btn = document.querySelector('.back-to-top');
+    window.addEventListener('scroll', function () {
+        if (window.scrollY > 200) {
+            btn.classList.add('show');
+        } else {
+            btn.classList.remove('show');
+        }
+    });
+
+    btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+});
+
+</script>
+
+
+    <script>
         function saveRedirectUrl() {
             // Lưu URL hiện tại vào session bằng AJAX
             fetch('<?php echo BASE_URL; ?>/auth/saveRedirectUrl', {

@@ -88,31 +88,29 @@
                     let collapseId = 'collapseBooking' + index;
 
                     bookingsHtml += `
-<tr class="toggle-collapse" data-collapse-id="${collapseId}" style="cursor: pointer;">
-    <td>${index + 1}</td>
-    <td>${booking.booking_code}</td>
-    <td>${booking.room_name}</td>
-    <td>${firstDisplay}</td>
-    <td>
-        <span class="badge 
-            ${booking.status === 'confirmed' ? 'bg-info' : 
-              booking.status === 'pending' ? 'bg-warning text-dark' : 
-              booking.status === 'canceled' ? 'bg-danger' : 
-              booking.status === 'completed' ? 'bg-success' : 
-              booking.status === 'paid' ? 'badge bg-warning text-dark' : 
-              booking.status === 'waiting' ? 'bg-secondary' : 'bg-dark'}
-        ">
-            ${booking.status === 'confirmed' ? 'Đã xác nhận' : 
-              booking.status === 'pending' ? 'Chờ xác nhận' : 
-              booking.status === 'canceled' ? 'Đã hủy' : 
-              booking.status === 'completed' ? 'Đã hoàn thành' : 
-              booking.status === 'paid' ? 'Đã thanh toán' : 
-              booking.status === 'waiting' ? 'Chờ thanh toán' : 'Không xác định'}
-        </span>
-    </td>                            
-    <td>${new Intl.NumberFormat().format(booking.total_price)} đ</td>
-    <td><a href="booking/detail?id=${booking.booking_id}" class="btn btn-sm btn-outline-primary mb-1 mb-md-0 detail-btn"><i class="bi bi-eye"></i> Chi tiết</a></td>
-</tr>
+                        <tr class="toggle-collapse" data-collapse-id="${collapseId}" style="cursor: pointer;">
+                            <td>${index + 1}</td>
+                            <td>${booking.booking_code}</td>
+                            <td>${booking.room_name}</td>
+                            <td>${firstDisplay}</td>
+                            <td>
+                                <span class="badge 
+                                    ${booking.status === 'confirmed' ? 'bg-primary' : 
+                                    booking.status === 'pending' ? 'bg-info text-dark' : 
+                                    booking.status === 'canceled' ? 'bg-danger' : 
+                                    booking.status === 'completed' ? 'bg-success' : 
+                                    booking.status === 'paid' ? 'bg-warning text-dark' : ''}
+                                ">
+                                    ${booking.status === 'confirmed' ? 'Đã xác nhận' : 
+                                    booking.status === 'pending' ? 'Chờ thanh toán' : 
+                                    booking.status === 'canceled' ? 'Đã hủy' : 
+                                    booking.status === 'completed' ? 'Đã hoàn thành' : 
+                                    booking.status === 'paid' ? 'Chờ xác nhận' : 'Không xác định'}
+                                </span>
+                            </td>                            
+                            <td>${new Intl.NumberFormat().format(booking.total_price)} đ</td>
+                            <td><a href="booking/detail?id=${booking.booking_id}" class="btn btn-sm btn-outline-primary mb-1 mb-md-0 detail-btn"><i class="bi bi-eye"></i> Chi tiết</a></td>
+                        </tr>
                     `;
 
                     // Add expanded row for additional time slots

@@ -24,7 +24,7 @@
             background-repeat: no-repeat;
             background-attachment: fixed; /* Scroll mượt */
             min-height: 100vh;
-
+            padding-top: 80px; 
         }
 
         body::before {
@@ -118,7 +118,7 @@
             font-size: 1.2rem;
             z-index: 999;
             transition: all 0.3s ease;
-            display: none;
+            display: none !important;
         }
 
         .back-to-top:hover {
@@ -128,12 +128,18 @@
             color: white;
         }
 
+        .back-to-top.show {
+            display: flex !important; 
+        }
+
         .text-justify {
             text-align: justify;
         }
 
-        html {
-            scroll-behavior: smooth;
+
+
+        .container, .container-sm, .container-md, .container-lg, .container-xl {
+            max-width: 1400px !important;
         }
 
     </style>
