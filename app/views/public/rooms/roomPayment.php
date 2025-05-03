@@ -68,17 +68,10 @@
 
     <!-- Main Content -->
     <?php
-    // Giả sử các biến PHP được truyền vào từ controller
-    $roomName = $room['name'] ?? 'A1 - Tower City';
-    $bookingTime = [
-        ['start' => '10:00', 'end' => '10:30'],
-        ['start' => '10:00', 'end' => '10:30'],
-        ['start' => '10:00', 'end' => '10:30'],
-        ['start' => '10:30', 'end' => '11:00']
-    ];
-    $bookingDate = '10/04/2025';
-    
-    $totalAmount = $booking['total'] ?? 350000;
+    $roomName = $room_name ?? '';
+    $roomLocation = $room_location ?? '';
+    $bookingTime = $timeslots ?? [];   
+    $totalAmount = $total_price ?? 10000000000000000000;
     ?>
 
     <!-- Main Content -->
@@ -122,10 +115,15 @@
                     </div>
 
                     <div class="row mb-2">
+                        <div class="col-4 fw-semibold text-end pe-3">Địa điểm:</div>
+                        <div class="col-8"><?= htmlspecialchars($roomLocation) ?></div>
+                    </div>
+
+                    <div class="row mb-2">
                         <div class="col-4 fw-semibold text-end pe-3">Thời gian:</div>
                         <div class="col-8">
                             <?php foreach ($bookingTime as $slot): ?>
-                                <?= htmlspecialchars($slot['start']) ?> – <?= htmlspecialchars($slot['end']) ?>, <?= date('d/m/Y', strtotime($bookingDate)) ?><br>
+                                <li><?= htmlspecialchars($slot) ?><br></li>
                             <?php endforeach; ?>
                         </div>
                     </div>
@@ -320,7 +318,7 @@
             status: 'paid',
         };
 
-        fetch(BASE_URL + '/booking/updatePaymentStatus', {
+        fetch(BASE_URL + '/booking/updatePaymentInfo', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

@@ -230,9 +230,10 @@ class BookingController
             // Thêm từng slot
             $model->addBookingSlots($bookingId, $bookingDate, $slots);
             $log->logInfo("Đã thêm slot cho ngày {$bookingDate}");
-    
-            // Lưu trạng thái booking
-            $model->addStatusHistory($bookingId, 'pending');
+
+            $note = "Yêu cầu đặt phòng đã được tạo thành công.";
+            $label = "Đặt phòng thành công";
+            $result = $model->updateBookingStatus($bookingId, 'pending', $note, $label);
             $log->logInfo("Đã lưu trạng thái ban đầu 'pending' cho booking {$bookingId}");
     
             // Trả về response thành công với mã 200
@@ -308,9 +309,9 @@ class BookingController
     }
     
     
-    public function updatePaymentStatus() {
+    public function updatePaymentInfo() {
         $log = new LogService();
-        $log->logInfo("Bắt đầu updatePaymentStatus");
+        $log->logInfo("Bắt đầu updatePaymentInfo");
     
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $log->logInfo("Xử lý POST updatePaymentStatus");
@@ -321,23 +322,28 @@ class BookingController
             $bookingId = $data['bookingId'] ?? null;
             $contactName = $data['name'] ?? null;
             $contactEmail = $data['email'] ?? null;
-            $paymentMethod = $data['paymentMethod'] ?? null;
-            $status = $data['status'] ?? 'confirmed';  // mặc định là confirmed
+            $contactPhone = $data['email'] ?? null;
+            $paymentMethod = $data['phone'] ?? null;
+            $status = $data['status'] ?? '';  // mặc định là confirmed
             $note = $data['note'] ?? null;
     
             // Validate input
-            if (empty($bookingId) || empty($contactName) || empty($contactEmail) || empty($paymentMethod)) {
-                $log->logError("Thiếu thông tin: bookingId, name, email, paymentMethod");
+            if (empty($bookingId) || empty($contactName) || empty($contactEmail) || empty($contactPhone) || empty($paymentMethod)) {
+                $log->logError("Thiếu thông tin: bookingId, name, email, phone, paymentMethod");
                 echo json_encode(['success' => false, 'message' => 'Thiếu thông tin bắt buộc']);
                 return;
             }
     
-            $log->logInfo("Dữ liệu nhận được: bookingId = $bookingId | name = $contactName | email = $contactEmail | method = $paymentMethod | status = $status");
+            $log->logInfo("Dữ liệu nhận được: bookingId = $bookingId | name = $contactName | email = $contactEmail  | phone = $contactPhone | method = $paymentMethod | status = $status");
     
             try {
                 // Gọi model cập nhật
                 $bookingModel = new BookingModel();  // Đảm bảo bạn đã include/require đúng class
-                $result = $bookingModel->updatePaymentInfo($bookingId, $paymentMethod, $status, $contactName, $contactEmail, $note);
+                $result = $bookingModel->updatePaymentInfo($bookingId, $paymentMethod, $status, $contactName, $contactEmail, $contactPhone, $note);
+
+                $label1 =  "Chờ xác nhận";
+                $note1 = "Quản trị viên sẽ xác nhận đơn đặt phòng của bạn trong thời gian sớm nhất.";
+                $result = $bookingModel->updateBookingStatus($bookingId, 'paid', $note1, $label1);
 
                 $log->logInfo("Kết quả trả về từ updatePaymentInfo: " . var_export($result, true));
 

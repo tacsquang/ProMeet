@@ -4,6 +4,7 @@ namespace App\Controllers\Public;
 use App\Core\View;
 use App\Core\LogService;
 use App\Models\BookingModel;
+use App\Models\RoomModel;
 
 class RoomsController
 {
@@ -58,6 +59,15 @@ class RoomsController
             exit;
         }
 
+        $roomModel = new RoomModel();
+        $room = $roomModel->getRoomById($booking->room_id);
+
+        $timeslots = $bookingModel->getTimeSlotsv2($id);
+        $log = new LogService();
+
+        $log->logInfo("Timeslots: %s". json_encode($timeslots));
+    
+
         $view = new View();
         $view->render('public/rooms/roomPayment', [
             'pageTitle' => 'ProMeet | Room Payment',
@@ -65,6 +75,11 @@ class RoomsController
             'roomId' => $id,
             'isLoggedIn' => isset($_SESSION['user']),
             'room_id' => $booking->room_id,
+            'total_price' => $booking->total_price,
+            'room_name' => $room->name,
+            'room_location' => $room->location_name,
+            'timeslots' => $timeslots,
+
         ]);
     }
 

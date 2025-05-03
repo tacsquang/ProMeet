@@ -213,13 +213,14 @@ class BookingModel
         }
     }
     
-    public function updatePaymentInfo($bookingId, $paymentMethod, $status, $contactName, $contactEmail, $note = null)
+    public function updatePaymentInfo($bookingId, $paymentMethod, $status, $contactName, $contactEmail, $contactPhone, $note = null)
     {
         $log = new LogService();
         $log->logInfo("=== [START] updatePaymentInfo ===");
-        if ($note === null) {
-            $note = $this->generateDefaultNote($status);
-        }
+        $note = $paymentMethod === 'momo'
+            ? "Thanh toán đặt phòng thành công qua ví MoMo."
+            : "Thanh toán đặt phòng thành công qua chuyển khoản ngân hàng.";
+        $label = "Đã thanh toán";
         $log->logInfo("Input | bookingId: $bookingId | method: $paymentMethod | status: $status | contactName: $contactName | contactEmail: $contactEmail | note: " . var_export($note, true));
     
         try {
@@ -290,14 +291,15 @@ class BookingModel
             $log->logInfo("Bắt đầu ghi lịch sử trạng thái...");
             $historyId = $this->generateUUID();
             $sqlHistory = "
-                INSERT INTO booking_status_history (id, booking_id, status, changed_at, note) 
-                VALUES (:id, :booking_id, :status, NOW(), :note)
+                INSERT INTO booking_status_history (id, booking_id, status, changed_at, note, label) 
+                VALUES (:id, :booking_id, :status, NOW(), :note, :label)
             ";
             $paramsHistory = [
                 ':id' => $historyId,
                 ':booking_id' => $bookingId,
                 ':status' => $status,
-                ':note' => $note
+                ':note' => $note,
+                ':label' => $label
             ];
             $inserted = $this->db->execute($sqlHistory, $paramsHistory);
     
