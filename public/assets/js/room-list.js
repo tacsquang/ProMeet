@@ -61,29 +61,35 @@ function loadRooms(page = 1) {
                 renderPagination(1, 1);
                 return;
             }
-
+        
             let html = '';
             response.rooms.forEach(function(room) {
-            
                 let stars = '';
-                let fullStars = Math.floor(room.review);  // số sao đầy
-                let hasHalfStar = (room.review - fullStars) >= 0.5;  // nửa sao
-                let emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);  // số sao rỗng
-                console.log(`image ${room.image}`);
-
-            
-                for (let i = 0; i < fullStars; i++) {
-                    stars += '<i class="bi bi-star-fill text-warning me-1"></i>';
+                let reviewText = '';
+        
+                // Kiểm tra nếu phòng có đánh giá
+                if (room.review && room.review > 0) {
+                    let fullStars = Math.floor(room.review);  // số sao đầy
+                    let hasHalfStar = (room.review - fullStars) >= 0.5;  // nửa sao
+                    let emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);  // số sao rỗng
+        
+                    // Hiển thị sao đầy, nửa sao và sao rỗng
+                    for (let i = 0; i < fullStars; i++) {
+                        stars += '<i class="bi bi-star-fill text-warning me-1"></i>';
+                    }
+                    if (hasHalfStar) {
+                        stars += '<i class="bi bi-star-half text-warning me-1"></i>';
+                    }
+                    for (let i = 0; i < emptyStars; i++) {
+                        stars += '<i class="bi bi-star text-warning me-1"></i>';
+                    }
+                    reviewText = `<small class="text-muted ms-1">(${room.review})</small>`;
+                } else {
+                    reviewText = '<small class="text-muted ms-1" style="font-style: italic;">Chưa có đánh giá</small>';
                 }
-                if (hasHalfStar) {
-                    stars += '<i class="bi bi-star-half text-warning me-1"></i>';
-                }
-                for (let i = 0; i < emptyStars; i++) {
-                    stars += '<i class="bi bi-star text-warning me-1"></i>';
-                }
-
+        
                 room.image = BASE_URL + room.image;
-            
+        
                 html += `
                 <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
                     <div class="card room-card position-relative">
@@ -93,7 +99,7 @@ function loadRooms(page = 1) {
                             <h5 class="card-title text-truncate" style="max-width: 100%;">${ room.name }</h5>
                             <div class="d-flex align-items-center mb-2">
                                 ${stars} 
-                                <small class="text-muted ms-1">(${room.review})</small>
+                                ${reviewText}
                             </div>
                             <p class="card-text text-truncate" style="max-width: 100%;">${ room.location }</p>
                             <p class="card-text fw-semibold d-flex justify-content-between align-items-center">
@@ -114,21 +120,21 @@ function loadRooms(page = 1) {
                     </div>
                 </div>`;
             });
-
+        
             $('#roomList').html(html);
             renderPagination(response.totalPages, page);
-
+        
             window.scrollTo({ top: 0, behavior: 'smooth' });
-
+        
             // Sau khi render xong, thêm sự kiện cho các nút "tym"
             document.querySelectorAll('.wishlist-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const icon = this.querySelector('i');
                     const roomId = this.getAttribute('data-room-id');
-
+        
                     // Lấy danh sách phòng đã tym từ localStorage
                     let likedRooms = JSON.parse(localStorage.getItem('likedRooms')) || [];
-
+        
                     if (icon.classList.contains('bi-heart')) {
                         // Nếu chưa tym, thêm phòng vào danh sách yêu thích
                         likedRooms.push(roomId);
@@ -144,19 +150,18 @@ function loadRooms(page = 1) {
                     }
                 });
             });
-
+        
             // Kiểm tra trạng thái yêu thích khi tải lại trang
             document.querySelectorAll('.wishlist-btn').forEach(btn => {
                 const roomId = btn.getAttribute('data-room-id');
                 let likedRooms = JSON.parse(localStorage.getItem('likedRooms')) || [];
-
+        
                 if (likedRooms.includes(roomId)) {
                     const icon = btn.querySelector('i');
                     icon.classList.remove('bi-heart');
                     icon.classList.add('bi-heart-fill', 'text-danger');
                 }
             });
-
         },
         error: function(xhr, status, error) {
             //console.error("[DEBUG] AJAX Error:", { status: status, error: error, xhr: xhr });

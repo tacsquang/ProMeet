@@ -212,6 +212,125 @@ class RoomModel
             'images' => $imageList
         ];
     }
+
+
+    public function fetchSmartSuggestedRooms($roomId, $roomType, $location) {
+        $log = new LogService();
+        $log->logInfo("Fetching smart suggestions | Exclude ID: $roomId | Type: $roomType | Location: $location");
+    
+        $params = [':roomId' => $roomId];
+        $conditions = [];
+        $excludeIds = [];
+    
+        // Ưu tiên location trước
+        if (!empty($location)) {
+            $conditions[] = "location_name LIKE :location";
+            $params[':location'] = '%' . $location . '%';
+        }
+    
+        if (!empty($roomType)) {
+            $conditions[] = "category = :roomType";
+            $params[':roomType'] = $roomType;
+        }
+    
+        // Nếu không có gì thì return rỗng
+        if (empty($conditions)) {
+            return [];
+        }
+    
+        // Truy vấn ban đầu
+        $where = "WHERE id != :roomId AND (" . implode(" OR ", $conditions) . ")";
+        $sql = "
+            SELECT id, name, category, price, capacity, location_name, average_rating
+            FROM rooms
+            {$where}
+            ORDER BY location_name DESC, id DESC
+            LIMIT 8
+        ";
+    
+        $log->logInfo("Smart Suggestion SQL: {$sql} | Params: " . json_encode($params, JSON_UNESCAPED_UNICODE));
+    
+        $rooms = $this->db->fetchAll($sql, $params);
+        $excludeIds = array_column($rooms, 'id');  // Lưu lại ID của các phòng đã lấy
+    
+        // Kiểm tra nếu có đủ 8 phòng hay không, nếu không bổ sung thêm điều kiện
+        if (count($rooms) < 8) {
+            $remainingRooms = 8 - count($rooms);
+            $additionalWhere = "WHERE id != :roomId";
+    
+            // Loại bỏ các phòng đã có trong kết quả ban đầu
+            if (!empty($excludeIds)) {
+                // Chỉnh sửa câu truy vấn bổ sung với tham số đúng cách
+                $placeholders = implode(',', array_map(function($i) {
+                    return ":excludeId$i";
+                }, array_keys($excludeIds)));
+    
+                $additionalWhere .= " AND id NOT IN ($placeholders)";
+    
+                // Gán giá trị cho các tham số excludeId
+                foreach ($excludeIds as $index => $id) {
+                    $params[":excludeId$index"] = $id;
+                }
+            }
+
+            unset($params[':location']);
+            unset($params[':roomType']);
+    
+            // Truy vấn bổ sung để lấy thêm phòng mà không cần áp dụng location hoặc category nữa
+            $additionalSql = "
+                SELECT id, name, category, price, capacity, location_name, average_rating
+                FROM rooms
+                {$additionalWhere}
+                ORDER BY id DESC
+                LIMIT {$remainingRooms}
+            ";
+    
+            $log->logInfo("Additional SQL: {$additionalSql} | Params: " . json_encode($params, JSON_UNESCAPED_UNICODE));
+            $additionalRooms = $this->db->fetchAll($additionalSql, $params);
+    
+            // Gộp kết quả ban đầu với kết quả bổ sung
+            if ($additionalRooms !== false) {
+                $rooms = array_merge($rooms, $additionalRooms);
+            } else {
+                $log->logError("No additional rooms found.");
+            }
+        }
+    
+        $colorMap = [
+            'Basic' => 'primary',
+            'Standard' => 'success',
+            'Premium' => 'warning',
+            'Luxury' => 'danger'
+        ];
+    
+        $formattedRooms = [];
+        foreach ($rooms as $room) {
+            $badgeColor = $colorMap[$room->category] ?? 'primary';
+            $imageData = $this->db->fetchOne(
+                "SELECT image_url FROM images WHERE room_id = :id ORDER BY is_primary DESC LIMIT 1",
+                [':id' => $room->id]
+            );
+    
+            $formattedRooms[] = [
+                'id' => $room->id,
+                'name' => $room->name,
+                'type' => $room->category,
+                'badgeColor' => $badgeColor,
+                'image' => $imageData ? $imageData->image_url : BASE_URL . '/assets/images/placeholder.jpeg',
+                'location' => $room->location_name,
+                'capacity' => $room->capacity,
+                'price' => $room->price,
+                'review' => $room->average_rating,
+            ];
+        }
+    
+        return $formattedRooms;
+    }
+    
+    
+    
+    
+    
     
     public function getRoomById($roomId)
     {

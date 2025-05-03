@@ -1,6 +1,11 @@
 function loadReviews(roomId, page = 1) {
     const sort = document.getElementById('sortBy').value;
-
+    const getMaskedName = (name) => {
+        const parts = name.trim().split(' ');
+        const firstName = parts[0]; // Lấy chữ cái đầu tiên
+        const lastName = parts.length > 1 ? parts[1] : ''; // Nếu có họ thì lấy, không thì để trống
+        return firstName + ' ' + lastName.charAt(0) + '. ***'; // Kết hợp họ và tên với dấu sao
+      };
 
 
     //////console.log(`[loadReviews] Bắt đầu tải đánh giá - RoomID: ${roomId}, Page: ${page}, Sort: ${sort}`);
@@ -31,7 +36,7 @@ function loadReviews(roomId, page = 1) {
                 container.innerHTML += `
                 <div class="col-md-4">
                     <div class="card rounded-4 p-3 shadow-sm h-100">
-                        <h6 class="fw-semibold mb-1">${r.username}</h6>
+                        <h6 class="fw-semibold mb-1">${getMaskedName(r.username)}</h6>
                         <small class="text-muted">${r.date}</small>
                         <div class="text-warning mb-2">${"★".repeat(r.rating)}${"☆".repeat(5 - r.rating)}</div>
                         <p class="mb-0 text-truncate-multiline" style="-webkit-line-clamp: 4;">

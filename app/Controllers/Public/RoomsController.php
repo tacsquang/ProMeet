@@ -127,6 +127,24 @@ class RoomsController
         echo json_encode($roomsData);
     }
     
+    public function getSmartSuggestedRoomsApi() {
+        $log = new LogService();
+    
+        $roomId = isset($_GET['roomId']) ? trim($_GET['roomId']) : '';
+        $roomType = isset($_GET['roomType']) ? trim($_GET['roomType']) : '';
+        $location = isset($_GET['location']) ? trim($_GET['location']) : '';
+    
+        $log->logInfo("Fetching smart suggested rooms | Exclude Room ID: {$roomId}, Room Type: {$roomType}, Location: {$location}");
+    
+        header('Content-Type: application/json');
+    
+        $model = new \App\Models\RoomModel();
+        $suggestedRooms = $model->fetchSmartSuggestedRooms($roomId, $roomType, $location);
+    
+        echo json_encode(['rooms' => $suggestedRooms]);
+    }
+    
+    
     
     
 }

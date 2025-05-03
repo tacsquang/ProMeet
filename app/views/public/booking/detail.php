@@ -309,8 +309,9 @@
       <?php endfor; ?>
     </div>
 
-    <div class="alert alert-info small mt-3" role="alert">
-      <strong>Chính sách hủy & hoàn tiền:</strong><br>
+    <!-- Chính sách hủy -->
+    <div class="alert alert-info small">
+      <strong><i class="bi bi-info-circle-fill me-1"></i> Chính sách hủy & hoàn tiền:</strong><br>
       – Hoàn tiền <strong>100%</strong> nếu hủy <strong>trước 2 giờ</strong> so với thời gian bắt đầu.<br>
       – Hoàn tiền <strong>50%</strong> nếu hủy trong vòng <strong>30 phút đến 2 giờ</strong> trước thời gian bắt đầu.<br>
       – <strong>Không hoàn tiền</strong> nếu hủy sau thời điểm trên.<br>

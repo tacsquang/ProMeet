@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const totalAmount = document.getElementById('total-amount');
     const bookBtn = document.getElementById('book-btn');
     const errorBox = document.getElementById('booking-error');
+    const warningBox = document.getElementById('booking-warning');
     const successBox = document.getElementById('successBox');
     const csrfToken = document.getElementById('csrf_token').value;
     const roomId = window.CURRENT_ROOM_ID;
@@ -115,14 +116,27 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     bookBtn.addEventListener('click', function(event) {
+        const checkbox = document.getElementById('agreePolicy');
+        
+      
+        if (!checkbox.checked) {
+            event.preventDefault();// chặn điều hướng
+            warningBox.textContent = 'Bạn cần đồng ý với chính sách trước khi đặt phòng.';
+            return;
+        } else {
+          warningBox.textContent = '';
+        }
+
         event.preventDefault();
         console.log("Total Price: %s", totalAmount.textContent);
 
 
         if (selectedTimeSlots.length === 0) {
-            errorBox.textContent = '* Vui lòng chọn ít nhất một khung giờ.';
+            warningBox.textContent = '* Vui lòng chọn ít nhất một khung giờ.';
             return;
         }
+
+        if (warningBox) warningBox.textContent = '';
 
         if (errorBox) errorBox.textContent = '';
 

@@ -24,7 +24,7 @@
             background-repeat: no-repeat;
             background-attachment: fixed; /* Scroll mượt */
             min-height: 100vh;
-            padding-top: 80px; 
+            padding-top: 90px; 
         }
 
         body::before {
@@ -37,6 +37,10 @@
 
         .navbar {
             background: linear-gradient(to right, #06163f, #15436b);
+            border-top: 2px solid #ffffff;   /* Viền trên */
+            border-bottom: 2px solid #ffffff; /* Viền dưới */
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
         }
         .navbar .nav-link,
         .navbar-brand {
@@ -84,7 +88,7 @@
             left: 0;
             height: 2px;
             width: 100%;
-            background-color: #810c0c; /* màu đen cho thanh gạch */
+            background-color:rgb(255, 255, 255); /* màu đen cho thanh gạch */
             transition: 0.3s;
         }
 

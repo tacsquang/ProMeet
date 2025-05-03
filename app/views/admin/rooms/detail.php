@@ -601,98 +601,98 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const descEditButton = document.getElementById('descEditButton');
-    const descCancelButton = document.getElementById('descCancel');
-    if (!descEditButton || !descCancelButton) {
-        console.error('descEditButton not found');
-        return;
-    }
-
-    console.log('descEditButton found');
-    const roomId = "<?= addslashes($room['id']) ?>";
-    console.log('roomId:', roomId); // Ghi log roomId
-
-    descEditButton.addEventListener('click', function(event) {
-        console.log('descEditButton clicked');
-
-        // Ẩn phần xem, hiện phần textarea
-        document.getElementById('descriptionView').style.display = 'none';
-        document.getElementById('descriptionEditor').style.display = 'block';
-
-        // Chuyển nút
-        document.getElementById('descButtonView').classList.add('d-none');
-        document.getElementById('descButtonEdit').classList.remove('d-none');
-
-        // Xóa nếu trước đó có TinyMCE gắn
-        if (tinymce.get('tinyDescription')) {
-            tinymce.get('tinyDescription').remove();
+    document.addEventListener('DOMContentLoaded', function () {
+        const descEditButton = document.getElementById('descEditButton');
+        const descCancelButton = document.getElementById('descCancel');
+        if (!descEditButton || !descCancelButton) {
+            console.error('descEditButton not found');
+            return;
         }
 
-        // Chờ một chút cho DOM render xong rồi mới init TinyMCE
-        setTimeout(() => {
-            tinymce.init({
-                selector: '#tinyDescription',
-                height: 750,
-                plugins: 'link lists image preview code textcolor',
-                toolbar: 'undo redo | styleselect | bold italic forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | preview code',
-                branding: false,
-                image_title: true,
-                automatic_uploads: false, // Tắt automatic uploads
-                file_picker_types: 'image',
-                document_base_url: window.location.origin,
-                file_picker_callback: function(cb, value, meta) {
-                    const input = document.createElement('input');
-                    input.setAttribute('type', 'file');
-                    input.setAttribute('accept', 'image/*');
-                    input.onchange = function() {
-                        const file = this.files[0];
-                        const formData = new FormData();
-                        formData.append('file', file); // Đính kèm file để upload
-                        formData.append('room_id', roomId); 
+        console.log('descEditButton found');
+        const roomId = "<?= addslashes($room['id']) ?>";
+        console.log('roomId:', roomId); // Ghi log roomId
 
-                        // Gửi file lên server của bạn (ví dụ endpoint '/upload-room-image')
-                        fetch('<?= BASE_URL ?>/room/uploadRoomImageTiny', {
-                            method: 'POST',
-                            body: formData
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.url) { // Server trả lại URL của ảnh
-                                cb(data.url, { title: file.name });
-                            } else {
-                                alert('Tải ảnh lên thất bại!');
-                            }
-                        })
-                        .catch(err => {
-                            alert('Lỗi khi tải ảnh lên');
-                            console.error(err);
-                        });
-                    };
-                    input.click();
-                },
-            }).then(() => {
-                console.log('TinyMCE initialized');
-            }).catch(err => {
-                console.error('TinyMCE init error:', err);
-            });
-        }, 0);
+        descEditButton.addEventListener('click', function(event) {
+            console.log('descEditButton clicked');
+
+            // Ẩn phần xem, hiện phần textarea
+            document.getElementById('descriptionView').style.display = 'none';
+            document.getElementById('descriptionEditor').style.display = 'block';
+
+            // Chuyển nút
+            document.getElementById('descButtonView').classList.add('d-none');
+            document.getElementById('descButtonEdit').classList.remove('d-none');
+
+            // Xóa nếu trước đó có TinyMCE gắn
+            if (tinymce.get('tinyDescription')) {
+                tinymce.get('tinyDescription').remove();
+            }
+
+            // Chờ một chút cho DOM render xong rồi mới init TinyMCE
+            setTimeout(() => {
+                tinymce.init({
+                    selector: '#tinyDescription',
+                    height: 750,
+                    plugins: 'link lists image preview code textcolor',
+                    toolbar: 'undo redo | styleselect | bold italic forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | preview code',
+                    branding: false,
+                    image_title: true,
+                    automatic_uploads: false, // Tắt automatic uploads
+                    file_picker_types: 'image',
+                    document_base_url: window.location.origin,
+                    file_picker_callback: function(cb, value, meta) {
+                        const input = document.createElement('input');
+                        input.setAttribute('type', 'file');
+                        input.setAttribute('accept', 'image/*');
+                        input.onchange = function() {
+                            const file = this.files[0];
+                            const formData = new FormData();
+                            formData.append('file', file); // Đính kèm file để upload
+                            formData.append('room_id', roomId); 
+
+                            // Gửi file lên server của bạn (ví dụ endpoint '/upload-room-image')
+                            fetch('<?= BASE_URL ?>/room/uploadRoomImageTiny', {
+                                method: 'POST',
+                                body: formData
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.url) { // Server trả lại URL của ảnh
+                                    cb(data.url, { title: file.name });
+                                } else {
+                                    alert('Tải ảnh lên thất bại!');
+                                }
+                            })
+                            .catch(err => {
+                                alert('Lỗi khi tải ảnh lên');
+                                console.error(err);
+                            });
+                        };
+                        input.click();
+                    },
+                }).then(() => {
+                    console.log('TinyMCE initialized');
+                }).catch(err => {
+                    console.error('TinyMCE init error:', err);
+                });
+            }, 0);
+        });
+
+        // Xử lý nút Cancel
+        descCancelButton.addEventListener('click', function() {
+            console.log('descCancel clicked');
+
+            document.getElementById('descriptionView').style.display = 'block';
+            document.getElementById('descriptionEditor').style.display = 'none';
+            document.getElementById('descButtonView').classList.remove('d-none');
+            document.getElementById('descButtonEdit').classList.add('d-none');
+
+            if (tinymce.get('tinyDescription')) {
+                tinymce.get('tinyDescription').remove();
+            }
+        });
+
+
     });
-
-    // Xử lý nút Cancel
-    descCancelButton.addEventListener('click', function() {
-        console.log('descCancel clicked');
-
-        document.getElementById('descriptionView').style.display = 'block';
-        document.getElementById('descriptionEditor').style.display = 'none';
-        document.getElementById('descButtonView').classList.remove('d-none');
-        document.getElementById('descButtonEdit').classList.add('d-none');
-
-        if (tinymce.get('tinyDescription')) {
-            tinymce.get('tinyDescription').remove();
-        }
-    });
-
-
-});
 </script>

@@ -1,47 +1,63 @@
 
-  <style>
-      .text-truncate-multiline {
-        display: -webkit-box;
-        display: box; /* Fallback */
-        -webkit-line-clamp: 4;
-        line-clamp: 4; /* ✨ Chuẩn hóa - nhưng vẫn cần prefix cho support thực tế */
-        -webkit-box-orient: vertical;
-        box-orient: vertical;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
+<style>
+    .text-truncate-multiline {
+      display: -webkit-box;
+      display: box; /* Fallback */
+      -webkit-line-clamp: 4;
+      line-clamp: 4; /* ✨ Chuẩn hóa - nhưng vẫn cần prefix cho support thực tế */
+      -webkit-box-orient: vertical;
+      box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
-      .text-truncate-2 {
-        display: -webkit-box;
-        -webkit-line-clamp: 2; /* Giới hạn 2 dòng */
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-      }
+    .text-truncate-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2; /* Giới hạn 2 dòng */
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
 
-      /* Điều chỉnh cho màn hình nhỏ */
-      @media (max-width: 991px) {
+    /* Điều chỉnh cho màn hình nhỏ */
+    @media (max-width: 991px) {
+    .carousel.slide {
+        max-height: 300px;
+      }
+    }
+    
+    @media (max-width: 576px) {
       .carousel.slide {
-          max-height: 300px;
+        max-height: 200px;
+      }
+    }
+
+    .info-box {
+      transition: all 0.3s ease;
+    }
+    .info-box:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.1);
+    }
+
+    .room-card img {
+        aspect-ratio: 16 / 9;
+        object-fit: cover;
+        border-top-left-radius: 0.5rem;
+        border-top-right-radius: 0.5rem;
         }
-      }
-      
-      @media (max-width: 576px) {
-        .carousel.slide {
-          max-height: 200px;
+
+        .room-card {
+            border-radius: 0.5rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
         }
-      }
 
-      .info-box {
-        transition: all 0.3s ease;
-      }
-      .info-box:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.1);
-      }
+        .room-card:hover {
+            transform: scale(1.03) translateY(-4px);
+            box-shadow: 0 0.75rem 1.5rem rgba(0, 123, 255, 0.15);
+        }
 
-
-
-  </style>
+</style>
 
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.11.0/mapbox-gl.css" rel="stylesheet" />
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.11.0/mapbox-gl.js"></script>
@@ -145,7 +161,7 @@
           const lat = parseFloat(mapDiv.getAttribute('data-lat'));
           const lng = parseFloat(mapDiv.getAttribute('data-lng'));
 
-          mapboxgl.accessToken = 'k.eyJ1IjoidGFjc3F1YW5nIiwiYSI6ImNtOWk2dm4yejBkYTEycHF2end2cThmNnQifQ.aylaQoQC8BjgWhbUEcHy9w';
+          mapboxgl.accessToken = 'k.eyJ1IjoidGFjc3F1YW5nIiwiYSI6ImNtYThiMjdrbTFhbXkyanM2dHl5NWFyMWEifQ.nG4gzYh02w2N_t2VR6UUtw';
           const map = new mapboxgl.Map({
               container: 'map',
               style: 'mapbox://styles/mapbox/streets-v11',
@@ -217,15 +233,48 @@
         </div>
 
         <!-- Tổng tiền -->
-        <div class="rounded-4 p-4 d-flex justify-content-between align-items-center" style="background-color:rgb(239, 245, 252)">
+        <div class="rounded-4 p-4 mb-2 d-flex justify-content-between align-items-center" style="background-color:rgb(239, 245, 252)">
           <span class="fw-semibold">Tổng cộng:</span>
           <span class="fw-bold fs-5 text-success" id="total-amount">0đ</span>
         </div>
 
+        <!-- Lưu ý -->
+        <div class="alert alert-warning small mb-2">
+          <strong><i class="bi bi-exclamation-triangle-fill me-1"></i> Lưu ý:</strong>
+          <ul class="mb-0 ps-3">
+            <li><strong>Thời gian đặt</strong> chia theo khung <strong>30 phút</strong>.</li>
+            <li>Có <strong>30 phút dọn phòng</strong> giữa các lượt đặt.</li>
+            <li>Bạn chỉ có <strong>10 phút</strong> để hoàn tất <strong>thanh toán</strong> sau khi đặt.</li>
+            <li>Các <strong>khung giờ đã đặt</strong> sẽ bị <strong>ẩn hoặc vô hiệu hóa</strong>.</li>
+          </ul>
+        </div>
+
+        <!-- Chính sách hủy -->
+        <div class="alert alert-info small">
+          <strong><i class="bi bi-info-circle-fill me-1"></i> Chính sách hủy & hoàn tiền:</strong><br>
+          – Hoàn tiền <strong>100%</strong> nếu hủy <strong>trước 2 giờ</strong> so với thời gian bắt đầu.<br>
+          – Hoàn tiền <strong>50%</strong> nếu hủy trong vòng <strong>30 phút đến 2 giờ</strong> trước thời gian bắt đầu.<br>
+          – <strong>Không hoàn tiền</strong> nếu hủy sau thời điểm trên.<br>
+          – Thời gian bắt đầu tính theo <strong>block đầu tiên</strong> bạn đã đặt.<br>
+          – <strong>Hoàn tiền sẽ được xử lý trong vòng 24 giờ</strong> sau khi hủy thành công.<br>
+        </div>
+
+        <!-- Checkbox xác nhận đã đọc chính sách -->
+        <!-- Checkbox xác nhận -->
+        <div class="form-check mt-3">
+          <input class="form-check-input" type="checkbox" id="agreePolicy">
+          <label class="form-check-label small text-muted" for="agreePolicy">
+            Tôi đã đọc và đồng ý với <strong>chính sách hủy & hoàn tiền</strong>.
+          </label>
+        </div>
+
+
+
         <!-- Nút đặt -->
         <div class="p-4 d-flex justify-content-end align-items-center flex-wrap gap-2">
-          <a href="<?php echo BASE_URL; ?>/rooms/payment/id=1" class="btn btn-success px-4 order-1 order-md-2" id="book-btn">Đặt phòng ngay</a>
+          <a href="#" class="btn btn-success px-4 order-1 order-md-2" id="book-btn" >Đặt phòng ngay</a>
           <div id="booking-error" class="text-danger fw-semibold order-2 order-md-1"></div>
+          <div id="booking-warning" class="text-warning"></div>
           <div id="successBox" class="hidden text-success font-semibold"></div>
         </div>
       </div>
@@ -262,6 +311,16 @@
             </nav>
         </div>
     </div>
+
+    <div class="container my-5">
+        <!-- Đề xuất phòng họp -->
+        <div class="bg-white rounded-4 shadow p-4">
+          <h4 class="fw-bold mb-3"> <i class="bi bi-house-door text-primary me-2"></i>Bạn có thể quan tâm</h4>
+            <div id="suggestedRooms" class="row g-3">
+                <!-- Các phòng sẽ được tải động từ API -->
+            </div>
+        </div>
+    </div>
   
   </div>
   <!-- End Main Content -->
@@ -271,6 +330,11 @@
   <script>
       const BASE_URL = "<?= BASE_URL ?>";
       const price = "<?=$room['price'] ?>";
+      const Location = "<?= $room['address'] ?>";
+      const RoomType = "<?= $room['label'] ?>";
+      const RoomId = "<?= $room['id'] ?>";
+      console.log("RoomId: %s ",RoomId);
+
   </script>
 
   <script>
@@ -280,6 +344,106 @@
 
   <script src="<?= BASE_URL ?>/assets/js/booking.js?v=<?= time() ?>"></script>
   <script src="<?= BASE_URL ?>/assets/js/review.js?v=<?= time() ?>"></script>
+
+
+<script>
+  function loadSuggestedRooms(roomId, roomType, location) {
+      $.ajax({
+          url: BASE_URL + '/rooms/getSmartSuggestedRoomsApi',  // ✅ Đổi API mới
+          type: 'GET',
+          dataType: 'json',
+          data: {
+              roomId: roomId,
+              roomType: roomType,
+              location: location
+          },
+          success: function(response) {
+              if (!response.rooms || response.rooms.length === 0) {
+                  $('#suggestedRooms').html('<div class="col-12 text-center text-warning">Không có phòng gợi ý!</div>');
+                  return;
+              }
+
+              let html = '';
+              response.rooms.forEach(function(room) {
+                  let stars = '';
+                  let reviewText = '';
+
+                  // Kiểm tra nếu phòng không có đánh giá
+                  if (room.review && room.review > 0) {
+                      let fullStars = Math.floor(room.review);
+                      let hasHalfStar = (room.review - fullStars) >= 0.5;
+                      let emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+                      for (let i = 0; i < fullStars; i++) {
+                          stars += '<i class="bi bi-star-fill text-warning me-1"></i>';
+                      }
+                      if (hasHalfStar) {
+                          stars += '<i class="bi bi-star-half text-warning me-1"></i>';
+                      }
+                      for (let i = 0; i < emptyStars; i++) {
+                          stars += '<i class="bi bi-star text-warning me-1"></i>';
+                      }
+                      reviewText = `<small class="text-muted ms-1">(${room.review})</small>`;
+                  } else {
+                      reviewText = '<small class="text-muted ms-1" style="font-style: italic;">Chưa có đánh giá</small>';
+                  }
+
+                  room.image = BASE_URL + room.image;
+
+                  // Định dạng cho các cột (8 cái cho màn hình lớn, 6 cái cho medium)
+                  html += `
+                  <div class="col-12 col-sm-6 col-lg-3 col-xl-3">  <!-- Điều chỉnh kích thước cột tùy theo màn hình -->
+                      <div class="card room-card position-relative">
+                          <span class="badge rounded-pill bg-${room.badgeColor} position-absolute m-2">${room.type}</span>
+                          <img src="${room.image}" class="card-img-top" alt="${room.name}" />
+                          <div class="card-body">
+                              <h5 class="card-title text-truncate" style="max-width: 100%;">${room.name}</h5>
+                              <div class="d-flex align-items-center mb-2">
+                                  ${stars}
+                                  ${reviewText}
+                              </div>
+                              <p class="card-text text-truncate">${room.location}</p>
+                              <p class="card-text fw-semibold d-flex justify-content-between align-items-center">
+                                  <span class="text-primary d-flex align-items-center">
+                                      <i class="bi bi-people-fill me-1"></i> ${room.capacity} người
+                                  </span>
+                                  <span class="text-success d-flex align-items-center">
+                                      <i class="bi bi-cash-coin me-1"></i> ${room.price}đ/giờ
+                                  </span>
+                              </p>
+                              <div class="d-flex align-items-center justify-content-between mt-3">
+                                  <a href="./${room.id}" class="btn btn-primary flex-grow-1 me-2">Đặt ngay</a>
+                              </div>
+                          </div>
+                      </div>
+                  </div>`;
+              });
+
+              $('#suggestedRooms').html(html);
+          },
+          error: function(xhr, status, error) {
+              $('#suggestedRooms').html('<div class="col-12 text-center text-danger">Không thể tải phòng gợi ý, vui lòng thử lại sau!</div>');
+          }
+      });
+  }
+
+
+
+
+  document.addEventListener('DOMContentLoaded', () => {
+      //////console.log('[DOMContentLoaded] Tải đánh giá lần đầu.');
+        const Location = "<?= $room['address'] ?>";
+      loadSuggestedRooms(RoomId, RoomType, Location);
+  });
+
+</script>
+
+
+
+
+
+
+
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
