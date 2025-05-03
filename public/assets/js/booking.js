@@ -31,34 +31,57 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(res => res.json())
             .then(data => {
                 if (data.slots) {
-                    applyUnavailableSlots(data.slots);
+                    applyUnavailableSlots(data.slots, date);  // Truyền cả ngày vào hàm
                 }
             })
             .catch(err => {
                 console.error(`[Booking] Lỗi khi lấy slot đã đặt:`, err);
             });
     }
-
-    function applyUnavailableSlots(slots) {
+    
+    function applyUnavailableSlots(slots, date) {
         const bookedTimes = slots;
+        const currentTime = new Date();  // Lấy thời gian hiện tại
+        const currentHour = currentTime.getHours();
+        const currentMinute = currentTime.getMinutes();
+    
+        // Kiểm tra xem ngày có phải hôm nay không
+        const selectedDate = new Date(date);
+        const isToday = currentTime.toDateString() === selectedDate.toDateString();  // So sánh ngày hiện tại và ngày đã chọn
+    
         timeSlotButtons.forEach(button => {
-            const time = button.dataset.time;
-            if (bookedTimes.includes(time)) {
-                button.classList.add('disabled', 'btn-outline-secondary');
-                button.classList.remove('btn-outline-primary', 'active');
+            const time = button.dataset.time;  // Ví dụ "09:00", "10:30", ...
+            const [slotHour, slotMinute] = time.split(":").map(num => parseInt(num));
+    
+            // Kiểm tra nếu ngày là hôm nay, và slot đã có người đặt hoặc slot đã qua thời gian
+            if (isToday) {
+                const slotTime = new Date();
+                slotTime.setHours(slotHour, slotMinute, 0, 0);  // Tạo đối tượng Date cho slot time
+    
+                if (bookedTimes.includes(time) || slotTime < currentTime) {
+                    // Nếu đã đặt hoặc slot đã qua, disable button
+                    button.classList.add('disabled', 'btn-outline-secondary');
+                    button.classList.remove('btn-outline-primary', 'active');
+                } else {
+                    // Nếu chưa đặt và chưa qua thời gian, enable button
+                    button.classList.remove('disabled', 'btn-outline-secondary');
+                    button.classList.add('btn-outline-primary');
+                }
             } else {
+                // Nếu không phải hôm nay, luôn cho phép chọn slot
                 button.classList.remove('disabled', 'btn-outline-secondary');
                 button.classList.add('btn-outline-primary');
             }
         });
     }
+    
 
     function clearActiveSlots() {
         timeSlotButtons.forEach(btn => btn.classList.remove('active'));
     }
 
     function calculatePrice(slots) {
-        return slots.length * 200000;
+        return slots.length * price/2;
     }
 
     function updateTotalAmount() {
@@ -93,6 +116,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     bookBtn.addEventListener('click', function(event) {
         event.preventDefault();
+        console.log("Total Price: %s", totalAmount.textContent);
+
 
         if (selectedTimeSlots.length === 0) {
             errorBox.textContent = '* Vui lòng chọn ít nhất một khung giờ.';
@@ -109,6 +134,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 room_id: roomId,
                 date: selectedDate,
                 slots: selectedTimeSlots,
+                totalPrice: totalAmount.textContent,
                 csrf_token: csrfToken
             },
             success: function(response) {

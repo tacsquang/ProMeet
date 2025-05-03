@@ -88,7 +88,7 @@
             <h3 class="fw-bold text-dark">
                 <i class="bi bi-calendar-check me-2 text-primary"></i> Thanh toán đặt phòng
             </h3>
-            <div id="countdown" class="badge bg-danger fs-6 px-3 py-2 rounded-pill">20:00</div>
+            <div id="countdown" class="badge bg-danger fs-6 px-3 py-2 rounded-pill">10:00</div>
         </div>
 
         <!-- Stepper -->
@@ -156,6 +156,10 @@
                     <label for="email" class="form-label fw-semibold">Email</label>
                     <input type="email" class="form-control" id="email" placeholder="Nhập email">
                 </div>
+                <div class="mb-3">
+                    <label for="phone" class="form-label fw-semibold">Số điện thoại</label>
+                    <input type="tel" class="form-control" id="phone" placeholder="Nhập số điện thoại">
+                </div>
                 <div class="mt-4 text-center">
                     <button class="btn btn-outline-secondary me-2" onclick="goToStep(1)">
                         <i class="bi bi-arrow-left me-2"></i>Quay lại
@@ -193,109 +197,166 @@
         </div>
     </div>
 
+    <div id="notification" class="alert alert-warning position-fixed top-0 start-50 translate-middle-x mt-3 px-4 py-2 d-none" style="z-index: 1050; max-width: 400px;"></div>
+
+    <div aria-live="polite" aria-atomic="true" class="position-fixed top-0 end-0 p-3" style="z-index: 2000">
+        <div id="notification-toast" class="toast align-items-center text-white bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+            <div class="toast-body" id="notification-message">
+                <!-- Thông báo -->
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+
+
     <!-- End Main Content -->
     
 
-    <script>
-        let timeLeft = 10 * 60;
-        let bookingID = '<?= $roomId ?>';
-        let BASE_URL = '<?= BASE_URL ?>';
-        let isPaymentConfirmed = false;
-        console.log("Booking ID: %s", BASE_URL);
-        const countdownEl = document.getElementById("countdown");
-        const interval = setInterval(() => {
-            const mins = String(Math.floor(timeLeft / 60)).padStart(2, '0');
-            const secs = String(timeLeft % 60).padStart(2, '0');
-            countdownEl.textContent = `${mins}:${secs}`;
-            timeLeft--;
-            if (timeLeft < 0) {
-                clearInterval(interval);
-                countdownEl.textContent = "00:00";
-                alert("Hết thời gian giữ phòng! Vui lòng đặt lại.");
-                window.location.href='./RoomDetail.html'; // ví dụ
-            }
-        }, 1000);
+<script>
 
-        function goToStep(step) {
-            document.querySelectorAll('.step').forEach(s => s.classList.add('d-none'));
-            document.getElementById(`step-${step}`).classList.remove('d-none');
-            for (let i = 1; i <= 3; i++) {
-                const item = document.getElementById(`step-item-${i}`);
-                item.classList.remove('active', 'done');
-                if (i < step) item.classList.add('done');
-                else if (i === step) item.classList.add('active');
-            }
+    function showNotification(message, type = 'primary') {
+        const toastEl = document.getElementById('notification-toast');
+        const toastMessage = document.getElementById('notification-message');
+
+        // Đổi màu theo loại thông báo (Bootstrap)
+        toastEl.className = `toast align-items-center text-white bg-${type} border-0`;
+
+        toastMessage.textContent = message;
+
+        const toast = new bootstrap.Toast(toastEl, {
+            animation: true,
+            autohide: true,
+            delay: 4000 // 4 giây
+        });
+
+        toast.show();
+    }
+
+
+    let timeLeft = 10 * 60;
+    let bookingID = '<?= $roomId ?>';
+    let BASE_URL = '<?= BASE_URL ?>';
+    let room_id = '<?= $room_id ?>';
+    let isPaymentConfirmed = false;
+
+    const countdownEl = document.getElementById("countdown");
+    const interval = setInterval(() => {
+        const mins = String(Math.floor(timeLeft / 60)).padStart(2, '0');
+        const secs = String(timeLeft % 60).padStart(2, '0');
+        countdownEl.textContent = `${mins}:${secs}`;
+        timeLeft--;
+        if (timeLeft < 0) {
+            clearInterval(interval);
+            countdownEl.textContent = "00:00";
+            showNotification("Hết thời gian giữ phòng! Đang chuyển hướng...");
+            setTimeout(() => {
+                window.location.href = BASE_URL + '/rooms/detail/' + room_id;
+            }, 2000);
         }
+    }, 1000);
 
-        function toggleQR() {
-            const method = document.querySelector('input[name="payment"]:checked').value;
-            const qr = document.getElementById("qr-image");
-            const label = document.getElementById("qr-text");
-            if (method === "bank") {
-                qr.src = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=ChuyenKhoanProMeet";
-                label.textContent = "Quét mã QR để chuyển khoản ngân hàng";
-            } else {
-                qr.src = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=MoMoProMeet";
-                label.textContent = "Quét mã QR để thanh toán qua MoMo";
-            }
-        }
-
-        function confirmPayment() {
+    function goToStep(step) {
+        // Kiểm tra trước khi chuyển sang bước 3
+        if (step === 3) {
             const name = document.getElementById("name").value.trim();
             const email = document.getElementById("email").value.trim();
-            const method = document.querySelector('input[name="payment"]:checked').value;
+            const phone = document.getElementById("phone").value.trim();
 
-            if (!name || !email) {
-                alert("Vui lòng nhập đầy đủ thông tin liên hệ.");
-                goToStep(2);
+            if (!name || !email || !phone) {
+                showNotification("Vui lòng nhập đầy đủ thông tin liên hệ", 'warning');
                 return;
             }
-
-            const paymentData = {
-                bookingId: bookingID,
-                name: name,
-                email: email,
-                paymentMethod: method,
-                status: 'paid', // Đặt trạng thái là đã thanh toán
-            };
-
-            // Gửi thông tin thanh toán đến backend
-            fetch(BASE_URL+'/booking/updatePaymentStatus', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(paymentData),
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    isPaymentConfirmed = true;
-                    alert(`Đặt phòng thành công!\nTên: ${name}\nEmail: ${email}\nPhương thức: ${method}`);
-                    window.location.href = "/lich-su-dat"; // Điều hướng đến trang lịch sử đặt phòng
-                } else {
-                    alert("Cập nhật thanh toán không thành công. Vui lòng thử lại.");
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert("Có lỗi xảy ra. Vui lòng thử lại.");
-            });
         }
 
-        window.addEventListener('beforeunload', function (e) {
-            // Nếu không phải reload
-            console.log("Load");
-            if (performance.navigation.type !== 1 && !isPaymentConfirmed) {
-                console.log("Delete");
+        // Hiển thị bước
+        document.querySelectorAll('.step').forEach(s => s.classList.add('d-none'));
+        document.getElementById(`step-${step}`).classList.remove('d-none');
+
+        // Cập nhật tiến trình
+        for (let i = 1; i <= 3; i++) {
+            const item = document.getElementById(`step-item-${i}`);
+            item.classList.remove('active', 'done');
+            if (i < step) item.classList.add('done');
+            else if (i === step) item.classList.add('active');
+        }
+    }
+
+
+    function toggleQR() {
+        const method = document.querySelector('input[name="payment"]:checked').value;
+        const qr = document.getElementById("qr-image");
+        const label = document.getElementById("qr-text");
+        if (method === "bank") {
+            qr.src = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=ChuyenKhoanProMeet";
+            label.textContent = "Quét mã QR để chuyển khoản ngân hàng";
+        } else {
+            qr.src = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=MoMoProMeet";
+            label.textContent = "Quét mã QR để thanh toán qua MoMo";
+        }
+    }
+
+    function confirmPayment() {
+        const name = document.getElementById("name").value.trim();
+        const email = document.getElementById("email").value.trim();
+        const phone = document.getElementById("phone").value.trim();
+        const method = document.querySelector('input[name="payment"]:checked').value;
+
+        if (!name || !email) {
+            showNotification("Đặt phòng thành công!", "success");
+            // showNotification("Vui lòng nhập đầy đủ thông tin liên hệ.", 'danger');
+            goToStep(2);
+            return;
+        }
+
+        const paymentData = {
+            bookingId: bookingID,
+            name: name,
+            email: email,
+            phone: phone,
+            paymentMethod: method,
+            status: 'paid',
+        };
+
+        fetch(BASE_URL + '/booking/updatePaymentStatus', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(paymentData),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                isPaymentConfirmed = true;
+                showNotification(`Đặt phòng thành công!`, 'success');
+                setTimeout(() => {
+                    window.location.href = BASE_URL + "/booking";
+                }, 2000);
+            } else {
+                showNotification("Cập nhật thanh toán không thành công. Vui lòng thử lại.", 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification("Có lỗi xảy ra. Vui lòng thử lại.", 'danger');
+        });
+    }
+
+    window.onbeforeunload = function(e) {
+        if (!isPaymentConfirmed) {
+            if (performance.navigation.type !== 1) {
                 navigator.sendBeacon(BASE_URL + '/rooms/deletePayment', JSON.stringify({
                     booking_id: bookingID
                 }));
-
+                e.preventDefault();
+                e.returnValue = '';  
             }
-        });
+        }
+    };
 
-
-    </script>
+</script>
       
 

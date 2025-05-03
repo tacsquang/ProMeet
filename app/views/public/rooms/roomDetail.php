@@ -1,6 +1,6 @@
 
   <style>
-
+    
 
       .text-truncate-multiline {
         display: -webkit-box;
@@ -272,6 +272,7 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
       const BASE_URL = "<?= BASE_URL ?>";
+      const price = "<?=$room['price'] ?>";
   </script>
 
   <script>

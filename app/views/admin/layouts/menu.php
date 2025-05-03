@@ -8,7 +8,7 @@
                 </a>
             </li>
     
-            <li class="sidebar-title">Products & Orders</li>
+            <li class="sidebar-title">Rooms & Bookings</li>
             <li class="sidebar-item has-sub <?php echo ($currentPage === 'Rooms' ? 'active' : ''); ?>">
                 <a href="#" class='sidebar-link'>
                     <i class="bi bi-box-seam"></i>
@@ -85,14 +85,14 @@
             </li>
     
             <li class="sidebar-title ">Account</li>
-            <li class="sidebar-item <?php echo ($currentPage === 'Comments' ? 'active' : ''); ?>">
-                <a href="#" class='sidebar-link'>
+            <li class="sidebar-item <?php echo ($currentPage === 'Profile' ? 'active' : ''); ?>">
+                <a href="<?php echo BASE_URL; ?>/account" class='sidebar-link'>
                     <i class="bi bi-person-circle"></i>
                     <span>Profile</span>
                 </a>
             </li>
-            <li class="sidebar-item <?php echo ($currentPage === 'Comments' ? 'active' : ''); ?>">
-                <a href="#" class='sidebar-link'>
+            <li class="sidebar-item <?php echo ($currentPage === 'Security' ? 'active' : ''); ?>">
+                <a href="<?php echo BASE_URL; ?>/account/security" class='sidebar-link'>
                     <i class="bi bi-shield-lock"></i>
                     <span>Security</span>
                 </a>

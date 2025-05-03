@@ -53,9 +53,8 @@ class RoomsController
         $bookingModel = new BookingModel();
         $booking = $bookingModel->findById($id);
 
-        if ($booking->status !== 'pending') {  // Sử dụng dấu '->' thay vì '[]'
-            // Điều hướng người dùng ra khỏi trang thanh toán
-            header("Location: /booking-success.php"); // Hoặc trang khác bạn muốn
+        if ($booking->status !== 'pending') {  
+            header("Location: " . BASE_URL . "/home");
             exit;
         }
 
@@ -65,6 +64,7 @@ class RoomsController
             'currentPage' => 'rooms',
             'roomId' => $id,
             'isLoggedIn' => isset($_SESSION['user']),
+            'room_id' => $booking->room_id,
         ]);
     }
 

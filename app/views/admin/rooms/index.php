@@ -12,7 +12,7 @@
             <div class="row">
                 <div class="col-12 col-md-6 order-md-1 order-last">
                     <h3>Quản lý phòng</h3>
-                    <p class="text-subtitle text-muted">A sortable, searchable, paginated table without dependencies thanks to simple-datatables.</p>
+                    <p class="text-subtitle text-muted">Theo dõi, chỉnh sửa và quản lý danh sách phòng họp trong hệ thống.</p>
                 </div>
                 <div class="col-12 col-md-6 order-md-2 order-first">
                     <nav aria-label="breadcrumb" class="breadcrumb-header float-start float-lg-end">
@@ -27,7 +27,10 @@
 <section class="section">
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="card-title mb-0">Danh sách phòng</h5>
+            <h5 class="card-title mb-0 text-primary d-flex align-items-baseline gap-2">
+                <i class="bi bi-door-open fs-5"></i>
+                <span class="fw-semibold">Danh sách phòng</span>
+            </h5>
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createRoomModal">
                 <i class="bi bi-plus-lg"></i> Thêm phòng mới
             </button>

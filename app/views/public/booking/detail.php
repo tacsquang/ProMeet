@@ -1,39 +1,40 @@
 <?php
 // Giả sử có sẵn dữ liệu đặt phòng
-$roomName = "Phòng họp A1";
-$status = "waiting";
-$timeSlots = [
-    "10:00 – 10:30, 30/04/2025",
-    "10:30 – 11:00, 30/04/2025"
-];
-$userName = "Nguyễn Văn A";
-$userEmail = "anguyen@example.com";
-$totalPrice = 200000;
-$paymentMethod = "Ví Momo";
-$timeline = [
-    ["time" => "30/04/2025 – 09:20", "event" => "Người dùng yêu cầu thay đổi thời gian"],
-    ["time" => "30/04/2025 – 09:25", "event" => "Yêu cầu được chấp thuận bởi Admin"],
-];
-$canceled = [
-  "cancelTime" => "09:45 – 30/04/2025",
-  "cancelBy" => "Nguyễn Văn A",
-  "cancelReason" => "Không còn nhu cầu sử dụng",
-];
+// $roomName = "Phòng họp A1";
+// $booking_code = "PR202505010002";
+// $status = "waiting";
+// $timeSlots = [
+//     "10:00 – 10:30, 30/04/2025",
+//     "10:30 – 11:00, 30/04/2025"
+// ];
+// $userName = "Nguyễn Văn A";
+// $userEmail = "anguyen@example.com";
+// $totalPrice = 200000;
+// $paymentMethod = "Ví Momo";
+// $timeline = [
+//     ["time" => "30/04/2025 – 09:20", "event" => "Người dùng yêu cầu thay đổi thời gian"],
+//     ["time" => "30/04/2025 – 09:25", "event" => "Yêu cầu được chấp thuận bởi Admin"],
+// ];
+// $canceled = [
+//   "cancelTime" => "09:45 – 30/04/2025",
+//   "cancelBy" => "Nguyễn Văn A",
+//   "cancelReason" => "Không còn nhu cầu sử dụng",
+// ];
 
-$completedTimes = [
-  "bookedAt" => "09:10 – 30/04/2025",
-  "paidAt" => "09:12 – 30/04/2025",
-  "confirmedAt" => "09:15 – 30/04/2025",
-  "completedAt" => "11:00 – 30/04/2025",
-];
+// $completedTimes = [
+//   "bookedAt" => "09:10 – 30/04/2025",
+//   "paidAt" => "09:12 – 30/04/2025",
+//   "confirmedAt" => "09:15 – 30/04/2025",
+//   "completedAt" => "11:00 – 30/04/2025",
+// ];
 
-$userReview = [
-  'rating' => 4,
-  'comment' => 'Phòng sạch sẽ, đầy đủ thiết bị. Tuy nhiên hơi ồn.',
-  'created_at' => '2025-04-30 11:15:00'
-];
+// $userReview = [
+//   'rating' => 4,
+//   'comment' => 'Phòng sạch sẽ, đầy đủ thiết bị. Tuy nhiên hơi ồn.',
+//   'created_at' => '2025-04-30 11:15:00'
+// ];
 
-$cancelable = false;
+// $cancelable = false;
 
 ?>
 <style>
@@ -59,13 +60,7 @@ $cancelable = false;
       margin-bottom: 1rem;
       color: #0d6efd;
     }
-    .card-envelope {
-      border: 2px solid #0d6efd;
-      border-radius: 1rem;
-      background-color: #fff;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
-      padding: 20px;
-    }
+
     .progress-bar-step {
       height: 8px;
       border-radius: 5px;
@@ -98,7 +93,7 @@ $cancelable = false;
 
     .card-envelope {
   padding: 20px;
-  background-color: #fff;
+  background-color:rgb(248, 237, 203);
   border-radius: 1rem;
   border-width: 4px;
   border-style: solid;
@@ -215,7 +210,7 @@ $cancelable = false;
 
     <div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
-        <form method="post" action="/cancel-booking.php" class="modal-content border-0 shadow-lg rounded-4">
+        <form method="post" action="<?= BASE_URL ?>/booking/cancelBooking" class="modal-content border-0 shadow-lg rounded-4">
           <div class="modal-header bg-danger text-white rounded-top-4">
             <h5 class="modal-title fw-bold" id="cancelModalLabel">
               <i class="bi bi-exclamation-triangle me-2"></i> Xác nhận hủy đặt phòng
@@ -231,11 +226,11 @@ $cancelable = false;
 
             <div class="mb-3">
               <label for="cancelReason" class="form-label fw-semibold">Lý do hủy <span class="text-danger">*</span></label>
-              <textarea class="form-control border-danger-subtle rounded-3" id="cancelReason" name="cancel_reason" rows="3"
+              <textarea class="form-control border-danger-subtle rounded-3" id="cancel_reason" name="cancel_reason" rows="3"
                 placeholder="Ví dụ: Hủy để thay đổi thời gian..." required></textarea>
             </div>
 
-            <input type="hidden" name="room_id" value="<?= $room['id'] ?>">
+            <input type="hidden" name="booking_id" value="<?= $bookingId ?>">
           </div>
 
           <div class="modal-footer bg-light rounded-bottom-4 px-4 py-3">
@@ -288,26 +283,43 @@ $cancelable = false;
     <div class="section-title">Thông tin đặt phòng</div>
     <div class="card-envelope">
       <div class="row">
-        <div class="col-md-6 mb-3"><strong>Phòng:</strong> <?= $roomName ?></div>
+        <div class="col-md-6 mb-3"><strong>Mã đặt phòng:</strong> <?= $booking_code ?></div> <!-- Thêm dòng này -->
+        <div class="col-md-6 mb-3">
+          <strong>Phòng:</strong> 
+          <a href="<?= BASE_URL ?>/rooms/detail/<?= $roomId ?>" class="text-decoration-none fw-semibold text-primary">
+            <?= $roomName ?>
+          </a>
+        </div>
         <div class="col-md-6 mb-3"><strong>Trạng thái:</strong> 
-          <span id="status-badge" class="badge"><?= $status ?></span>
+          <span id="status-badge" class="badge">...</span>
         </div>
         <div class="col-md-6 mb-3"><strong>Thời gian:</strong>
           <ul class="mb-0 ps-3">
             <?php foreach ($timeSlots as $slot): ?>
-              <li><?= $slot ?></li>
+              <li><?= $slot['booking_date'] ?> - <?= $slot['time_slot'] ?></li>
             <?php endforeach; ?>
           </ul>
         </div>
+
         <div class="col-md-6 mb-3"><strong>Người đặt:</strong> <?= $userName ?></div>
         <div class="col-md-6 mb-3"><strong>Email:</strong> <?= $userEmail ?></div>
         <div class="col-md-6 mb-3"><strong>Tổng tiền:</strong> 
           <span class="text-success fw-bold"><?= number_format($totalPrice, 0, ',', '.') ?>đ</span>
         </div>
-        <div class="col-md-6 mb-3"><strong>Phương thức thanh toán:</strong> <?= $paymentMethod ?></div>
+        <div class="col-md-6 mb-3">
+            <strong>Phương thức thanh toán:</strong> 
+            <?php 
+                if ($paymentMethod === 'bank') {
+                    echo 'Ngân hàng';
+                } else {
+                    echo $paymentMethod;
+                }
+            ?>
+        </div>
       </div>
     </div>
   </div>
+
 
   <?php if ($status === 'completed'): ?>
     <div class="mb-5">
@@ -317,21 +329,21 @@ $cancelable = false;
         <!-- Hiển thị đánh giá đã gửi -->
         <div class="d-flex align-items-center mb-2">
           <?php for ($i = 1; $i <= 5; $i++): ?>
-            <?php if ($i <= $userReview['rating']): ?>
+            <?php if ($i <= $userReview->rating): ?>
               <i class="bi bi-star-fill text-warning fs-4"></i>
             <?php else: ?>
               <i class="bi bi-star text-warning fs-4"></i>
             <?php endif; ?>
           <?php endfor; ?>
         </div>
-        <div class="fst-italic"><?= htmlspecialchars($userReview['comment']) ?></div>
+        <div class="fst-italic"><?= htmlspecialchars($userReview->comment) ?></div>
         <div class="text-muted small mt-1">
-          Đánh giá lúc <?= date('H:i – d/m/Y', strtotime($userReview['created_at'])) ?>
+          Đánh giá lúc <?= date('H:i – d/m/Y', strtotime($userReview->created_at)) ?>
         </div>
 
       <?php else: ?>
         <!-- Form đánh giá nếu chưa đánh giá -->
-        <form method="post" action="/submit-review.php" id="reviewForm">
+        <form method="post" action="<?= BASE_URL ?>/review/submit_review" id="reviewForm">
           <div class="mb-3">
             <label class="form-label d-block">Chọn số sao:</label>
             <div class="rating-stars fs-3 text-warning" id="starContainer">
@@ -347,7 +359,8 @@ $cancelable = false;
             <textarea name="comment" class="form-control" rows="3" placeholder="Bạn thấy phòng như thế nào?" required></textarea>
           </div>
 
-          <input type="hidden" name="room_id" value="<?= $room['id'] ?>">
+          <input type="hidden" name="room_id" value="<?= $roomId?>">
+          <input type="hidden" name="booking_id" value="<?= $bookingId ?>">
           <button type="submit" class="btn btn-primary">Gửi đánh giá</button>
         </form>
       <?php endif; ?>
@@ -366,6 +379,61 @@ $cancelable = false;
   </div>
 
 </div>
+
+<script>
+  document.getElementById('reviewForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const form = e.target;
+    const formData = new FormData(form);
+
+    fetch(form.action, {
+      method: 'POST',
+      body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        alert("Đánh giá đã được gửi thành công!");
+        location.reload(); // hoặc bạn có thể ẩn form/hiện trạng thái đã gửi
+      } else {
+        alert(data.error || "Đã có lỗi xảy ra khi gửi đánh giá.");
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Có lỗi xảy ra. Vui lòng thử lại.");
+    });
+  });
+
+</script>
+
+<script>
+  document.getElementById('cancelForm').addEventListener('submit', function (e) {
+    e.preventDefault(); // Ngăn gửi form theo cách mặc định
+
+    const form = e.target;
+    const formData = new FormData(form);
+
+    fetch(form.action, {
+      method: 'POST',
+      body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        location.reload(); // Load lại trang nếu huỷ thành công
+      } else {
+        alert(data.error || "Đã có lỗi xảy ra!");
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Có lỗi xảy ra. Vui lòng thử lại.");
+    });
+  });
+</script>
+
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     const stars = document.querySelectorAll('#starContainer i');
@@ -390,11 +458,14 @@ $cancelable = false;
   });
 </script>
 
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const currentStatus = <?= json_encode($status) ?>; // ← Chỉnh status ở đây
-      console.log("Currrent Status: %s", currentStatus)
 
+
+
+<script>
+    let currentStatus = '<?= $status ?>';
+    console.log("Currrent Status: %s", currentStatus);
+
+    document.addEventListener('DOMContentLoaded', () => {
       const progressBar = document.getElementById('progress-bar');
       const steps = document.getElementById('progress-steps').children;
       const timings = document.getElementById('steps-timings').children;
@@ -418,9 +489,9 @@ $cancelable = false;
 
             // Hiển thị nội dung hủy
           const cancelAlert = document.getElementById('cancelAlert');
-          document.getElementById('cancelTime').textContent = '<?= $canceled['cancelTime'] ?>';
-          document.getElementById('cancelBy').textContent = '<?= $canceled['cancelBy'] ?>';
-          document.getElementById('cancelReason').textContent = '<?= $canceled['cancelReason'] ?>';
+          document.getElementById('cancelTime').textContent = '<?= $canceled['cancelTime'] ?? "..." ?>';
+          document.getElementById('cancelBy').textContent = '<?= $canceled['cancelBy'] ?? "..." ?>';
+          document.getElementById('cancelReason').textContent = '<?= $canceled['cancelReason'] ?? "..." ?>';
           cancelAlert.classList.remove('d-none');
           break;
 
@@ -429,10 +500,10 @@ $cancelable = false;
           for (let step of steps) {
             step.classList.add('step-complete');
           }
-          timings[0].innerHTML = '<i class="bi bi-pencil-square me-1 text-primary"></i>Đặt phòng lúc '+ '<?= $completedTimes['bookedAt'] ?>';
-          timings[1].innerHTML = '<i class="bi bi-wallet2 me-1 text-success"></i>Đã thanh toán lúc ' + '<?= $completedTimes['paidAt'] ?>';
-          timings[2].innerHTML = '<i class="bi bi-check-circle-fill me-1 text-info"></i>Đã xác nhận lúc ' + '<?= $completedTimes['confirmedAt'] ?>';
-          timings[3].innerHTML = '<i class="bi bi-flag-fill me-1 text-secondary"></i>Đã hoàn thành lúc ' + '<?= $completedTimes['completedAt'] ?>';
+          timings[0].innerHTML = '<i class="bi bi-pencil-square me-1 text-primary"></i>Đặt phòng lúc '+ '<?= $completedTimes['bookedAt'] ?? "..." ?>';
+          timings[1].innerHTML = '<i class="bi bi-wallet2 me-1 text-success"></i>Đã thanh toán lúc ' + '<?= $completedTimes['paidAt'] ?? "..." ?>';
+          timings[2].innerHTML = '<i class="bi bi-check-circle-fill me-1 text-info"></i>Đã xác nhận lúc <?= $completedTimes["confirmedAt"] ?? "..." ?>';
+          timings[3].innerHTML = '<i class="bi bi-flag-fill me-1 text-secondary"></i>Đã hoàn thành lúc ' + '<?= $completedTimes['completedAt'] ?? "..." ?>';
           statusBadge.textContent = 'Đã hoàn thành';
           statusBadge.className = 'badge bg-success';
 
@@ -444,9 +515,9 @@ $cancelable = false;
           steps[1].classList.add('step-complete');
           steps[2].classList.add('step-ongoing');
           steps[3].classList.add('step-pending');
-          timings[0].innerHTML = '<i class="bi bi-pencil-square me-1 text-primary"></i>Đặt phòng lúc '+ '<?= $completedTimes['bookedAt'] ?>';
-          timings[1].innerHTML = '<i class="bi bi-wallet2 me-1 text-success"></i>Đã thanh toán lúc ' + '<?= $completedTimes['paidAt'] ?>';
-          timings[2].innerHTML = '<i class="bi bi-check-circle-fill me-1 text-info"></i>Đã xác nhận lúc ' + '<?= $completedTimes['confirmedAt'] ?>';
+          timings[0].innerHTML = '<i class="bi bi-pencil-square me-1 text-primary"></i>Đặt phòng lúc '+ '<?= $completedTimes['bookedAt'] ?? "..." ?>';
+          timings[1].innerHTML = '<i class="bi bi-wallet2 me-1 text-success"></i>Đã thanh toán lúc ' + '<?= $completedTimes['paidAt'] ?? "..." ?>';
+          timings[2].innerHTML = '<i class="bi bi-check-circle-fill me-1 text-info"></i>Đã xác nhận lúc <?= $completedTimes["confirmedAt"] ?? "..." ?>';
 
           statusBadge.textContent = 'Đã xác nhận';
           statusBadge.className = 'badge bg-info';
@@ -460,10 +531,10 @@ $cancelable = false;
           steps[1].classList.add('step-ongoing');
           steps[2].classList.add('step-pending');
           steps[3].classList.add('step-pending');
-          timings[0].innerHTML = '<i class="bi bi-pencil-square me-1 text-primary"></i>Đặt phòng lúc '+ '<?= $completedTimes['bookedAt'] ?>';
-          timings[1].innerHTML = '<i class="bi bi-wallet2 me-1 text-success"></i>Đã thanh toán lúc ' + '<?= $completedTimes['paidAt'] ?>';
           statusBadge.textContent = 'Đã thanh toán';
-          statusBadge.className = 'badge bg-info';
+          statusBadge.className = 'badge bg-warning text-dark';
+          timings[0].innerHTML = '<i class="bi bi-pencil-square me-1 text-primary"></i>Đặt phòng lúc '+ '<?= $completedTimes['bookedAt'] ?? "..." ?>';
+          timings[1].innerHTML = '<i class="bi bi-wallet2 me-1 text-success"></i>Đã thanh toán lúc ' + '<?= $completedTimes['paidAt'] ?? "..." ?>';
           break;
 
         case 'waiting':
@@ -472,7 +543,7 @@ $cancelable = false;
           steps[1].classList.add('step-pending');
           steps[2].classList.add('step-pending');
           steps[3].classList.add('step-pending');
-          timings[0].innerHTML = '<i class="bi bi-pencil-square me-1 text-primary"></i>Đặt phòng lúc '+ '<?= $completedTimes['bookedAt'] ?>';
+          timings[0].innerHTML = '<i class="bi bi-pencil-square me-1 text-primary"></i>Đặt phòng lúc '+ '<?= $completedTimes['bookedAt'] ?? "..." ?>';
           statusBadge.textContent = 'Chờ thanh toán';
           statusBadge.className = 'badge bg-warning text-dark';
 

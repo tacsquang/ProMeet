@@ -84,7 +84,28 @@ class ReviewModel
         return (int) $result->total;  // Trả về tổng số lượng reviews
     }
     
+    public function getByBookingId($bookingId) {
+        $sql = "SELECT * FROM reviews WHERE booking_id = :booking_id LIMIT 1";
+        $params = [':booking_id' => $bookingId];
     
+        try {
+            return $this->db->fetchOne($sql, $params);
+        } catch (Exception $e) {
+            $log = new LogService();
+            $log->logError("Lỗi khi tìm review theo bookingID: $bookingId | " . $e->getMessage());
+            return null;
+        }
+    }
     
-    
+    public function hasReview($bookingId) {
+        $sql = "SELECT COUNT(*) as count FROM reviews WHERE booking_id = ?";
+        $result = $this->db->fetchOne($sql, [$bookingId]);
+        return $result && $result->count > 0;
+    }
+
+    public function createReview($data) {
+        $sql = "INSERT INTO reviews (id, room_id, user_id, booking_id, rating, comment, created_at)
+                VALUES (UUID(), :room_id, :user_id, :booking_id, :rating, :comment, NOW())";
+        return $this->db->execute($sql, $data);
+    }
 }
