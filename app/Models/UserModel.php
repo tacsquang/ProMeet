@@ -13,6 +13,24 @@ class UserModel
         $this->log = new LogService();
     }
 
+    public function create($data) {
+        $sql = "INSERT INTO users (id, username, email, password_hash, role) VALUES (:id, :username, :email, :password_hash, :role)";
+        $params = [
+            'id' => $this->generateUUID(),
+            'username' => $data['username'],
+            'email' => $data['email'],
+            'password_hash' => $data['password_hash'],
+            'role' => $data['role']
+        ];
+
+        if ($this->db->execute($sql, $params)) {
+            $this->log->logInfo("User '{$data['username']}' (Email: {$data['email']}) registered successfully.");
+            return true;
+        }
+
+        return false;
+    }
+
     public function findByEmail($email) {
         $this->log->logInfo("Fetching user by email: $email");
         return $this->db->fetchOne("SELECT * FROM users WHERE email = ?", [$email]);
@@ -121,5 +139,85 @@ class UserModel
         }
     }
     
+
+
+
+
+
+
+    // 1. Đếm tất cả người dùng
+    public function countAllUsers() {
+        $sql = "SELECT COUNT(*) as total FROM users WHERE role = 'user'";
+        $result = $this->db->fetchOne($sql);
+        return $result ? $result->total : 0;
+    }
+
+    // 2. Đếm số người dùng phù hợp với từ khoá tìm kiếm
+    public function countFilteredUsers($search) {
+        $sql = "SELECT COUNT(*) as total FROM users 
+                WHERE role = 'user' AND (
+                    username LIKE :kw OR 
+                    email LIKE :kw OR 
+                    phone LIKE :kw
+                )";
+        $params = [':kw' => '%' . $search . '%'];
+        $result = $this->db->fetchOne($sql, $params);
+        return $result ? $result->total : 0;
+    }
+
+    public function fetchUsersForAdmin($start, $length, $search, $orderColumn, $orderDir) {
+        // 1. Các cột được phép sắp xếp
+        $allowedColumns = [
+            'username', 'email', 'phone', 'birth_date', 'sex', 'is_ban', 'created_at'
+        ];
+    
+        // 2. Kiểm tra và xử lý cột sắp xếp hợp lệ
+        $orderColumn = in_array($orderColumn, $allowedColumns) ? $orderColumn : 'created_at';
+        
+        // 3. Kiểm tra và xử lý hướng sắp xếp
+        $orderDir = strtolower($orderDir) === 'desc' ? 'DESC' : 'ASC';
+    
+        // 4. Chuẩn bị câu lệnh SQL
+        $sql = "SELECT id, username, email, phone, birth_date, sex, avatar_url, is_ban
+                FROM users
+                WHERE role = 'user'";
+    
+        // 5. Thêm điều kiện tìm kiếm nếu có
+        $params = [];
+        if (!empty($search)) {
+            $sql .= " AND (username LIKE :kw OR email LIKE :kw OR phone LIKE :kw OR is_ban LIKE :kw)";
+            $params[':kw'] = '%' . $search . '%';
+        }
+    
+        // 6. Thêm điều kiện sắp xếp và phân trang
+        $sql .= " ORDER BY $orderColumn $orderDir LIMIT :start, :length";
+    
+        // 7. Gán giá trị cho phân trang
+        $params[':start'] = (int)$start;
+        $params[':length'] = (int)$length;
+    
+        // 8. Log truy vấn và tham số
+        $this->log->logInfo("SQL Query: " . $sql); // Log câu truy vấn SQL
+        $this->log->logInfo("Parameters: " . print_r($params, true)); // Log các tham số truy vấn
+    
+        // 9. Thực hiện truy vấn và trả về kết quả
+        $result = $this->db->fetchAll($sql, $params);
+        
+        // 10. Log kết quả
+        $this->log->logInfo("Query Result: " . print_r($result, true)); // Log kết quả trả về từ cơ sở dữ liệu
+    
+        return $result;
+    }
+    
+    private function generateUUID() {
+        return sprintf(
+            '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+            mt_rand(0, 0xffff),
+            mt_rand(0, 0x0fff) | 0x4000,
+            mt_rand(0, 0x3fff) | 0x8000,
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+        );
+    }
     
 }

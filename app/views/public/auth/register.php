@@ -57,8 +57,6 @@
         .form-check-input:active {
             transform: scale(0.9);
         }
-
-
     </style>
 </head>
 <body>
@@ -83,17 +81,18 @@
 
                     <!-- Phần phải -->
                     <div class="col-lg-6 bg-white p-4 d-flex flex-column justify-content-center">
-                        <h3 class="text-center fw-bold mb-4" style="color: #2b4f81;">Đăng nhập</h3>
+                        <h3 class="text-center fw-bold mb-4" style="color: #2b4f81;">Đăng ký</h3>
 
                         <?php if (!empty($error)): ?>
                             <div class="alert alert-danger text-center"><?= htmlspecialchars($error) ?></div>
                         <?php endif; ?>
 
-                        <?php if (!empty($success)): ?>
-                            <div class="alert alert-success text-center"><?= htmlspecialchars($success) ?></div>
-                        <?php endif; ?>
+                        <form action="<?= BASE_URL ?>/auth/register" method="post">
+                            <div class="mb-3">
+                                <label for="username" class="form-label text-muted">Tên người dùng</label>
+                                <input type="text" id="username" name="username" class="form-control" required>
+                            </div>
 
-                        <form action="<?php echo BASE_URL; ?>/auth/login" method="post">
                             <div class="mb-3">
                                 <label for="email" class="form-label text-muted">Email</label>
                                 <input type="email" id="email" name="email" class="form-control" required>
@@ -104,25 +103,16 @@
                                 <input type="password" id="password" name="password" class="form-control" required>
                             </div>
 
-                            <div class="mb-3 form-check form-switch d-flex align-items-center gap-2">
-                                <input type="checkbox" class="form-check-input" id="remember" role="switch" aria-label="Ghi nhớ đăng nhập">
-                                <label class="form-check-label text-muted mb-0" for="remember">Ghi nhớ đăng nhập</label>
+                            <div class="mb-3">
+                                <label for="confirm_password" class="form-label text-muted">Xác nhận mật khẩu</label>
+                                <input type="password" id="confirm_password" name="confirm_password" class="form-control" required>
                             </div>
 
-                            <button type="submit" class="btn btn-primary w-100 fw-semibold" id="login-btn">
-                                <span id="btn-text">Đăng nhập</span>
-                                <span id="loading-spinner" class="spinner-border spinner-border-sm text-light" role="status" aria-hidden="true" style="display: none;"></span>
-                            </button>
-
-                            <div class="text-center my-3 text-muted">hoặc</div>
-
-                            <button type="button" class="btn btn-light border shadow-sm d-flex align-items-center justify-content-center mx-auto gap-2 px-3 py-2 rounded-pill" aria-label="Đăng nhập bằng Google">
-                                <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" width="22">
-                                <span class="fw-semibold text-muted">Google</span>
-                            </button>
+                            <button type="submit" class="btn btn-success w-100 fw-semibold">Đăng ký</button>
 
                             <div class="text-center mt-4">
-                                <span class="text-muted">Chưa có tài khoản?</span> <a href="<?= BASE_URL ?>/auth/register" class="text-decoration-none text-success">Đăng ký ngay</a>
+                                <span class="text-muted">Đã có tài khoản?</span>
+                                <a href="<?= BASE_URL ?>/auth/login" class="text-decoration-none text-primary">Đăng nhập</a>
                             </div>
                         </form>
                     </div>
@@ -133,19 +123,20 @@
     </div>
 </div>
 
-<script>
 
+
+<script>
     document.querySelector('form').addEventListener('submit', function(e) {
         e.preventDefault();
         const btn = this.querySelector('button[type="submit"]');
         btn.disabled = true;
-        btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang đăng nhập...`;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang đăng ký...`;
 
         setTimeout(() => {
             btn.disabled = false;
-            btn.innerHTML = 'Đăng nhập';
+            btn.innerHTML = 'Đăng ký';
             e.target.submit();
-        }, 3000);
+        }, 2000);
 
         
     });

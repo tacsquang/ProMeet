@@ -254,48 +254,64 @@
 </script>
 
 <script>
-$(document).ready(function() {
+$(document).ready(function () {
     $('#table1').DataTable({
         processing: true,
         serverSide: true,
         ajax: {
-            url: '<?= BASE_URL ?>/room/getAll',
+            url: '<?= BASE_URL ?>/userAccess/getAllUsers',
             type: 'GET'
         },
         columns: [
-            { data: 'stt', orderable: false},
-            { data: 'name' },
-            { data: 'category' },
-            { 
-                data: 'price',
-                render: function(data) {
-                    return parseInt(data).toLocaleString() + 'đ';
-                }
-            },
-            { data: 'location_name' },
-            { 
-                data: 'average_rating',
-                render: function(data) {
-                    return data + '/5';
-                }
-            },
-            { 
+            { data: 'stt', orderable: false }, // số thứ tự
+            {
                 data: null,
-                render: function() {
-                    return 'Hoạt động';
+                render: function (data) {
+                    const avatar = data.avatar_url || '/assets/images/avatar-default.png';
+                    return `
+                        <div class="d-flex align-items-center gap-2">
+                            <img src="${BASE_URL + avatar}" alt="avatar" class="rounded-circle" width="40" height="40">
+                            <span>${data.username}</span>
+                        </div>
+                    `;
                 }
             },
-            { 
+            { data: 'email', orderable: false, },
+            { data: 'phone', orderable: false, },
+            {
+                data: 'birth_date',
+                orderable: false,
+                render: function (data) {
+                    return data ? new Date(data).toLocaleDateString('vi-VN') : '';
+                }
+            },
+            {
+                data: 'sex',
+                render: function (data) {
+                    return data === 'male' ? 'Nam' : (data === 'female' ? 'Nữ' : '');
+                }
+            },
+            {
+                data: 'is_ban',
+                render: function (data) {
+                    return data == 1
+                    ? '<span class="badge bg-danger">Bị cấm</span>'
+                    : '<span class="badge bg-success">Hoạt động</span>';
+                }
+            },
+            {
                 data: 'id',
                 orderable: false,
-                render: function(data) {
+                render: function (data, type, row) {
+                    const banText = row.is_ban == 1 ? 'Bỏ chặn' : 'Chặn';
+                    const banIcon = row.is_ban == 1 ? 'bi-person-check' : 'bi-person-x';
                     return `
                         <div class="d-flex gap-2">
-                            <button class="btn btn-primary btn-sm btn-view-room" data-id="${data}">
-                                <i class="bi bi-eye"></i>
+                            <button class="btn btn-warning btn-sm btn-reset-pass" data-id="${data}">
+                                <i class="bi bi-key"></i>
                             </button>
-                            <button class="btn btn-danger btn-sm btn-delete-room" data-id="${data}">
-                                <i class="bi bi-trash"></i>
+                            <button class="btn btn-danger btn-sm btn-toggle-ban" data-id="${data}" data-isban="${row.is_ban}">
+                                <i class="bi ${banIcon}"></i> ${banText}
                             </button>
                         </div>
                     `;
@@ -320,14 +336,124 @@ $(document).ready(function() {
 });
 
 
-$(document).on('click', '.btn-view-room', function() {
-    let id = $(this).data('id');
-    viewRoom(id);
+
+$(document).on('click', '.btn-reset-pass', function () {
+    const userId = $(this).data('id');
+
+    // Bước 1: xác nhận ý định
+    Swal.fire({
+        title: 'Xác nhận đặt lại mật khẩu',
+        
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Tiếp tục',
+        cancelButtonText: 'Hủy'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Bước 2: yêu cầu admin nhập lại mật khẩu của mình
+            Swal.fire({
+                title: 'Đặt lại mật khẩu',
+                icon: 'warning',
+                html:
+                    '<input type="password" id="newPassword" class="swal2-input" placeholder="Mật khẩu mới">' +
+                    '<input type="password" id="adminPassword" class="swal2-input" placeholder="Xác nhận mật khẩu admin">',
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: 'Xác nhận',
+                cancelButtonText: 'Hủy',
+                preConfirm: () => {
+                    const newPassword = document.getElementById('newPassword').value;
+                    const adminPassword = document.getElementById('adminPassword').value;
+
+                    if (!newPassword || !adminPassword) {
+                        Swal.showValidationMessage('Vui lòng nhập đầy đủ thông tin');
+                        return false;
+                    }
+
+                    return { newPassword, adminPassword };
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const { newPassword, adminPassword } = result.value;
+                    fetch('<?= BASE_URL ?>/admin/user/reset_password.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: userId, newPassword, adminPassword })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            showToastSuccess('Đặt lại mật khẩu thành công');
+                        } else {
+                            showToastError(data.message || 'Thao tác thất bại');
+                        }
+                    })
+                    .catch(err => showToastError('Lỗi: ' + err.message));
+                }
+            });
+        }
+    });
 });
 
-$(document).on('click', '.btn-delete-room', function() {
-    let id = $(this).data('id');
-    deleteRoom(id);
+
+// Ban / Unban người dùng với xác nhận bước 1 và nhập mật khẩu admin ở bước 2
+$(document).on('click', '.btn-toggle-ban', function () {
+    const userId = $(this).data('id');
+    const isBan = $(this).data('isban');
+
+    const actionText = isBan == 1 ? 'Bỏ chặn' : 'Chặn';
+    const confirmText = isBan == 1 ? 'Bạn có chắc muốn bỏ chặn?' : 'Bạn có chắc muốn chặn người dùng này?';
+
+    // Bước 1: Xác nhận ý định
+    Swal.fire({
+        title: actionText + ' người dùng',
+        text: confirmText,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Tiếp tục',
+        cancelButtonText: 'Hủy'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Bước 2: Yêu cầu mật khẩu admin
+            Swal.fire({
+                title: 'Xác nhận hành động',
+                html: '<input type="password" id="adminPassword" class="swal2-input" placeholder="Nhập mật khẩu admin để xác nhận">',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Xác nhận',
+                cancelButtonText: 'Hủy',
+                preConfirm: () => {
+                    const adminPassword = document.getElementById('adminPassword').value;
+                    if (!adminPassword) {
+                        Swal.showValidationMessage('Vui lòng nhập mật khẩu');
+                        return false;
+                    }
+                    return adminPassword;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const adminPassword = result.value;
+                    fetch('<?= BASE_URL ?>/admin/user/toggle_ban.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: userId, adminPassword })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            showToastSuccess(data.message || 'Cập nhật trạng thái thành công');
+                            $('#yourTableId').DataTable().ajax.reload(null, false);
+                        } else {
+                            showToastError(data.message || 'Thao tác thất bại');
+                        }
+                    })
+                    .catch(err => showToastError('Lỗi: ' + err.message));
+                }
+            });
+        }
+    });
 });
+
+
 
 </script>

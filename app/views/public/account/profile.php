@@ -87,7 +87,7 @@ $user = [
     'gender' => $sex ?: '',
     'email' => $email ?: '',
     'phone' => $phone ?: '',
-    'avatar' => $avatar_url ?: '/assets/images/placeholder.jpeg'
+    'avatar' => $avatar_url ?: '/assets/images/avatar-default.png'
 ];
 ?>
 <body id="profile">
@@ -256,14 +256,6 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // Nếu có nút toast thử
-    const toastBtn = document.getElementById('toast-success');
-    if (toastBtn) {
-        toastBtn.addEventListener('click', () => {
-            showToastSuccess('Signed in successfully');
-        });
-    }
-
     // Xử lý form cập nhật avatar
     const avatarForm = document.getElementById('avatarForm');
     if (avatarForm) {
@@ -288,6 +280,15 @@ document.addEventListener("DOMContentLoaded", function () {
                         avatarPreview.onload = function() {
                             console.log('Avatar updated successfully.');
                         };
+
+                        const avatarInput = document.getElementById('avatarInput');
+                    
+                        // Reset input file
+                        avatarInput.value = "";
+                    
+                        // Ẩn nút
+                        document.getElementById('updateAvatarBtn').style.display = 'none';
+                        document.getElementById('cancelAvatarBtn').style.display = 'none';
                     }
                 } else {
                     showToastError(data.message || 'Có lỗi xảy ra khi cập nhật ảnh.');

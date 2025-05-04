@@ -68,14 +68,76 @@ class AuthController
                 ]);
             }
         } else { // GET
+            $success = $_SESSION['success_message'] ?? '';
+            unset($_SESSION['success_message']);
+
             $log->logInfo("Login attempt");
             $view = new View();
             $view->setLayout(null);
             $view->render('public/auth/login', [
-                'pageTitle' => 'Đăng nhập | ProMeet'
+                'pageTitle' => 'Đăng nhập | ProMeet',
+                'success' => $success,
             ]);
         }
     }
+
+    public function register() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $username = trim($_POST['username'] ?? '');
+            $email = trim($_POST['email'] ?? '');
+            $password = $_POST['password'] ?? '';
+            $confirm = $_POST['confirm_password'] ?? '';
+    
+            $log = new LogService();
+            $log->logInfo("Register attempt for email: {$email}");
+    
+            // Kiểm tra hợp lệ
+            if (!$username || !$email || !$password || !$confirm) {
+                $error = 'Vui lòng điền đầy đủ thông tin.';
+            } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $error = 'Email không hợp lệ.';
+            } elseif ($password !== $confirm) {
+                $error = 'Mật khẩu xác nhận không khớp.';
+            } else {
+                $userModel = new UserModel();
+    
+                if ($userModel->findByEmail($email)) {
+                    $error = 'Email đã được sử dụng.';
+                } else {
+                    $created = $userModel->create([
+                        'username' => $username,
+                        'email' => $email,
+                        'password_hash' => password_hash($password, PASSWORD_DEFAULT),
+                        'role' => 'user'
+                    ]);
+                    
+                    if ($created) {
+                        $_SESSION['success_message'] = 'Tạo tài khoản thành công. Hãy đăng nhập để khám phá ProMeet.';
+                        $log->logInfo("New user '{$username}' registered successfully.");
+                        header('Location: ' . BASE_URL . '/auth/login');
+                        exit;
+                    } else {
+                        $error = 'Có lỗi xảy ra. Vui lòng thử lại sau.';
+                        $log->logError("Failed to create user '{$username}'.");
+                    }
+                }
+            }
+    
+            $view = new View();
+            $view->setLayout(null);
+            $view->render('public/auth/register', [
+                'pageTitle' => 'Đăng ký | ProMeet',
+                'error' => $error ?? ''
+            ]);
+        } else {
+            $view = new View();
+            $view->setLayout(null);
+            $view->render('public/auth/register', [
+                'pageTitle' => 'Đăng ký | ProMeet'
+            ]);
+        }
+    }
+    
 
     public function logout() {
         session_destroy();
