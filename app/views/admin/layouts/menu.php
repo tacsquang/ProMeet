@@ -71,8 +71,8 @@
             </li>
     
             <li class="sidebar-title">User Access</li>
-            <li class="sidebar-item <?php echo ($currentPage === 'Comments' ? 'active' : ''); ?>">
-                <a href="#" class='sidebar-link'>
+            <li class="sidebar-item <?php echo ($currentPage === 'Customers' ? 'active' : ''); ?>">
+                <a href="<?php echo BASE_URL; ?>/userAccess" class='sidebar-link'>
                     <i class="bi bi-people"></i>
                     <span>Customers</span>
                 </a>

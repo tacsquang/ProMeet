@@ -55,8 +55,8 @@ class ImageModel
 
     // Lấy tất cả ảnh của một phòng
     public function getImagesByRoomId($roomId) {
-        $sql = "SELECT image_url FROM images WHERE room_id = {$roomId} ORDER BY is_primary DESC, id ASC";
-        $images = $this->db->fetchAll($sql);
+        $sql = "SELECT id, image_url FROM images WHERE room_id = ? ORDER BY is_primary DESC, created_at ASC, id ASC;";
+        $images = $this->db->fetchAll($sql, [$roomId]);
         return $images;
     }
 
@@ -95,6 +95,20 @@ class ImageModel
         }
 
         return $deleted;
+    }
+
+    // Set tất cả các ảnh trong phòng thành không phải ảnh chính
+    public function setAllImagesNonPrimary($roomId)
+    {
+        $sql = "UPDATE images SET is_primary = 0 WHERE room_id = ?";
+        return $this->db->execute($sql, [$roomId]);
+    }
+
+    // Đặt ảnh cụ thể là ảnh chính
+    public function setImageAsPrimary($imageId)
+    {
+        $sql = "UPDATE images SET is_primary = 1 WHERE id = ?";
+        return $this->db->execute($sql, [$imageId]);
     }
 
 

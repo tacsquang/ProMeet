@@ -45,6 +45,42 @@ class RoomModel
         }
     }
 
+    public function updateRoom($data)
+    {
+        $sql = "
+            UPDATE rooms
+            SET name = ?, price = ?, capacity = ?, category = ?, location_name = ?, latitude = ?, longitude = ?, updated_at = NOW()
+            WHERE id = ?
+        ";
+
+        $params = [
+            $data['name'],
+            $data['price'],
+            $data['capacity'],
+            $data['category'],
+            $data['location_name'],
+            $data['latitude'],
+            $data['longitude'],
+            $data['id'],
+        ];
+
+        return $this->db->execute($sql, $params);
+    }
+
+    public function updateStatus($roomId, $status)
+    {
+        $sql = "UPDATE rooms SET is_active = ? WHERE id = ?";
+        return $this->db->execute($sql, [$status, $roomId]);
+    }
+
+    public function updateDescription($roomId, $description)
+    {
+        $sql = "UPDATE rooms SET html_description = ? WHERE id = ?";
+        return $this->db->execute($sql, [$description, $roomId]);
+    }
+
+
+
     private function generateUUID()
     {
         return sprintf(
@@ -65,7 +101,7 @@ class RoomModel
     
         $log->logInfo("Preparing room list | Offset: {$offset}, Limit: {$limit}, Filters: " . json_encode($filters, JSON_UNESCAPED_UNICODE));
     
-        $where = "WHERE 1=1";
+        $where = "WHERE is_active = 1";
         $params = [];
     
         // Tìm kiếm từ khóa sử dụng MATCH...AGAINST cho Full-Text Search
@@ -209,7 +245,8 @@ class RoomModel
             'label' => $room->category,
             'label_color' => 'bg-' . $badgeColor,
             'html_description' => $room->html_description,
-            'images' => $imageList
+            'images' => $imageList,
+            'is_active' => $room->is_active
         ];
     }
 

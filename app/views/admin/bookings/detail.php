@@ -178,7 +178,7 @@ $timeline = $timeline;
     <div class="col-lg-6">
       <div class="card">
         <div class="card-header">
-          <h4><i class="bi bi-clock-history me-2 text-primary"></i>Timeline xử lý đơn hàng</h4>
+          <h4><i class="bi bi-clock-history me-2 text-primary"></i>Timeline xử lý yêu cầu đặt phòng</h4>
         </div>
         <div class="card-body">
           <ul class="timeline">

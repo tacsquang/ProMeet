@@ -11,14 +11,14 @@
         <div class="page-title">
             <div class="row">
                 <div class="col-12 col-md-6 order-md-1 order-last">
-                    <h3>Quản lý phòng</h3>
-                    <p class="text-subtitle text-muted">Theo dõi, chỉnh sửa và quản lý danh sách phòng họp trong hệ thống.</p>
+                    <h3>Quản lý người dùng</h3>
+                    <p class="text-subtitle text-muted">Theo dõi và quản lý danh sách người dùng trong hệ thống.</p>
                 </div>
                 <div class="col-12 col-md-6 order-md-2 order-first">
                     <nav aria-label="breadcrumb" class="breadcrumb-header float-start float-lg-end">
                         <ol class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="index.html">Products & Orders</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Rooms</li>
+                            <li class="breadcrumb-item"><a href="index.html">User Access</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Customers</li>
                         </ol>
                     </nav>
                 </div>
@@ -29,22 +29,19 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="card-title mb-0 text-primary d-flex align-items-baseline gap-2">
                 <i class="bi bi-door-open fs-5"></i>
-                <span class="fw-semibold">Danh sách phòng</span>
+                <span class="fw-semibold">Danh sách người dùng</span>
             </h5>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createRoomModal">
-                <i class="bi bi-plus-lg"></i> Thêm phòng mới
-            </button>
         </div>
         <div class="card-body">
             <table class="table table-striped" id="table1" style="width: 100%;">
                 <thead>
                     <tr>
                         <th>STT</th>
-                        <th>Tên phòng</th>
-                        <th>Loại phòng</th>
-                        <th>Giá/giờ</th>
-                        <th>Địa điểm</th>
-                        <th>Trung bình</th>
+                        <th>Họ và tên</th>  <!-- kèm AVATAR -->
+                        <th>Email</th>  
+                        <th>SĐT</th>
+                        <th>Ngày sinh</th>
+                        <th>Giới tính</th>
                         <th>Trạng thái</th>
                         <th>Thao tác</th>
                     </tr>
@@ -58,64 +55,6 @@
 </section>
 </div>
 
-<!-- Modal thêm phòng mới -->
-<div class="modal fade" id="createRoomModal" tabindex="-1" aria-labelledby="createRoomModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <form action="" method="POST" enctype="multipart/form-data" id="addRoomForm">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="createRoomModalLabel">
-                        <i class="bi bi-door-open me-1"></i> Thêm phòng họp mới
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="name" class="form-label fw-semibold">Tên phòng</label>
-                            <input type="text" class="form-control" id="name" name="name" required placeholder="Nhập tên phòng">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="price" class="form-label fw-semibold">Giá (VNĐ / giờ)</label>
-                            <input type="number" class="form-control" id="price" name="price" required step="1000" min="0" placeholder="Ví dụ: 300000">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="capacity" class="form-label fw-semibold">Sức chứa</label>
-                            <input type="number" class="form-control" id="capacity" name="capacity" required min="1" placeholder="Tối đa bao nhiêu người?">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="category" class="form-label fw-semibold">Phân loại</label>
-                            <select class="form-select" id="category" name="category" required>
-                                <option value="">-- Chọn loại phòng --</option>
-                                <option value="Basic">Basic</option>
-                                <option value="Standard">Standard</option>
-                                <option value="Premium">Premium</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="location_name" class="form-label fw-semibold">Địa điểm</label>
-                            <input type="text" class="form-control" id="location_name" name="location_name" required placeholder="Tên địa điểm hiển thị">
-                        </div>
-                        <div class="col-md-3">
-                            <label for="latitude" class="form-label fw-semibold">Vĩ độ (Latitude)</label>
-                            <input type="text" class="form-control" id="latitude" name="latitude" required placeholder="10.12345">
-                        </div>
-                        <div class="col-md-3">
-                            <label for="longitude" class="form-label fw-semibold">Kinh độ (Longitude)</label>
-                            <input type="text" class="form-control" id="longitude" name="longitude" required placeholder="106.12345">
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer border-0 pt-3">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-save me-1"></i> Lưu phòng
-                    </button>
-                </div>
-            </div>
-        </form>
-    </div>
-</div>
 
 <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
   <div class="modal-dialog">

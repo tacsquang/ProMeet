@@ -110,7 +110,9 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">Trạng thái</h5>
                     <div class="form-check form-switch form-switch-lg">
-                        <input class="form-check-input" type="checkbox" id="statusSwitch" checked style="transform: scale(1.8); margin-right: 12px;">
+                        <input class="form-check-input" type="checkbox" id="statusSwitch" 
+                            <?= $room['is_active'] == 1 ? 'checked' : '' ?>  
+                            style="transform: scale(1.8); margin-right: 12px;">
                         <label class="form-check-label fs-5" for="statusSwitch"></label>
                     </div>
                 </div>
@@ -138,7 +140,10 @@
 
 
             <div class="card-body">
-                    <form action="#" method="POST" id="roomForm" class="row g-3">
+                    <form action="<?php echo BASE_URL; ?>/room/update_room_info" method="POST" id="roomForm" class="row g-3">
+
+                        <!-- Hidden field -->
+                        <input type="hidden" name="room_id" value="<?= htmlspecialchars($room['id']) ?>">
 
                         <div class="col-md-6">
                             <label class="form-label">Tên phòng</label>
@@ -200,39 +205,12 @@
 
                 <div class="card-body">
                     <div class="row gallery" id="slideshowContainer">
-                        <?php if (!empty($room['images'])): ?>
-                            <?php foreach ($room['images'] as $index => $image): ?>
-                                <div class="col-6 col-sm-6 col-lg-3 mb-3" data-id="<?= $image['id'] ?>">
-                                    <div class="position-relative border rounded shadow-sm overflow-hidden h-100" style="aspect-ratio:6/4;">
-                                        <img class="view-image-btn w-100 h-100"
-                                            src="<?= BASE_URL . htmlspecialchars($image['url']) ?>"
-                                            data-url="<?= BASE_URL . htmlspecialchars($image['url']) ?>"
-                                            alt="Ảnh slideshow"
-                                            style="object-fit:cover; cursor:pointer;">
-                                        
-                                        <div class="position-absolute top-0 end-0 m-2">
-                                            <button type="button" class="btn btn-sm btn-danger delete-image-btn" data-id="<?= $image['id'] ?>">
-                                                <i class="bi bi-x"></i>
-                                            </button>
-                                        </div>
-
-                                        <div class="position-absolute top-0 start-0 m-2 d-flex gap-2">
-                                            <?php if ($index === 0): ?>
-                                                <i class="bi bi-star-fill text-warning fs-4"></i>
-                                            <?php else: ?>
-                                                <button class="btn btn-sm btn-light set-primary-btn" data-id="<?= $image['id'] ?>">
-                                                    <i class="bi bi-star"></i>
-                                                </button>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <div class="col-12 text-muted">Chưa có ảnh slideshow nào.</div>
-                        <?php endif; ?>
+                        <!-- Các ảnh sẽ được render động từ AJAX -->
                     </div>
                 </div>
+
+
+
             </div>
         </div>
 
@@ -250,198 +228,6 @@
                 </div>
             </div>
         </div>
-
-
-
-<script>
-    const BASE_URL = "<?php echo BASE_URL; ?>";
-
-    document.getElementById('uploadSlideBtn').addEventListener('click', function() {
-        document.getElementById('slideUploadInput').click();
-    });
-
-    document.getElementById('slideUploadInput').addEventListener('change', function(e) {
-        const files = e.target.files;
-        if (files.length === 0) return;
-
-        const roomId = "<?php echo $room['id']; ?>";  // Lấy roomId từ PHP
-        
-
-        const formData = new FormData();
-        formData.append('room_id', roomId);
-        for (let i = 0; i < files.length; i++) {
-            formData.append('images[]', files[i]);
-        }
-
-        fetch(BASE_URL + '/room/uploadSlide', {
-            method: 'POST',
-            body: formData
-        })
-        .then(res => res.json())
-        .then(data => {
-            console.log(data);
-            if (data.success) {
-                alert('Tải ảnh thành công!');
-
-                // Xử lý ảnh mới, thêm tất cả ảnh vào UI
-                data.images.forEach(image => {
-                    const newImage = `
-                        <div class="col-6 col-sm-6 col-lg-3 mb-3" data-id="${image.id}">
-                            <div class="position-relative border rounded shadow-sm overflow-hidden h-100" style="aspect-ratio:6/4;">
-                                <img class="view-image-btn w-100 h-100" 
-                                    src="${BASE_URL + image.url}" 
-                                    data-url="${BASE_URL + image.url}" 
-                                    alt="Ảnh slideshow"
-                                    style="object-fit:cover; cursor:pointer;">
-                                
-                                <div class="position-absolute top-0 end-0 m-2">
-                                    <button type="button" class="btn btn-sm btn-danger delete-image-btn" data-id="${image.id}">
-                                        <i class="bi bi-x"></i>
-                                    </button>
-                                </div>
-
-                                <div class="position-absolute top-0 start-0 m-2 d-flex gap-2">
-                                    <button class="btn btn-sm btn-light set-primary-btn" data-id="${image.id}">
-                                        <i class="bi bi-star"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-
-                    document.getElementById('slideshowContainer').insertAdjacentHTML('beforeend', newImage);
-                });
-            } else {
-                alert('Tải ảnh thất bại.');
-            }
-        });
-    });
-
-
-    // Xoá ảnh
-    const slideshowContainer = document.getElementById('slideshowContainer');
-
-    slideshowContainer.addEventListener('click', function(e) {
-        const deleteBtn = e.target.closest('.delete-image-btn');
-        if (deleteBtn) {
-            const imageId = deleteBtn.dataset.id;
-            if (!confirm('Xác nhận xoá ảnh này?')) return;
-
-            fetch(BASE_URL + '/room/deleteSlide', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ id: imageId })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Đã xoá ảnh.');
-                    deleteBtn.closest('.col-6').remove();
-                } else {
-                    alert(data.message || 'Xoá ảnh thất bại.');
-                }
-            })
-            .catch(err => {
-                console.error('Lỗi khi xoá:', err);
-                alert('Có lỗi khi xoá ảnh.');
-            });
-        }
-    });
-
-
-
-    // Đặt làm ảnh chính
-    document.querySelectorAll('.set-primary-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const imageId = this.dataset.id;
-            fetch('your_set_primary_endpoint.php', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ id: imageId })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Đã đặt làm ảnh chính.');
-                    location.reload();
-                } else {
-                    alert('Đặt làm ảnh chính thất bại.');
-                }
-            });
-        });
-    });
-
-    // Xem ảnh lớn
-    document.getElementById('slideshowContainer').addEventListener('click', function(event) {
-        // Kiểm tra xem sự kiện có phải từ nút "Xem ảnh" không
-        if (event.target.classList.contains('view-image-btn')) {
-            const imageUrl = event.target.dataset.url;  // Lấy URL từ data-url
-            const modalImage = document.getElementById('modalImage');  // Lấy phần tử img trong modal
-            modalImage.src = imageUrl;  // Cập nhật ảnh trong modal
-            new bootstrap.Modal(document.getElementById('imageModal')).show();  // Hiển thị modal
-        }
-    });
-
-
-</script>
-
-
-
-
-        <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title">Our Gallery</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row gallery" data-bs-toggle="modal" data-bs-target="#galleryModal">
-                            <div class="col-6 col-sm-6 col-lg-3 mt-2 mt-md-0 mb-md-0 mb-2">
-                                <a href="#">
-                                    <img class="w-100 active" src="https://images.unsplash.com/photo-1633008808000-ce86bff6c1ed?ixid=MnwxMjA3fDB8MHxlZGl0b3JpYWwtZmVlZHwyN3x8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" data-bs-target="#Gallerycarousel" data-bs-slide-to="0">
-                                </a>
-                            </div>
-                            <div class="col-6 col-sm-6 col-lg-3 mt-2 mt-md-0 mb-md-0 mb-2">
-                                <a href="#">
-                                    <img class="w-100" src="https://images.unsplash.com/photo-1524758631624-e2822e304c36?ixid=MnwxMjA3fDF8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=870&q=80" data-bs-target="#Gallerycarousel" data-bs-slide-to="1">
-                                </a>
-                            </div>
-                            <div class="col-6 col-sm-6 col-lg-3 mt-2 mt-md-0 mb-md-0 mb-2">
-                                <a href="#">
-                                    <img class="w-100" src="https://images.unsplash.com/photo-1632951634308-d7889939c125?ixid=MnwxMjA3fDB8MHxlZGl0b3JpYWwtZmVlZHw0M3x8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" data-bs-target="#Gallerycarousel" data-bs-slide-to="2">
-                                </a>
-                            </div>
-                            <div class="col-6 col-sm-6 col-lg-3 mt-2 mt-md-0 mb-md-0 mb-2">
-                                <a href="#">
-                                    <img class="w-100" src="https://images.unsplash.com/photo-1632949107130-fc0d4f747b26?ixid=MnwxMjA3fDB8MHxlZGl0b3JpYWwtZmVlZHw3OHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" data-bs-target="#Gallerycarousel" data-bs-slide-to="3">
-                                </a>
-                            </div>
-                        </div>
-
-                        <div class="row mt-2 mt-md-4 gallery" data-bs-toggle="modal" data-bs-target="#galleryModal">
-                            <div class="col-6 col-sm-6 col-lg-3 mt-2 mt-md-0 mb-md-0 mb-2">
-                                <a href="#">
-                                    <img class="w-100 active" src="https://images.unsplash.com/photo-1633008808000-ce86bff6c1ed?ixid=MnwxMjA3fDB8MHxlZGl0b3JpYWwtZmVlZHwyN3x8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" data-bs-target="#Gallerycarousel" data-bs-slide-to="0">
-                                </a>
-                            </div>
-                            <div class="col-6 col-sm-6 col-lg-3 mt-2 mt-md-0 mb-md-0 mb-2">
-                                <a href="#">
-                                    <img class="w-100" src="https://images.unsplash.com/photo-1524758631624-e2822e304c36?ixid=MnwxMjA3fDF8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=870&q=80" data-bs-target="#Gallerycarousel" data-bs-slide-to="1">
-                                </a>
-                            </div>
-                            <div class="col-6 col-sm-6 col-lg-3 mt-2 mt-md-0 mb-md-0 mb-2">
-                                <a href="#">
-                                    <img class="w-100" src="https://images.unsplash.com/photo-1632951634308-d7889939c125?ixid=MnwxMjA3fDB8MHxlZGl0b3JpYWwtZmVlZHw0M3x8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" data-bs-target="#Gallerycarousel" data-bs-slide-to="2">
-                                </a>
-                            </div>
-                            <div class="col-6 col-sm-6 col-lg-3 mt-2 mt-md-0 mb-md-0 mb-2">
-                                <a href="#">
-                                    <img class="w-100" src="https://images.unsplash.com/photo-1632949107130-fc0d4f747b26?ixid=MnwxMjA3fDB8MHxlZGl0b3JpYWwtZmVlZHw3OHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" data-bs-target="#Gallerycarousel" data-bs-slide-to="3">
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
         <style>
             #descriptionView {
@@ -485,94 +271,328 @@
             </div>
         </div>
 
-
-
-
-
     </div>
 
-
-
 </section>
-<script src="<?= BASE_URL ?>/assets/tinymce/tinymce.min.js"></script>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="<?= BASE_URL ?>/assets/tinymce/tinymce.min.js"></script>
+<script src="<?= BASE_URL ?>/mazer/assets/extensions/chart.js/chart.umd.js"></script>
+<script src="<?= BASE_URL ?>/assets/js/room-chart.js"></script>
 
 
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const roomForm = document.getElementById('roomForm');
-    const editButton = document.getElementById('editButton');
-    const cancelButton = document.getElementById('cancelEdit');
-    const buttonGroupView = document.getElementById('buttonGroupView');
-    const buttonGroupEdit = document.getElementById('buttonGroupEdit');
+    function showToastSuccess(message) {
+        Swal.fire({
+            icon: 'success',
+            title: message,
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+        });
+    }
 
-    const inputs = document.querySelectorAll('#roomForm input, #roomForm select');
+    // Hàm toast error theo chuẩn Mazer
+    function showToastError(message) {
+        Swal.fire({
+            icon: 'error',
+            title: message,
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+        });
+    }
 
-    // Khi nhấn "Chỉnh sửa"
-    editButton.addEventListener('click', function() {
-        inputs.forEach(input => {
-            if (input.tagName === 'SELECT') {
-                input.disabled = false;
-            } else {
-                input.removeAttribute('readonly');
+    function showToastWarning(message) {
+        Swal.fire({
+            icon: 'warning',
+            title: message,
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+        });
+    }
+</script>
+
+<script>
+    const BASE_URL = "<?php echo BASE_URL; ?>";
+    const room_id = <?= json_encode($room['id']) ?>;
+</script>
+
+<script>
+    $(document).ready(function () {
+        $('#statusSwitch').on('change', function () {
+            const $checkbox = $(this);
+            const newStatus = $checkbox.is(':checked') ? 'active' : 'inactive';
+            const originalChecked = !$checkbox.is(':checked'); // lưu trạng thái trước khi đổi
+
+            $.ajax({
+                url: '<?= BASE_URL ?>/room/update_status',
+                method: 'POST',
+                data: {
+                    id: room_id,
+                    status: newStatus
+                },
+                success: function (response) {
+                    if (!response.success) {
+                        showToastError("Cập nhật thất bại! Trạng thái sẽ được hoàn tác.");
+                        $checkbox.prop('checked', originalChecked);
+                    } else {
+                        const message = newStatus === 'active'
+                            ? "Phòng đã được kích hoạt."
+                            : "Phòng đã được ẩn.";
+                        showToastSuccess(message);
+                    }
+                },
+                error: function () {
+                    showToastError("Lỗi kết nối! Trạng thái sẽ được hoàn tác.");
+                    $checkbox.prop('checked', originalChecked);
+                }
+            });
+        });
+    });
+</script>
+
+
+<script>
+    // Hàm để render ảnh lên phần slideshow
+    function loadAndRenderImages(roomId) {
+        // Hàm gọi AJAX để tải ảnh và render chúng
+        $.ajax({
+            url: '<?= BASE_URL ?>/room/getImages',
+            method: 'GET',
+            data: { roomId: roomId },
+            dataType: 'json',
+            success: function(response) {
+                console.log(response);
+                if (response.success) {
+                    renderImages(response.images); // Gọi hàm renderImages để hiển thị ảnh
+                } else {
+                    showToastError("Không thể tải ảnh.");
+                }
+            },
+            error: function() {
+                showToastError("Lỗi hệ thống. Vui lòng thử lại sau.");
             }
         });
-        buttonGroupView.style.display = 'none';
-        buttonGroupEdit.style.display = 'block';
-    });
+    }
 
-    // Khi nhấn "Hủy"
-    cancelButton.addEventListener('click', function() {
-        inputs.forEach(input => {
-            if (input.tagName === 'SELECT') {
-                input.disabled = true;
-            } else {
-                input.setAttribute('readonly', true);
-            }
+    function renderImages(images) {
+        let html = '';
+        if (images.length > 0) {
+            images.forEach((image, index) => {
+                html += `
+                    <div class="col-6 col-sm-6 col-lg-3 mb-3" data-id="${image.id}">
+                        <div class="position-relative border rounded shadow-sm overflow-hidden h-100" style="aspect-ratio:6/4;">
+                            <img class="view-image-btn w-100 h-100"
+                                src="${BASE_URL + image.image_url}"
+                                data-url="${BASE_URL + image.image_url}"
+                                alt="Ảnh slideshow"
+                                style="object-fit:cover; cursor:pointer;">
+                            
+                            <div class="position-absolute top-0 end-0 m-2">
+                                <button type="button" class="btn btn-sm btn-danger delete-image-btn" data-id="${image.id}">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>
+
+                            <div class="position-absolute top-0 start-0 m-2 d-flex gap-2">
+                                ${index === 0 ? 
+                                    '<i class="bi bi-star-fill text-warning fs-4"></i>' :
+                                    `<button class="btn btn-sm btn-light set-primary-btn" data-id="${image.id}">
+                                        <i class="bi bi-star"></i>
+                                    </button>`}
+                            </div>
+                        </div>
+                    </div>`;
+            });
+        } else {
+            html = '<div class="col-12 text-muted">Chưa có ảnh slideshow nào.</div>';
+        }
+        $('#slideshowContainer').html(html);
+
+         // Gán lại sự kiện "Đặt làm ảnh chính" sau khi render
+        document.querySelectorAll('.set-primary-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const imageId = this.dataset.id;
+                fetch(BASE_URL + '/room/set_image_primary', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ id: imageId })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showToastSuccess("Đã đặt làm ảnh chính.");
+                        loadAndRenderImages(room_id);
+                    } else {
+                        showToastError("Đặt làm ảnh chính thất bại.");
+                    }
+                });
+            });
         });
-        buttonGroupEdit.style.display = 'none';
-        buttonGroupView.style.display = 'block';
+    }
+
+    $(document).ready(function() {
+        // Gọi hàm loadAndRenderImages và truyền roomId vào
+        loadAndRenderImages(<?= json_encode($room['id']) ?>);
     });
-});
 
-    // Gửi form bằng AJAX
-    roomForm.addEventListener('submit', function(e) {
-        e.preventDefault(); // chặn submit gốc
+    // Hàm upload ảnh
+    document.getElementById('uploadSlideBtn').addEventListener('click', function() {
+        document.getElementById('slideUploadInput').click();
+    });
 
-        const formData = new FormData(roomForm);
+    document.getElementById('slideUploadInput').addEventListener('change', function(e) {
+        const files = e.target.files;
+        if (files.length === 0) return;
 
-        fetch(roomForm.action, {
+        const roomId = "<?php echo $room['id']; ?>";  // Lấy roomId từ PHP
+        
+
+        const formData = new FormData();
+        formData.append('room_id', roomId);
+        for (let i = 0; i < files.length; i++) {
+            formData.append('images[]', files[i]);
+        }
+
+        fetch(BASE_URL + '/room/uploadSlide', {
             method: 'POST',
             body: formData
         })
-        .then(response => response.json())  // server trả về JSON
+        .then(res => res.json())
         .then(data => {
+            console.log(data);
             if (data.success) {
-                alert('Cập nhật thành công!');
-
-                // Khóa lại input
-                inputs.forEach(input => {
-                    if (input.tagName === 'SELECT') input.disabled = true;
-                    else input.setAttribute('readonly', true);
-                });
-
-                buttonGroupEdit.style.display = 'none';
-                buttonGroupView.style.display = 'block';
+                showToastSuccess("Tải ảnh thành công!");
+                loadAndRenderImages(roomId);
             } else {
-                alert('Có lỗi: ' + (data.message || 'Không xác định!'));
+                showToastError("Tải ảnh thất bại!");
             }
-        })
-        .catch(err => {
-            console.error(err);
-            alert('Đã xảy ra lỗi khi gửi dữ liệu!');
         });
+    });
+
+    // Xoá ảnh
+    const slideshowContainer = document.getElementById('slideshowContainer');
+
+    slideshowContainer.addEventListener('click', function(e) {
+        const deleteBtn = e.target.closest('.delete-image-btn');
+        if (deleteBtn) {
+            const imageId = deleteBtn.dataset.id;
+            if (!confirm('Xác nhận xoá ảnh này?')) return;
+
+            fetch(BASE_URL + '/room/deleteSlide', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ id: imageId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showToastSuccess("Đã xoá ảnh.");
+                    deleteBtn.closest('.col-6').remove();
+                } else {
+                    showToastError(data.message || "Xoá ảnh thất bại.");
+                }
+            })
+            .catch(err => {
+                console.error('Lỗi khi xoá:', err);
+                showToastError("Có lỗi khi xoá ảnh.");
+            });
+        }
+    });
+
+    // Xem ảnh lớn
+    document.getElementById('slideshowContainer').addEventListener('click', function(event) {
+        if (event.target.classList.contains('view-image-btn')) {
+            const imageUrl = event.target.dataset.url;  
+            const modalImage = document.getElementById('modalImage');  
+            modalImage.src = imageUrl;  
+            new bootstrap.Modal(document.getElementById('imageModal')).show();  
+        }
     });
 
 </script>
 
-<script src="<?= BASE_URL ?>/mazer/assets/extensions/chart.js/chart.umd.js"></script>
-<script src="<?= BASE_URL ?>/assets/js/room-chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const roomForm = document.getElementById('roomForm');
+        const editButton = document.getElementById('editButton');
+        const cancelButton = document.getElementById('cancelEdit');
+        const buttonGroupView = document.getElementById('buttonGroupView');
+        const buttonGroupEdit = document.getElementById('buttonGroupEdit');
+
+        const inputs = document.querySelectorAll('#roomForm input, #roomForm select');
+
+        // Khi nhấn "Chỉnh sửa"
+        editButton.addEventListener('click', function() {
+            inputs.forEach(input => {
+                if (input.tagName === 'SELECT') {
+                    input.disabled = false;
+                } else {
+                    input.removeAttribute('readonly');
+                }
+            });
+            buttonGroupView.style.display = 'none';
+            buttonGroupEdit.style.display = 'block';
+        });
+
+        // Khi nhấn "Hủy"
+        cancelButton.addEventListener('click', function() {
+            inputs.forEach(input => {
+                if (input.tagName === 'SELECT') {
+                    input.disabled = true;
+                } else {
+                    input.setAttribute('readonly', true);
+                }
+            });
+            buttonGroupEdit.style.display = 'none';
+            buttonGroupView.style.display = 'block';
+        });
+
+        // Gửi form bằng AJAX
+        roomForm.addEventListener('submit', function(e) {
+            e.preventDefault(); // chặn submit gốc
+
+            const formData = new FormData(roomForm);
+
+            fetch(roomForm.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())  // server trả về JSON
+            .then(data => {
+                if (data.success) {
+                    showToastSuccess('Cập nhật phòng thành công!');
+
+                    // Khóa lại input
+                    inputs.forEach(input => {
+                        if (input.tagName === 'SELECT') input.disabled = true;
+                        else input.setAttribute('readonly', true);
+                    });
+
+                    buttonGroupEdit.style.display = 'none';
+                    buttonGroupView.style.display = 'block';
+                } else {
+                    showToastError(data.error || 'Lỗi không xác định');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                showToastError('Không thể cập nhật phòng');
+            });
+        });
+
+    });
+
+</script>
 
 <script>
     // Thêm animation Mazer cho thống kê
@@ -585,8 +605,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-
-
     // Thêm số liệu với animation
     function updateStat(id, newValue) {
         const element = document.getElementById(id);
@@ -597,8 +615,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 1000);
     }
 </script>
-
-
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -661,11 +677,11 @@ document.addEventListener('DOMContentLoaded', function () {
                                 if (data.url) { // Server trả lại URL của ảnh
                                     cb(data.url, { title: file.name });
                                 } else {
-                                    alert('Tải ảnh lên thất bại!');
+                                    showToastError("Tải ảnh lên thất bại!");
                                 }
                             })
                             .catch(err => {
-                                alert('Lỗi khi tải ảnh lên');
+                                showToastError("Lỗi khi tải ảnh lên");
                                 console.error(err);
                             });
                         };
@@ -692,6 +708,51 @@ document.addEventListener('DOMContentLoaded', function () {
                 tinymce.get('tinyDescription').remove();
             }
         });
+
+
+        const descSaveButton = document.getElementById('descSave');
+        descSaveButton.addEventListener('click', function () {
+            const content = tinymce.get('tinyDescription').getContent();
+            if (!content.trim()) {
+                showToastWarning("Mô tả không được để trống!");
+                return;
+            }
+
+            fetch('<?= BASE_URL ?>/room/updateDescription', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    room_id: room_id,
+                    description: content
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showToastSuccess("Lưu thành công!")
+                    // Cập nhật lại nội dung mô tả
+                    document.getElementById('descriptionView').innerHTML = content;
+
+                    // Ẩn editor, hiện lại view
+                    document.getElementById('descriptionView').style.display = 'block';
+                    document.getElementById('descriptionEditor').style.display = 'none';
+                    document.getElementById('descButtonView').classList.remove('d-none');
+                    document.getElementById('descButtonEdit').classList.add('d-none');
+
+                    tinymce.get('tinyDescription').remove();
+                } else {
+                    showToastError("Lưu thất bại!");
+                    console.error(data);
+                }
+            })
+            .catch(err => {
+                showToastError("Lỗi khi gửi dữ liệu!");
+                console.error(err);
+            });
+        });
+
 
 
     });

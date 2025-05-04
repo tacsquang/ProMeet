@@ -55,7 +55,6 @@ class RoomController {
             'message' => 'Chào mừng bạn!',
             'currentPage' => 'Rooms',
             'currentSubPage' => 'AddRoom',
-            'roomId' => $id,
             'room' => $room
         ]);
     }
@@ -135,8 +134,9 @@ class RoomController {
     
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $log->logError("[ROOM STORE] Invalid request method: " . $_SERVER['REQUEST_METHOD']);
-            header('Location: /BTL_LTW/ProMeet/public/room/index');
-            exit;
+            http_response_code(405);
+            echo json_encode(['error' => 'Phương thức không hợp lệ']);
+            return;
         }
     
         $uuid = $this->generateUUID();
@@ -157,32 +157,150 @@ class RoomController {
         $log->logInfo("[ROOM STORE] Received POST data: " . json_encode($_POST));
     
         $roomModel = new \App\Models\RoomModel();
-        $log->logInfo("[ROOM STORE] Inserting room data: " . json_encode($roomData));
     
         if (!$roomModel->insertRoom($roomData)) {
             $log->logError("[ROOM STORE] Failed to insert room. Data: " . json_encode($roomData));
-            header('Location: /BTL_LTW/ProMeet/public/room/addRoomPage?error=1');
-            exit;
+            http_response_code(500);
+            echo json_encode(['error' => 'Không thể thêm phòng']);
+            return;
         }
     
-        $log->logInfo("[ROOM STORE] Room inserted successfully. UUID: {$uuid}");
-    
-        // Upload slideshow images
+        // Upload ảnh
         $imagePaths = $this->handleRoomImageUpload($uuid, $_FILES['images'] ?? null, $_POST['primary_index'] ?? '', $log);
     
         if (!empty($imagePaths)) {
-            $log->logInfo("[ROOM STORE] Inserting room images: " . json_encode($imagePaths));
             $roomModel->insertRoomImages($uuid, $imagePaths);
-            $log->logInfo("[ROOM STORE] Images inserted for room: {$uuid}");
-        } else {
-            $log->logInfo("[ROOM STORE] No images to insert.");
         }
     
-        $log->logInfo("=== [ROOM STORE] Room creation process completed successfully ===");
-        header('Location: /BTL_LTW/ProMeet/public/room/detail?success=1');
-        exit;
+        $log->logInfo("=== [ROOM STORE] Room creation completed successfully ===");
+        echo json_encode(['success' => true, 'room_id' => $uuid]);
     }
 
+    public function update_room_info()
+    {
+        $log = new LogService();
+        $log->logInfo("=== [ROOM UPDATE] Start processing room update ===");
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $log->logError("[ROOM UPDATE] Invalid request method: " . $_SERVER['REQUEST_METHOD']);
+            http_response_code(405);
+            echo json_encode(['error' => 'Phương thức không hợp lệ']);
+            return;
+        }
+
+        $roomId = $_POST['room_id'] ?? null;
+
+        if (!$roomId) {
+            $log->logError("[ROOM UPDATE] Missing room_id in POST data.");
+            http_response_code(400);
+            echo json_encode(['error' => 'Thiếu mã phòng cần cập nhật']);
+            return;
+        }
+
+        $roomData = [
+            'id' => $roomId,
+            'name' => $_POST['name'] ?? '',
+            'price' => $_POST['price'] ?? 0,
+            'capacity' => $_POST['capacity'] ?? 1,
+            'category' => $_POST['category'] ?? '',
+            'location_name' => $_POST['location_name'] ?? '',
+            'latitude' => $_POST['latitude'] ?? '',
+            'longitude' => $_POST['longitude'] ?? '',
+        ];
+
+        $log->logInfo("[ROOM UPDATE] Received POST data: " . json_encode($roomData));
+
+        $roomModel = new \App\Models\RoomModel();
+
+        if (!$roomModel->updateRoom($roomData)) {
+            $log->logError("[ROOM UPDATE] Failed to update room. Data: " . json_encode($roomData));
+            http_response_code(500);
+            echo json_encode(['error' => 'Không thể cập nhật phòng']);
+            return;
+        }
+
+        $log->logInfo("=== [ROOM UPDATE] Room update completed successfully ===");
+        echo json_encode(['success' => true, 'room_id' => $roomId]);
+    }
+
+    public function getImages()
+    {
+        $log = new LogService();
+        $log->logInfo("[ROOM GET IMAGES] Start fetching images for the room.");
+    
+        // Lấy roomId từ query string (GET parameter)
+        $roomId = $_GET['roomId'] ?? null;
+
+    
+        if (!$roomId) {
+            $log->logWarning("[ROOM GET IMAGES] Missing or invalid room ID.");
+            http_response_code(400); // Bad request
+            echo json_encode(['success' => false, 'error' => 'Thiếu hoặc sai ID phòng']);
+            return;
+        }
+
+        $log->logInfo(sprintf("[ROOM GET IMAGES] Start fetching images for the room. %s", $roomId));
+
+    
+        // Lấy danh sách ảnh từ cơ sở dữ liệu
+        $imageModel = new ImageModel();
+        $images = $imageModel->getImagesByRoomId($roomId);
+    
+        if ($images === false) {
+            $log->logError("[ROOM GET IMAGES] Failed to fetch images for room ID $roomId.");
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => 'Không thể lấy ảnh']);
+            return;
+        }
+    
+        // Trả về ảnh dưới dạng JSON
+        echo json_encode(['success' => true, 'images' => $images]);
+    }
+    
+    public function set_image_primary() {
+        $log = new LogService();
+        $log->logInfo("[ROOM SET IMAGE PRIMARY] Start setting primary image.");
+    
+        // Lấy ID ảnh từ body request
+        $data = json_decode(file_get_contents('php://input'), true);
+        $imageId = $data['id'] ?? null;
+    
+        // Kiểm tra ID ảnh hợp lệ
+        if (!$imageId) {
+            $log->logWarning("[ROOM SET IMAGE PRIMARY] Missing or invalid image ID.");
+            http_response_code(400); // Bad request
+            echo json_encode(['success' => false, 'error' => 'Thiếu hoặc sai ID ảnh']);
+            return;
+        }
+    
+        $log->logInfo(sprintf("[ROOM SET IMAGE PRIMARY] Setting image ID %s as primary.", $imageId));
+    
+        // Cập nhật ảnh chính: Set all others to non-primary, then set the selected image as primary
+        $imageModel = new ImageModel();
+
+        $image = $imageModel->getImageById($imageId);
+        
+        // Set tất cả các ảnh trong phòng này là không phải ảnh chính
+        $result = $imageModel->setAllImagesNonPrimary($image->room_id);
+        if (!$result) {
+            $log->logError("[ROOM SET IMAGE PRIMARY] Failed to reset primary status for images.");
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => 'Không thể cập nhật trạng thái ảnh chính']);
+            return;
+        }
+    
+        // Set ảnh được chọn làm ảnh chính
+        $result = $imageModel->setImageAsPrimary($imageId);
+        if (!$result) {
+            $log->logError("[ROOM SET IMAGE PRIMARY] Failed to set image $imageId as primary.");
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => 'Không thể đặt ảnh chính']);
+            return;
+        }
+    
+        // Trả về thành công
+        echo json_encode(['success' => true]);
+    }
 
     public function uploadRoomImage()
     {
@@ -319,6 +437,47 @@ class RoomController {
         $log->logInfo("=== [UPLOAD ROOM IMAGE] Image upload process completed ===");
     }
 
+    public function updateDescription() {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $roomId = $data['room_id'] ?? null;
+        $description = $data['description'] ?? '';
+
+        if (!$roomId || !$description) {
+            echo json_encode(['success' => false, 'message' => 'Missing data']);
+            return;
+        }
+
+        $model = new RoomModel();
+        $result = $model->updateDescription($roomId, $description);
+
+        echo json_encode(['success' => $result]);
+    }
+
+    public function update_status() {
+        header('Content-Type: application/json');
+    
+        $id = $_POST['id'] ?? null;
+        $status = $_POST['status'] ?? null;
+    
+        if (!$id || !in_array($status, ['active', 'inactive'])) {
+            echo json_encode(['success' => false, 'message' => 'Dữ liệu không hợp lệ']);
+            return;
+        }
+
+        $statusValue = $status === 'active' ? 1 : 0;
+        $roomModel = new RoomModel();
+
+        $result = $roomModel->updateStatus($id, $statusValue);
+        $logService = new LogService();
+        $logService->logInfo("Cập nhật trạng thái phòng ID $id => $status ($statusValue)");
+    
+        if ($result) {
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Không thể cập nhật trạng thái']);
+        }
+    }
+    
     
 
     public function uploadSlide() {

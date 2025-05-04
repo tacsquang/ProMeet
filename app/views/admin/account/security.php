@@ -126,14 +126,6 @@ $currentEmail = $email;
             });
         }
 
-        // Nếu có nút toast thử
-        const toastBtn = document.getElementById('toast-success');
-        if (toastBtn) {
-            toastBtn.addEventListener('click', () => {
-                showToastSuccess('Signed in successfully');
-            });
-        }
-
         // Xử lý form đổi mật khẩu
         const changePasswordForm = document.getElementById('changePasswordForm');
         if (changePasswordForm) {
