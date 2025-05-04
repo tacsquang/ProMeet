@@ -52,9 +52,7 @@
                     <i class="bi bi-person-circle fs-3"></i>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-md-end" aria-labelledby="userDropdown">
-                    <li><a class="dropdown-item" href="#">Thông tin tài khoản</a></li>
-                    <li><a class="dropdown-item" href="#">Lịch sử đặt phòng</a></li>
-                    <li><a class="dropdown-item" href="#">Cài đặt</a></li>
+                    <li><a class="dropdown-item" href="<?php echo BASE_URL; ?>/account">Thông tin tài khoản</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li>
                         <a class="dropdown-item text-danger" href="#" id="logoutBtn">Đăng xuất</a>
