@@ -15,26 +15,26 @@
             <!-- Menu chính ở giữa -->
             <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                 <li class="nav-item px-3">
-                    <a class="nav-link <?php echo ($currentPage === 'home' ? 'active' : ''); ?>" href="<?php echo BASE_URL; ?>/home">Home</a>
-                </li>
-
-                <li class="nav-item px-3">
-                    <a class="nav-link <?php echo ($currentPage === 'about' ? 'active' : ''); ?>" href="#" role="button" data-bs-toggle="dropdown">
-                        About
+                    <a 
+                        class="nav-link <?php echo ($currentPage === 'home' ? 'active' : ''); ?>" 
+                        href="<?php echo ($currentPage === 'home' ? '#home' : BASE_URL . '/home'); ?>"
+                    >
+                        Home
                     </a>
                 </li>
-
                 <li class="nav-item px-3">
-                    <a class="nav-link <?php echo ($currentPage === 'rooms' ? 'active' : ''); ?>" href="<?php echo BASE_URL; ?>/rooms">Rooms</a>
+                    <a class="nav-link" href="<?= $currentPage === 'home' ? '#about' : BASE_URL . '/home#about' ?>">About</a>
+                </li>
+                <li class="nav-item px-3">
+                    <a class="nav-link <?= $currentPage === 'rooms' ? 'active' : '' ?>" href="<?= $currentPage === 'home' ? '#rooms' : BASE_URL . '/home#rooms' ?>">Rooms</a>
+                </li>
+                <!-- <li class="nav-item px-3">
+                    <a class="nav-link" href="#">Blog</a>
+                </li> -->
+                <li class="nav-item px-3">
+                    <a class="nav-link" href="<?= $currentPage === 'home' ? '#contact' : BASE_URL . '/home#contact' ?>">Contact</a>
                 </li>
 
-                <li class="nav-item px-3">
-                    <a class="nav-link <?php echo ($currentPage === 'blog' ? 'active' : ''); ?>" href="#">Blog</a>
-                </li>
-
-                <li class="nav-item px-3">
-                    <a class="nav-link <?php echo ($currentPage === 'contact' ? 'active' : ''); ?>" href="#">Contact</a>
-                </li>
             </ul>
             
             <!-- Login/Signup -->
@@ -45,3 +45,4 @@
     </div>
 </nav>
 <!-- End Navbar -->
+

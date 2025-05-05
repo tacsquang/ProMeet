@@ -1,5 +1,9 @@
 
 <style>
+      html, body {
+        scroll-padding-top: 80px; 
+      }
+
     .text-truncate-multiline {
       display: -webkit-box;
       display: box; /* Fallback */

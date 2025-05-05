@@ -341,9 +341,11 @@ $(document).ready(function() {
                 }
             },
             { 
-                data: null,
-                render: function() {
-                    return 'Hoạt động';
+                data: 'is_active',
+                render: function(data) {
+                    return data == 1
+                        ? '<span class="badge bg-success">Hoạt động</span>'
+                        : '<span class="badge bg-secondary">Không hoạt động</span>';
                 }
             },
             { 

@@ -14,20 +14,6 @@ class RoomController {
             'pageTitle' => 'ProMeet | Room',
             'message' => 'Chào mừng bạn!',
             'currentPage' => 'Rooms',
-            'currentSubPage' => 'RoomList'
-        ]);
-    }
-
-    public function addRoomPage() {
-        #echo "This is global RoomController.";
-        $view = new \App\Core\View();
-        $layout = '/admin/layouts/main.php';
-        $view->setLayout($layout);
-        $view->render('admin/rooms/addRoom', [
-            'pageTitle' => 'ProMeet | AddRoom',
-            'message' => 'Chào mừng bạn!',
-            'currentPage' => 'Rooms',
-            'currentSubPage' => 'AddRoom'
         ]);
     }
 
@@ -82,7 +68,7 @@ class RoomController {
             'price',          // 3
             'location_name',  // 4
             'average_rating', // 5
-            'status',         // 6
+            'is_active',         // 6
             ''                // 7 (hành động)
         ];
     

@@ -9,26 +9,13 @@
             </li>
     
             <li class="sidebar-title">Rooms & Bookings</li>
-            <li class="sidebar-item has-sub <?php echo ($currentPage === 'Rooms' ? 'active' : ''); ?>">
-                <a href="#" class='sidebar-link'>
+            <li class="sidebar-item <?php echo ($currentPage === 'Rooms' ? 'active' : ''); ?>">
+                <a href="<?php echo BASE_URL; ?>/room/index" class='sidebar-link'>
                     <i class="bi bi-box-seam"></i>
                     <span>Rooms</span>
                 </a>
-
-                <ul class="submenu active">
-                    
-                    <li class="submenu-item <?php echo ($currentSubPage === 'RoomList' ? 'active' : ''); ?> ">
-                        <a href="<?php echo BASE_URL; ?>/room/index" class="submenu-link">Danh sách phòng</a>
-                        
-                    </li>
-                    
-                    <li class="submenu-item <?php echo ($currentSubPage === 'AddRoom' ? 'active' : ''); ?> ">
-                        <a href="<?php echo BASE_URL; ?>/room/addRoomPage" class="submenu-link">Thêm phòng</a>
-                        
-                    </li>
-                    
-                </ul>
             </li>
+
             <li class="sidebar-item <?php echo ($currentPage === 'Bookings' ? 'active' : ''); ?>">
                 <a href="<?php echo BASE_URL; ?>/booking/index" class='sidebar-link'>
                     <i class="bi bi-bag-check"></i>
@@ -77,12 +64,12 @@
                     <span>Customers</span>
                 </a>
             </li>
-            <li class="sidebar-item <?php echo ($currentPage === 'Comments' ? 'active' : ''); ?>">
+            <!-- <li class="sidebar-item ?php echo ($currentPage === 'Comments' ? 'active' : ''); ?>">
                 <a href="#" class='sidebar-link'>
                     <i class="bi bi-person-gear"></i>
                     <span>Admins & Staff</span>
                 </a>
-            </li>
+            </li> -->
     
             <li class="sidebar-title ">Account</li>
             <li class="sidebar-item <?php echo ($currentPage === 'Profile' ? 'active' : ''); ?>">

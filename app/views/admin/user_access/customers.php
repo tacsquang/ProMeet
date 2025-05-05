@@ -442,7 +442,7 @@ $(document).on('click', '.btn-toggle-ban', function () {
                     .then(data => {
                         if (data.success) {
                             showToastSuccess(data.message || 'Cập nhật trạng thái thành công');
-                            $('#yourTableId').DataTable().ajax.reload(null, false);
+                            $('#table1').DataTable().ajax.reload(null, false);
                         } else {
                             showToastError(data.message || 'Thao tác thất bại');
                         }

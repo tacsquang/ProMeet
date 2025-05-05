@@ -61,6 +61,7 @@
 
         .navbar-nav .nav-link.active {
             color: #FFD166 !important; 
+            border-bottom: 2px solid white;
         }
 
 

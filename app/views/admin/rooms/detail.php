@@ -331,29 +331,48 @@
         $('#statusSwitch').on('change', function () {
             const $checkbox = $(this);
             const newStatus = $checkbox.is(':checked') ? 'active' : 'inactive';
-            const originalChecked = !$checkbox.is(':checked'); // lưu trạng thái trước khi đổi
+            const originalChecked = !$checkbox.is(':checked'); // Trạng thái trước khi đổi
 
-            $.ajax({
-                url: '<?= BASE_URL ?>/room/update_status',
-                method: 'POST',
-                data: {
-                    id: room_id,
-                    status: newStatus
-                },
-                success: function (response) {
-                    if (!response.success) {
-                        showToastError("Cập nhật thất bại! Trạng thái sẽ được hoàn tác.");
-                        $checkbox.prop('checked', originalChecked);
-                    } else {
-                        const message = newStatus === 'active'
-                            ? "Phòng đã được kích hoạt."
-                            : "Phòng đã được ẩn.";
-                        showToastSuccess(message);
-                    }
-                },
-                error: function () {
-                    showToastError("Lỗi kết nối! Trạng thái sẽ được hoàn tác.");
-                    $checkbox.prop('checked', originalChecked);
+            // Ngăn đổi trạng thái ngay lập tức
+            $checkbox.prop('checked', originalChecked);
+
+            // Hiển thị hộp thoại xác nhận
+            Swal.fire({
+                title: newStatus === 'active' ? 'Kích hoạt phòng?' : 'Ẩn phòng này?',
+                text: newStatus === 'active'
+                    ? "Phòng sẽ hiển thị cho người dùng."
+                    : "Phòng sẽ bị ẩn và không thể được đặt.",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Xác nhận',
+                cancelButtonText: 'Hủy',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Tiếp tục cập nhật nếu người dùng xác nhận
+                    $.ajax({
+                        url: '<?= BASE_URL ?>/room/update_status',
+                        method: 'POST',
+                        data: {
+                            id: room_id,
+                            status: newStatus
+                        },
+                        success: function (response) {
+                            if (!response.success) {
+                                showToastError("Cập nhật thất bại! Trạng thái giữ nguyên.");
+                                $checkbox.prop('checked', originalChecked);
+                            } else {
+                                $checkbox.prop('checked', newStatus === 'active');
+                                const message = newStatus === 'active'
+                                    ? "Phòng đã được kích hoạt."
+                                    : "Phòng đã được ẩn.";
+                                showToastSuccess(message);
+                            }
+                        },
+                        error: function () {
+                            showToastError("Lỗi kết nối! Trạng thái giữ nguyên.");
+                            $checkbox.prop('checked', originalChecked);
+                        }
+                    });
                 }
             });
         });

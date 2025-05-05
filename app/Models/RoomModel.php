@@ -383,7 +383,7 @@ class RoomModel
         $orderDir = strtoupper($orderDir) === 'ASC' ? 'ASC' : 'DESC';
     
         // Ánh xạ cột hợp lệ để tránh SQL Injection
-        $allowedColumns = ['id', 'name', 'category', 'price', 'location_name', 'average_rating'];
+        $allowedColumns = ['id', 'name', 'category', 'price', 'location_name', 'is_active', 'average_rating'];
         if (!in_array($orderColumn, $allowedColumns)) {
             $orderColumn = 'id';
         }
@@ -397,7 +397,7 @@ class RoomModel
         }
     
         $sql = "
-            SELECT id, name, category, price, location_name, average_rating
+            SELECT id, name, category, price, location_name, is_active, average_rating
             FROM rooms
             {$whereClause}
             ORDER BY {$orderColumn} {$orderDir}

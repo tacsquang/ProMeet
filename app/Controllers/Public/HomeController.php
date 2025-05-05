@@ -28,7 +28,7 @@ class HomeController {
 
 
         $view = new \App\Core\View();
-        $view->render('public/home/home', [
+        $view->render('public/home/index', [
             'pageTitle' => 'ProMeet | Trang chính',
             'username' => $_SESSION['user']['username'] ?? 'User',
             'currentPage' => 'home',

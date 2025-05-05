@@ -134,6 +134,77 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     </script>
 
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+    // Smooth scroll cho các click nội bộ
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute("href"));
+            if (target) {
+                target.scrollIntoView({ behavior: "smooth" });
+            }
+        });
+    });
+
+    // Smooth scroll nếu có hash từ URL (vào từ trang khác)
+    const hash = window.location.hash;
+    if (hash) {
+        const target = document.querySelector(hash);
+        if (target) {
+            setTimeout(() => {
+                target.scrollIntoView({ behavior: "smooth" });
+            }, 100); // Delay nhỏ để chắc chắn phần tử đã render
+        }
+    }
+});
+
+    </script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const sections = document.querySelectorAll("section[id]");
+  const navLinks = document.querySelectorAll(".nav-link[href^='#']");
+
+  const scrollOffset = 100; // Khoảng cách bù nếu có navbar cố định
+
+  function onScroll() {
+    let currentSection = "";
+
+    sections.forEach((section) => {
+      const sectionTop = section.offsetTop - scrollOffset;
+      if (pageYOffset >= sectionTop) {
+        currentSection = section.getAttribute("id");
+      }
+    });
+
+    navLinks.forEach((link) => {
+      link.classList.remove("active");
+      if (link.getAttribute("href") === `#${currentSection}`) {
+        link.classList.add("active");
+      }
+    });
+  }
+
+  window.addEventListener("scroll", onScroll);
+});
+</script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const navLinks = document.querySelectorAll(".navbar-collapse .nav-link");
+    const navbarCollapse = document.querySelector(".navbar-collapse");
+
+    navLinks.forEach(function (link) {
+      link.addEventListener("click", function () {
+        const bsCollapse = new bootstrap.Collapse(navbarCollapse, {
+          toggle: false
+        });
+        bsCollapse.hide(); // Thu gọn navbar
+      });
+    });
+  });
+</script>
 
 </body>
 </html>
