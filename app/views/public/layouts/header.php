@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ProMeet | Home</title>
+    <title><?= $pageTitle ?? 'ProMeet'; ?></title>
+
+    <link rel="shortcut icon" href="<?= BASE_URL ?>/assets/images/favicon.ico" type="image/x-icon">
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
@@ -14,10 +17,30 @@
             background-color: rgb(182, 190, 192) !important;
             font-size: 16px;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+
+            background-image: url('<?= BASE_URL ?>/assets/images/rooms-page-bg.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed; /* Scroll mượt */
+            min-height: 100vh;
+            padding-top: 90px; 
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(69, 96, 102, 0.75); /* trắng mờ */
+            z-index: -1;
         }
 
         .navbar {
             background: linear-gradient(to right, #06163f, #15436b);
+            border-top: 2px solid #ffffff;   /* Viền trên */
+            border-bottom: 2px solid #ffffff; /* Viền dưới */
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
         }
         .navbar .nav-link,
         .navbar-brand {
@@ -38,6 +61,7 @@
 
         .navbar-nav .nav-link.active {
             color: #FFD166 !important; 
+            border-bottom: 2px solid white;
         }
 
 
@@ -65,7 +89,7 @@
             left: 0;
             height: 2px;
             width: 100%;
-            background-color: #810c0c; /* màu đen cho thanh gạch */
+            background-color:rgb(255, 255, 255); /* màu đen cho thanh gạch */
             transition: 0.3s;
         }
 
@@ -82,74 +106,48 @@
             transform: translateY(-50%);
         }
 
+        .social-icon a i:hover {
+            transform: scale(1.2);
+            transition: 0.3s ease-in-out;
+        }
+
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background-color: #6351ce;
+            color: white;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            z-index: 999;
+            transition: all 0.3s ease;
+            display: none !important;
+        }
+
+        .back-to-top:hover {
+            background-color: #7c4dff;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+            color: white;
+        }
+
+        .back-to-top.show {
+            display: flex !important; 
+        }
+
+        .text-justify {
+            text-align: justify;
+        }
+
+
+
+        .container, .container-sm, .container-md, .container-lg, .container-xl {
+            max-width: 1400px !important;
+        }
+
     </style>
 
 </head>
 <body>
-
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-md">
-        <div class="container-fluid px-4 px-lg-5">
-            <a class="navbar-brand fw-bold" href="#">
-                <a class="navbar-brand" href="#">
-                    <img src="../../../public/assets/images/logoProMEET_US_light.svg" alt="ProMeet Logo" height="60">
-                </a>
-            </a>
-            <button class="navbar-toggler text-white" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-        
-            <!-- Gộp toàn bộ vào đây -->
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <!-- Menu chính ở giữa -->
-                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                    <li class="nav-item px-3">
-                    <a class="nav-link active" href="#">Home</a>
-                    </li>
-                    <li class="nav-item px-3">
-                    <a class="nav-link" href="#" role="button" data-bs-toggle="dropdown">
-                        About
-                    </a>
-                    </li>
-                    <li class="nav-item px-3">
-                    <a class="nav-link" href="#">Rooms</a>
-                    </li>
-                    <li class="nav-item px-3">
-                    <a class="nav-link" href="#">Blog</a>
-                    </li>
-                    <li class="nav-item px-3">
-                    <a class="nav-link" href="#">Contact</a>
-                    </li>
-                </ul>
-                
-            
-                <!-- User -->
-                <div class="auth-buttons d-flex  gap-1 mb-2 mb-lg-0 ms-3 ms-md-0">
-                    <!-- Giỏ đặt phòng -->
-                    <a href="cart.html" class="btn text-light position-relative d-flex align-items-center p-0">
-                        <i class="bi bi-calendar-check fs-4 position-relative">
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">
-                            2
-                        </span>
-                        </i>
-                    </a>
-            
-
-                    <!-- Dropdown người dùng -->
-                    <div class="dropdown">            
-                        <a href="#" class="btn text-light d-flex align-items-center dropdown-toggle" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-person-circle fs-3"></i>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-md-end" aria-labelledby="userDropdown">
-                        <li><a class="dropdown-item" href="#">Thông tin tài khoản</a></li>
-                        <li><a class="dropdown-item" href="#">Lịch sử đặt phòng</a></li>
-                        <li><a class="dropdown-item" href="#">Cài đặt</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-danger" href="#">Đăng xuất</a></li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </nav>
-    <!-- End Navbar -->

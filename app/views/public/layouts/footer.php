@@ -10,7 +10,7 @@
 
             <!-- Right -->
             <div class="social-icon">
-                <a href="https://lms.hcmut.edu.vn/login/index.php" class="text-white me-4 text-decoration-none">
+                <a href="https://www.facebook.com/tacsquang/" class="text-white me-4 text-decoration-none">
                 <i class="fab fa-facebook-f fa-lg"></i>
                 </a>
                 <a href="" class="text-white me-4 text-decoration-none">
@@ -25,7 +25,7 @@
                 <a href="" class="text-white me-4 text-decoration-none">
                 <i class="fab fa-linkedin fa-lg"></i>
                 </a>
-                <a href="" class="text-white me-4 text-decoration-none">
+                <a href="https://github.com/tacsquang" class="text-white me-4 text-decoration-none">
                 <i class="fab fa-github fa-lg"></i>
                 </a>
             </div>
@@ -40,7 +40,7 @@
                     <div class="col-12 col-sm-6 col-md-6 col-lg-4 col-xl-3 mx-auto mb-4 text-center text-lg-start">
                         <!-- Logo -->
                         <div class="mb-3">
-                        <img src="../../../public/assets/images/logoProMEET_US_light.svg" alt="ProMeet Logo" height="60" class="mb-2">
+                        <img src="<?= BASE_URL ?>/assets/images/logoProMEET_US_light.svg" alt="ProMeet Logo" height="60" class="mb-2">
                         <hr class="mx-auto mx-lg-0" style="width: 60px; background-color: #7c4dff; height: 2px">
                         </div>
                     
@@ -87,7 +87,7 @@
     
         <!-- Copyright -->
         <div class="text-center p-3" style="background-color: rgba(0, 0, 0, 0.2)">
-            © 2025 By TacsQuang</a>
+            © 2025 ProMeet. All rights reserved.</a>
         </div>
         <!-- End Copyright -->
     </footer>
@@ -102,6 +102,109 @@
     <!-- Bootstrap JS & Icons -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+    <script>
+document.addEventListener('DOMContentLoaded', function () {
+    const btn = document.querySelector('.back-to-top');
+    window.addEventListener('scroll', function () {
+        if (window.scrollY > 200) {
+            btn.classList.add('show');
+        } else {
+            btn.classList.remove('show');
+        }
+    });
+
+    btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+});
+
+</script>
+
+
+    <script>
+        function saveRedirectUrl() {
+            // Lưu URL hiện tại vào session bằng AJAX
+            fetch('<?php echo BASE_URL; ?>/auth/saveRedirectUrl', {
+                method: 'POST',
+                body: JSON.stringify({redirect_url: window.location.href}),
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+    // Smooth scroll cho các click nội bộ
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute("href"));
+            if (target) {
+                target.scrollIntoView({ behavior: "smooth" });
+            }
+        });
+    });
+
+    // Smooth scroll nếu có hash từ URL (vào từ trang khác)
+    const hash = window.location.hash;
+    if (hash) {
+        const target = document.querySelector(hash);
+        if (target) {
+            setTimeout(() => {
+                target.scrollIntoView({ behavior: "smooth" });
+            }, 100); // Delay nhỏ để chắc chắn phần tử đã render
+        }
+    }
+});
+
+    </script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const sections = document.querySelectorAll("section[id]");
+  const navLinks = document.querySelectorAll(".nav-link[href^='#']");
+
+  const scrollOffset = 100; // Khoảng cách bù nếu có navbar cố định
+
+  function onScroll() {
+    let currentSection = "";
+
+    sections.forEach((section) => {
+      const sectionTop = section.offsetTop - scrollOffset;
+      if (pageYOffset >= sectionTop) {
+        currentSection = section.getAttribute("id");
+      }
+    });
+
+    navLinks.forEach((link) => {
+      link.classList.remove("active");
+      if (link.getAttribute("href") === `#${currentSection}`) {
+        link.classList.add("active");
+      }
+    });
+  }
+
+  window.addEventListener("scroll", onScroll);
+});
+</script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const navLinks = document.querySelectorAll(".navbar-collapse .nav-link");
+    const navbarCollapse = document.querySelector(".navbar-collapse");
+
+    navLinks.forEach(function (link) {
+      link.addEventListener("click", function () {
+        const bsCollapse = new bootstrap.Collapse(navbarCollapse, {
+          toggle: false
+        });
+        bsCollapse.hide(); // Thu gọn navbar
+      });
+    });
+  });
+</script>
 
 </body>
 </html>
