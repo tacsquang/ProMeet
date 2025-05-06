@@ -1,6 +1,6 @@
 <?php
 namespace App\Models;
-
+use App\Core\Utils;
 use App\Core\Database;
 use App\Core\LogService;
 
@@ -45,7 +45,7 @@ class RoomModel
         $sql = "INSERT INTO images (id, room_id, image_url, is_primary, created_at) VALUES (?, ?, ?, ?, NOW())";
 
         foreach ($images as $image) {
-            $id = $this->generateUUID();
+            $id = Utils::generateUUID();
             $params = [$id, $roomId, $image['url'], $image['is_primary']];
             $this->db->execute($sql, $params);
         }
@@ -93,19 +93,6 @@ class RoomModel
         return $this->db->execute($sql, $params);
     }
 
-
-
-    private function generateUUID()
-    {
-        return sprintf(
-            '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0x0fff) | 0x4000,
-            mt_rand(0, 0x3fff) | 0x8000,
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
-        );
-    }
 
     public function fetchRooms($offset = 0, $limit = 8, $filters = []) {
     

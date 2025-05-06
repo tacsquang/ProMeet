@@ -1,6 +1,6 @@
 <?php
 namespace App\Models;
-
+use App\Core\Utils;
 use App\Core\Database;
 use App\Core\LogService;
 use Exception;
@@ -127,7 +127,7 @@ class BookingModel
 
     public function createBooking($roomId, $userId, $totalPrice) {
         
-        $bookingId = $this->generateUUID();
+        $bookingId = Utils::generateUUID();
     
         // Chuyển totalPrice từ chuỗi sang kiểu số (int)
         // Loại bỏ tất cả các ký tự không phải số
@@ -304,7 +304,7 @@ class BookingModel
     
             // 4. Ghi lịch sử trạng thái
             $this->log->logInfo("Bắt đầu ghi lịch sử trạng thái...");
-            $historyId = $this->generateUUID();
+            $historyId = Utils::generateUUID();
             $sqlHistory = "
                 INSERT INTO booking_status_history (id, booking_id, status, changed_at, note, label) 
                 VALUES (:id, :booking_id, :status, NOW(), :note, :label)
@@ -1039,19 +1039,5 @@ class BookingModel
         }
     }
     
-    
-    
-    
 
-
-    private function generateUUID() {
-        return sprintf(
-            '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0x0fff) | 0x4000,
-            mt_rand(0, 0x3fff) | 0x8000,
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
-        );
-    }
 }

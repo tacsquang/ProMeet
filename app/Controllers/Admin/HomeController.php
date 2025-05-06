@@ -6,8 +6,7 @@ class HomeController {
     protected $log;
     protected $userModel;
 
-    public function __construct(Container $container)
-    {
+    public function __construct(Container $container) {
         $this->log = $container->get('logger');
         $this->userModel = $container->get('UserModel');
     }

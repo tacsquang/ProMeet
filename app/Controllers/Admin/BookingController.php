@@ -8,8 +8,7 @@ class BookingController {
     protected $bookingModel;
     protected $userModel;
 
-    public function __construct(Container $container)
-    {
+    public function __construct(Container $container) {
         $this->log = $container->get('logger');
         $this->roomModel = $container->get('RoomModel');
         $this->bookingModel = $container->get('BookingModel');

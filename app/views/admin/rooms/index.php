@@ -32,7 +32,7 @@
                 <span class="fw-semibold">Danh sách phòng</span>
             </h5>
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createRoomModal">
-                <i class="bi bi-plus-lg"></i> Thêm phòng mới
+                <i class="bi bi-plus-lg"></i> Thêm phòng
             </button>
         </div>
         <div class="card-body">
@@ -207,7 +207,7 @@
         const form = e.target;
         const formData = new FormData(form);
 
-        fetch('<?php echo BASE_URL; ?>/room/store', {
+        fetch('<?php echo BASE_URL; ?>/room/create_init_room', {
             method: 'POST',
             body: formData
         })

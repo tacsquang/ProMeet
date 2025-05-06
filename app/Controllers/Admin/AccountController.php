@@ -6,8 +6,7 @@ class AccountController {
     protected $log;
     protected $userModel;
 
-    public function __construct(Container $container)
-    {
+    public function __construct(Container $container) {
         $this->log = $container->get('logger');
         $this->userModel = $container->get('UserModel');
     }
@@ -162,10 +161,8 @@ class AccountController {
             ]);
         }
     }
-    
 
-    public function uploadAvatar()
-    {
+    public function uploadAvatar() {
         
         $this->log->logInfo("=== [UPLOAD AVATAR] Start uploading avatar ===");
     
@@ -241,8 +238,7 @@ class AccountController {
     
         $this->log->logInfo("=== [UPLOAD AVATAR] Avatar upload process completed ===");
     }
-    
-    
+     
     public function updateProfile() {
         if (!isset($_SESSION['user'])) {
             echo json_encode(['success' => false, 'message' => 'Chưa đăng nhập']);
@@ -268,8 +264,5 @@ class AccountController {
             echo json_encode(['success' => false, 'message' => 'Không thể cập nhật.']);
         }
     }
-    
-    
-    
     
 }

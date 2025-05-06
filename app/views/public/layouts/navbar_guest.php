@@ -1,11 +1,10 @@
 <!-- Navbar -->
-<nav class="navbar navbar-expand-md fixed-top">
+<nav class="navbar navbar-expand-md fixed-top" aria-label="Điều hướng người dùng">
     <div class="container-fluid px-4 px-lg-5">
-        <a class="navbar-brand fw-bold" href="#">
-            <a class="navbar-brand" href="<?php echo BASE_URL; ?>/home">
-                <img src="<?= BASE_URL ?>/assets/images/logoProMEET_US_light.svg" alt="ProMeet Logo" height="60">
-            </a>
+        <a class="navbar-brand fw-bold" href="<?php echo BASE_URL; ?>/home">
+            <img src="<?= BASE_URL ?>/assets/images/logoProMEET_US_light.svg" alt="Logo ProMeet – Nền tảng đặt phòng họp thông minh" height="60">
         </a>
+
         <button class="navbar-toggler text-white" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -26,7 +25,9 @@
                     <a class="nav-link" href="<?= $currentPage === 'home' ? '#about' : BASE_URL . '/home#about' ?>">Giới thiệu</a>
                 </li>
                 <li class="nav-item px-3">
-                    <a class="nav-link <?= $currentPage === 'rooms' ? 'active' : '' ?>" href="<?= $currentPage === 'home' ? '#rooms' : BASE_URL . '/home#rooms' ?>">Phòng họp</a>
+                    <a class="nav-link <?= $currentPage === 'rooms' ? 'active' : '' ?>"
+                        href="<?= $currentPage === 'home' ? '#rooms' : BASE_URL . '/home#rooms' ?>"
+                        title="Xem danh sách phòng họp">Phòng họp</a>
                 </li>
                 <!-- <li class="nav-item px-3">
                     <a class="nav-link" href="#">Blog</a>

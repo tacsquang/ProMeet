@@ -1,6 +1,6 @@
 <?php
 namespace App\Models;
-
+use App\Core\Utils;
 use App\Core\Database;
 use App\Core\LogService;
 
@@ -25,7 +25,7 @@ class ImageModel
     
         foreach ($imageUrls as $imageUrl) {
             $this->log->logInfo("Inserting image: {$imageUrl} for roomId: {$roomId}");
-            $id = $this->generateUUID(); 
+            $id = Utils::generateUUID(); 
         
             $sql = "INSERT INTO images (id, room_id, image_url) VALUES (:id, :room_id, :image_url)";
             $params = [
@@ -112,17 +112,5 @@ class ImageModel
         $sql = "UPDATE images SET is_primary = 1 WHERE id = :id";
         $params = [':id' => $imageId];
         return $this->db->execute($sql, $params);
-    }
-
-
-    private function generateUUID() {
-        return sprintf(
-            '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0x0fff) | 0x4000,
-            mt_rand(0, 0x3fff) | 0x8000,
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
-        );
     }
 }

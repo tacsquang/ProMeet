@@ -1,6 +1,5 @@
 <?php
 namespace App\Models;
-
 use App\Core\Database;
 use App\Core\LogService;
 
@@ -16,9 +15,8 @@ class UserModel
     }
 
     public function create($data) {
-        $sql = "INSERT INTO users (id, username, email, password_hash, role) VALUES (:id, :username, :email, :password_hash, :role)";
+        $sql = "INSERT INTO users (id, username, email, password_hash, role) VALUES (UUID(), :username, :email, :password_hash, :role)";
         $params = [
-            'id' => $this->generateUUID(),
             'username' => $data['username'],
             'email' => $data['email'],
             'password_hash' => $data['password_hash'],
@@ -239,17 +237,6 @@ class UserModel
         $this->log->logInfo("Query Result: " . print_r($result, true)); // Log kết quả trả về từ cơ sở dữ liệu
     
         return $result;
-    }
-    
-    private function generateUUID() {
-        return sprintf(
-            '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0x0fff) | 0x4000,
-            mt_rand(0, 0x3fff) | 0x8000,
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
-        );
     }
     
 }

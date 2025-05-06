@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers\Admin;
 use App\Core\Container;
+use App\Core\Utils;
 
 class RoomController {
     protected $log;
@@ -52,7 +53,6 @@ class RoomController {
             'room' => $room
         ]);
     }
-
 
 
     public function getAll() {
@@ -118,11 +118,10 @@ class RoomController {
         echo json_encode($jsonData);
     }
     
-    
-    public function store()
-    {
+
+    public function create_init_room() {
         
-        $this->log->logInfo("=== [ROOM STORE] Start processing room creation ===");
+        $this->log->logInfo("=== [ROOM CREATE] Start processing room creation ===");
     
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->log->logError("[ROOM STORE] Invalid request method: " . $_SERVER['REQUEST_METHOD']);
@@ -131,8 +130,8 @@ class RoomController {
             return;
         }
     
-        $uuid = $this->generateUUID();
-        $this->log->logInfo("[ROOM STORE] Generated UUID: {$uuid}");
+        $uuid = Utils::generateUUID();
+        $this->log->logInfo("[ROOM CREATE] Generated UUID: {$uuid}");
     
         $roomData = [
             'id' => $uuid,
@@ -146,23 +145,16 @@ class RoomController {
             'html_description' => $_POST['html_description'] ?? '',
         ];
     
-        $this->log->logInfo("[ROOM STORE] Received POST data: " . json_encode($_POST));
+        $this->log->logInfo("[ROOM CREATE] Received POST data: " . json_encode($_POST));
     
         if (!$this->roomModel->insertRoom($roomData)) {
-            $this->log->logError("[ROOM STORE] Failed to insert room. Data: " . json_encode($roomData));
+            $this->log->logError("[ROOM CREATE] Failed to insert room. Data: " . json_encode($roomData));
             http_response_code(500);
             echo json_encode(['error' => 'Không thể thêm phòng']);
             return;
         }
     
-        // Upload ảnh
-        $imagePaths = $this->handleRoomImageUpload($uuid, $_FILES['images'] ?? null, $_POST['primary_index'] ?? '', $this->log);
-    
-        if (!empty($imagePaths)) {
-            $this->roomModel->insertRoomImages($uuid, $imagePaths);
-        }
-    
-        $this->log->logInfo("=== [ROOM STORE] Room creation completed successfully ===");
+        $this->log->logInfo("=== [ROOM CREATE] Room creation completed successfully ===");
         echo json_encode(['success' => true, 'room_id' => $uuid]);
     }
 
@@ -289,72 +281,6 @@ class RoomController {
         // Trả về thành công
         echo json_encode(['success' => true]);
     }
-
-    public function uploadRoomImage()
-    {
-        
-        $this->log->logInfo("=== [UPLOAD ROOM IMAGE] Start uploading image ===");
-    
-        // Kiểm tra nếu là phương thức POST
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $this->log->logError("[UPLOAD ROOM IMAGE] Invalid request method: " . $_SERVER['REQUEST_METHOD']);
-            echo json_encode(['error' => 'Invalid request method']);
-            exit;
-        }
-    
-        // Kiểm tra xem có file ảnh được upload không
-        $image = $_FILES['file'] ?? null;
-        if ($image && $image['error'] === UPLOAD_ERR_OK) {
-            $this->log->logInfo("[UPLOAD ROOM IMAGE] File received: " . json_encode($image));
-    
-            // Lấy ID phòng từ POST hoặc URL nếu có
-            $roomId = $_POST['room_id'] ?? null;
-            if (!$roomId) {
-                $this->log->logError("[UPLOAD ROOM IMAGE] Missing room ID in POST data");
-                echo json_encode(['error' => 'Room ID is required']);
-                exit;
-            }
-            $this->log->logInfo("[UPLOAD ROOM IMAGE] Room ID: {$roomId}");
-    
-            // Tạo thư mục lưu trữ ảnh cho phòng nếu chưa tồn tại
-            $uploadDir = __DIR__ . '/../../../public/uploads/rooms/' . $roomId . '/slideshow/';
-            if (!is_dir($uploadDir)) {
-                if (mkdir($uploadDir, 0777, true)) {
-                    $this->log->logInfo("[UPLOAD ROOM IMAGE] Upload directory created: {$uploadDir}");
-                } else {
-                    $this->log->logError("[UPLOAD ROOM IMAGE] Failed to create upload directory: {$uploadDir}");
-                    echo json_encode(['error' => 'Failed to create upload directory']);
-                    exit;
-                }
-            }
-    
-            // Đặt tên file ảnh và xác định vị trí lưu trữ
-            $filename = time() . '_' . basename($image['name']);
-            $target = $uploadDir . $filename;
-            $this->log->logInfo("[UPLOAD ROOM IMAGE] Target file path: {$target}");
-    
-            // Di chuyển ảnh vào thư mục
-            if (move_uploaded_file($image['tmp_name'], $target)) {
-                $relativeUrl = '/uploads/rooms/' . $roomId . '/slideshow/' . $filename;
-                $this->log->logInfo("[UPLOAD ROOM IMAGE] Image uploaded successfully: {$relativeUrl}");
-    
-                // Trả về URL của ảnh
-                echo json_encode(['url' => $relativeUrl]);
-            } else {
-                $this->log->logError("[UPLOAD ROOM IMAGE] Failed to move uploaded file: {$image['tmp_name']} to {$target}");
-                echo json_encode(['error' => 'Failed to upload image']);
-            }
-        } else {
-            if (isset($image)) {
-                $this->log->logError("[UPLOAD ROOM IMAGE] Upload error: " . $image['error']);
-            } else {
-                $this->log->logError("[UPLOAD ROOM IMAGE] No file uploaded");
-            }
-            echo json_encode(['error' => 'No file uploaded or upload error']);
-        }
-    
-        $this->log->logInfo("=== [UPLOAD ROOM IMAGE] Image upload process completed ===");
-    }
     
     public function uploadRoomImageTiny()
     {
@@ -464,8 +390,6 @@ class RoomController {
         }
     }
     
-    
-
     public function uploadSlide() {
         
         header('Content-Type: application/json');
@@ -614,21 +538,5 @@ class RoomController {
     
         return $imagePaths;
     }
-    
-    private function generateUUID()
-    {
-        return sprintf(
-            '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0x0fff) | 0x4000,
-            mt_rand(0, 0x3fff) | 0x8000,
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
-        );
-    }
-    
-
-    
-    
 }
 
