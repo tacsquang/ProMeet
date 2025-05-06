@@ -19,35 +19,28 @@
                         class="nav-link <?php echo ($currentPage === 'home' ? 'active' : ''); ?>" 
                         href="<?php echo ($currentPage === 'home' ? '#home' : BASE_URL . '/home'); ?>"
                     >
-                        Home
+                        Trang chủ
                     </a>
                 </li>
                 <li class="nav-item px-3">
-                    <a class="nav-link" href="<?= $currentPage === 'home' ? '#about' : BASE_URL . '/home#about' ?>">About</a>
+                    <a class="nav-link" href="<?= $currentPage === 'home' ? '#about' : BASE_URL . '/home#about' ?>">Giới thiệu</a>
                 </li>
                 <li class="nav-item px-3">
-                    <a class="nav-link <?= $currentPage === 'rooms' ? 'active' : '' ?>" href="<?= $currentPage === 'home' ? '#rooms' : BASE_URL . '/home#rooms' ?>">Rooms</a>
+                    <a class="nav-link <?= $currentPage === 'rooms' ? 'active' : '' ?>" href="<?= $currentPage === 'home' ? '#rooms' : BASE_URL . '/home#rooms' ?>">	Phòng họp</a>
                 </li>
                 <!-- <li class="nav-item px-3">
                     <a class="nav-link" href="#">Blog</a>
                 </li> -->
                 <li class="nav-item px-3">
-                    <a class="nav-link" href="<?= $currentPage === 'home' ? '#contact' : BASE_URL . '/home#contact' ?>">Contact</a>
+                    <a class="nav-link" href="<?= $currentPage === 'home' ? '#contact' : BASE_URL . '/home#contact' ?>">Liên hệ</a>
                 </li>
 
             </ul>
             
         
             <!-- User -->
-            <div class="auth-buttons d-flex  gap-1 mb-2 mb-lg-0 ms-3 ms-md-0">
-                <!-- Giỏ đặt phòng -->
-                <a href="<?php echo BASE_URL; ?>/booking" class="btn text-light position-relative d-flex align-items-center p-0">
-                    <i class="bi bi-calendar-check fs-4 position-relative">
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">
-                        2
-                    </span>
-                    </i>
-                </a>
+            <div class="auth-buttons d-flex  gap-1 mb-2 mb-lg-0 ms-3 ms-md-0 ms-lg-4">
+
         
 
                 <!-- Dropdown người dùng -->
@@ -56,7 +49,9 @@
                     <i class="bi bi-person-circle fs-3"></i>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-md-end" aria-labelledby="userDropdown">
-                    <li><a class="dropdown-item" href="<?php echo BASE_URL; ?>/account">Thông tin tài khoản</a></li>
+                    <li><a class="dropdown-item" href="<?php echo BASE_URL; ?>/account">Hồ sơ</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="<?php echo BASE_URL; ?>/booking">Lịch đặt</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li>
                         <a class="dropdown-item text-danger" href="#" id="logoutBtn">Đăng xuất</a>
