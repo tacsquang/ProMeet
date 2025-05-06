@@ -41,6 +41,53 @@ class UserModel
         return $this->db->fetchOne("SELECT * FROM users WHERE id = :id", ['id' => $id]);
     }
 
+    // Lưu token remember me vào database
+    public function storeRememberToken($userId, $token, $expiryTime) {
+        $query = "INSERT INTO remember_tokens (id, user_id, remember_token, expiry_time)
+                  VALUES (UUID(), :user_id, :remember_token, :expiry_time)
+                  ON DUPLICATE KEY UPDATE remember_token = :remember_token, expiry_time = :expiry_time";
+    
+        $params = [
+            ':user_id' => $userId,
+            ':remember_token' => $token,
+            ':expiry_time' => $expiryTime
+        ];
+    
+        return $this->db->execute($query, $params);
+    }
+    
+
+    // Tìm người dùng theo token remember me
+    public function findByRememberToken($token) {
+        $query = "SELECT u.* FROM users u
+                  JOIN remember_tokens rt ON u.id = rt.user_id
+                  WHERE rt.remember_token = :token AND rt.expiry_time > :now";
+        $params = [
+            ':token' => $token,
+            ':now' => time()
+        ];
+    
+        return $this->db->fetchOne($query, $params);
+    }
+    
+
+    // Cập nhật thời gian hết hạn của token
+    public function updateRememberTokenExpiry($userId, $expiryTime) {
+        $query = "UPDATE remember_tokens SET expiry_time = :expiry_time WHERE user_id = :user_id";
+    
+        $params = [
+            ':expiry_time' => $expiryTime,
+            ':user_id' => $userId
+        ];
+        return $this->db->execute($query, $params);
+    }
+    
+    public function clearRememberToken($token) {
+        $query = "DELETE FROM remember_tokens WHERE remember_token = :token";
+        return $this->db->execute($query, [':token' => $token]);
+    }
+
+
     public function updateAvatar($userId, $relativeUrl) {
         // Log thông tin
         $this->log->logInfo("Updating avatar for user with ID: $userId");
