@@ -1,7 +1,15 @@
 <?php
 namespace App\Controllers\Public;
+use App\Core\Container;
 
 class HomeController {
+    protected $log;
+
+    public function __construct(Container $container)
+    {
+        $this->log = $container->get('logger');
+    }
+
     public function index() {
 
         #var_dump($_SESSION);

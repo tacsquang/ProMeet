@@ -1,10 +1,20 @@
 <?php
 namespace App\Controllers\Admin;
-use App\Models\RoomModel;
-use App\Models\UserModel;
-use App\Core\LogService;
+use App\Core\Container;
 
 class UserAccessController {
+
+    protected $log;
+    protected $roomModel;
+    protected $userModel;
+
+    public function __construct(Container $container)
+    {
+        $this->log = $container->get('logger');
+        $this->roomModel = $container->get('RoomModel');
+        $this->userModel = $container->get('UserModel');
+    }
+
     public function index(){
         $view = new \App\Core\View();
         $layout = '/admin/layouts/main.php';
@@ -18,8 +28,6 @@ class UserAccessController {
     }
 
     public function getAllUsers() {
-        $userModel = new UserModel();
-        $log = new LogService();
     
         $draw = isset($_GET['draw']) ? intval($_GET['draw']) : 0;
         $start = isset($_GET['start']) ? intval($_GET['start']) : 0;
@@ -42,12 +50,12 @@ class UserAccessController {
     
         $orderColumn = isset($columns[$orderColumnIndex]) ? $columns[$orderColumnIndex] : 'id';
     
-        $log->logInfo("Fetching users - draw: $draw, start: $start, length: $length, search: '$searchValue', order: $orderColumn $orderDir");
+        $this->log->logInfo("Fetching users - draw: $draw, start: $start, length: $length, search: '$searchValue', order: $orderColumn $orderDir");
     
-        $totalRecords = $userModel->countAllUsers();
-        $totalFiltered = $searchValue ? $userModel->countFilteredUsers($searchValue) : $totalRecords;
+        $totalRecords = $this->userModel->countAllUsers();
+        $totalFiltered = $searchValue ? $this->userModel->countFilteredUsers($searchValue) : $totalRecords;
     
-        $users = $userModel->fetchUsersForAdmin($start, $length, $searchValue, $orderColumn, $orderDir);
+        $users = $this->userModel->fetchUsersForAdmin($start, $length, $searchValue, $orderColumn, $orderDir);
     
         $usersWithStt = array_map(function($user, $index) {
             $userArray = (array)$user;

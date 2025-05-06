@@ -7,10 +7,12 @@ use App\Core\LogService;
 class UserModel
 {
     private $db;
+    private $log;
 
-    public function __construct() {
-        $this->db = new Database();
-        $this->log = new LogService();
+    public function __construct(Database $db, LogService $log)
+    {
+        $this->db = $db;
+        $this->log = $log;
     }
 
     public function create($data) {
@@ -33,12 +35,12 @@ class UserModel
 
     public function findByEmail($email) {
         $this->log->logInfo("Fetching user by email: $email");
-        return $this->db->fetchOne("SELECT * FROM users WHERE email = ?", [$email]);
+        return $this->db->fetchOne("SELECT * FROM users WHERE email = :email", ['email' => $email]);;
     }
 
     public function findById($id) {
         $this->log->logInfo("Fetching user by id: $id");
-        return $this->db->fetchOne("SELECT * FROM users WHERE id = ?", [$id]);
+        return $this->db->fetchOne("SELECT * FROM users WHERE id = :id", ['id' => $id]);
     }
 
     public function updateAvatar($userId, $relativeUrl) {
@@ -46,10 +48,14 @@ class UserModel
         $this->log->logInfo("Updating avatar for user with ID: $userId");
     
         // Cập nhật URL ảnh đại diện của người dùng
-        $query = "UPDATE users SET avatar_url = ? WHERE id = ?";
+        $query = "UPDATE users SET avatar_url = :avatar_url WHERE id = :id";
+        $params = [
+            ':avatar_url' => $relativeUrl,
+            ':id' => $userId
+        ];
         
         // Thực hiện câu lệnh cập nhật
-        $result = $this->db->execute($query, [$relativeUrl, $userId]);
+        $result = $this->db->execute($query, $params);
     
         if ($result) {
             $this->log->logInfo("Avatar updated successfully for user with ID: $userId");
@@ -64,21 +70,35 @@ class UserModel
         // Log thông tin
         $this->log->logInfo("Updating profile for user with ID: $userId");
     
-        // Câu lệnh SQL cập nhật
-        $query = "UPDATE users SET username = ?, phone = ?, birth_date = ?, sex = ? WHERE id = ?";
-        $params = [$name, $phone, $birthday, $gender, $userId];
+        // Câu lệnh SQL cập nhật sử dụng named placeholders
+        $query = "UPDATE users SET username = :username, phone = :phone, birth_date = :birth_date, sex = :sex WHERE id = :id";
+        
+        // Dữ liệu để binding vào câu lệnh SQL
+        $params = [
+            'username' => $name,
+            'phone' => $phone,
+            'birth_date' => $birthday,
+            'sex' => $gender,
+            'id' => $userId
+        ];
     
         // Thực thi cập nhật
         $result = $this->db->execute($query, $params);
     
-        if ($result) {
+        $affected = $this->db->execute($query, $params);
+
+        if ($affected > 0) {
             $this->log->logInfo("Profile updated successfully for user with ID: $userId");
             return true;
+        } elseif ($affected === 0) {
+            $this->log->logWarning("No changes detected when updating profile for user ID: $userId");
+            return true; // hoặc false tùy theo bạn muốn xử lý sao
         } else {
-            $this->log->logError("Failed to update profile for user with ID: $userId");
+            $this->log->logError("Failed to update profile for user ID: $userId");
             return false;
         }
     }
+    
 
     public function checkPassword($userId, $currentPassword) {
         $this->log->logInfo("Checking current password for user ID: $userId");
@@ -103,11 +123,19 @@ class UserModel
     
         $hashed = password_hash($newPassword, PASSWORD_DEFAULT);
     
-        $query = "UPDATE users SET password_hash = ? WHERE id = ?";
-        $result = $this->db->execute($query, [$hashed, $userId]);
+        $query = "UPDATE users SET password_hash = :password_hash WHERE id = :id";
+        $params = [
+            'password_hash' => $hashed,
+            'id' => $userId
+        ];
+
+        $result = $this->db->execute($query, $params);
     
-        if ($result) {
+        if ($result > 0) {
             $this->log->logInfo("Password updated successfully for user ID: $userId");
+            return true;
+        } else if ($result === 0) {
+            $this->log->logInfo("Password no change for user ID: $userId");
             return true;
         } else {
             $this->log->logError("Failed to update password for user ID: $userId");
@@ -120,15 +148,19 @@ class UserModel
         $this->log->logInfo("Updating email for user with ID: $userId");
     
         // Kiểm tra nếu email mới đã tồn tại trong hệ thống
-        $existingUser = $this->db->fetchOne("SELECT id FROM users WHERE email = ?", [$newEmail]);
+        $existingUser = $this->db->fetchOne("SELECT id FROM users WHERE email = :email", [':email' => $newEmail]);
         if ($existingUser) {
             $this->log->logError("Email đã tồn tại: $newEmail");
             return false; // Trả về false nếu email đã tồn tại
         }
     
         // Cập nhật email người dùng
-        $query = "UPDATE users SET email = ? WHERE id = ?";
-        $result = $this->db->execute($query, [$newEmail, $userId]);
+        $query = "UPDATE users SET email = :email WHERE id = :id";
+        $params = [
+            ':email' => $newEmail,
+            ':id' => $userId
+        ];
+        $result = $this->db->execute($query, $params);
     
         if ($result) {
             $this->log->logInfo("Email updated successfully for user with ID: $userId");

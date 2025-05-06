@@ -8,9 +8,12 @@ use Exception;
 class BookingModel
 {
     private $db;
+    private $log;
 
-    public function __construct() {
-        $this->db = new Database();
+    public function __construct(Database $db, LogService $log)
+    {
+        $this->db = $db;
+        $this->log = $log;
     }
 
     public function getBookings($userId, $searchQuery, $perPage, $offset) {
@@ -55,7 +58,17 @@ class BookingModel
         $bookingIds = array_map(fn($b) => $b->booking_id, $bookings);
     
         // 2. Truy vấn để lấy các time_slot tương ứng với booking_id
-        $inQuery = implode(',', array_fill(0, count($bookingIds), '?'));
+        $slotParams = [];
+        $inPlaceholders = [];
+
+        foreach ($bookingIds as $index => $bookingId) {
+            $key = ":id$index";
+            $inPlaceholders[] = $key;
+            $slotParams[$key] = $bookingId;
+        }
+
+        $inQuery = implode(', ', $inPlaceholders);
+
         $slotSql = "
             SELECT 
                 booking_id, 
@@ -65,8 +78,8 @@ class BookingModel
             WHERE booking_id IN ($inQuery)
             ORDER BY booking_date, time_slot
         ";
-    
-        $slotRows = $this->db->fetchAll($slotSql, $bookingIds);
+
+        $slotRows = $this->db->fetchAll($slotSql, $slotParams);
     
         // 3. Gom slot theo booking_id
         $slotsByBooking = [];
@@ -113,7 +126,7 @@ class BookingModel
     
 
     public function createBooking($roomId, $userId, $totalPrice) {
-        $log = new LogService();
+        
         $bookingId = $this->generateUUID();
     
         // Chuyển totalPrice từ chuỗi sang kiểu số (int)
@@ -122,7 +135,7 @@ class BookingModel
     
         // Kiểm tra xem totalPriceInt có phải là một số hợp lệ và không âm không
         if ($totalPriceInt < 0) {
-            $log->logError("totalPrice không hợp lệ: $totalPriceInt");
+            $this->log->logError("totalPrice không hợp lệ: $totalPriceInt");
             throw new Exception("Giá trị totalPrice không hợp lệ");
         }
     
@@ -138,10 +151,10 @@ class BookingModel
             ':total_price' => $totalPriceInt // Dùng giá trị số nguyên (int)
         ];
     
-        $log->logInfo("Tạo booking mới | Params: " . json_encode($params));
+        $this->log->logInfo("Tạo booking mới | Params: " . json_encode($params));
     
         if (!$this->db->execute($sql, $params)) {
-            $log->logError("Không thể tạo booking!");
+            $this->log->logError("Không thể tạo booking!");
             throw new Exception("Lỗi khi tạo booking");
         }
     
@@ -150,48 +163,48 @@ class BookingModel
     
 
     public function deleteBooking($bookingId) {
-        $log = new LogService();
-        $log->logInfo("Vao deleteBooking Model | ID: $bookingId");
+        
+        $this->log->logInfo("Vao deleteBooking Model | ID: $bookingId");
     
         try {
             // Xoá lịch sử trạng thái
             $sqlHistory = "DELETE FROM booking_status_history WHERE booking_id = :booking_id";
             $params = [':booking_id' => $bookingId];
-            $log->logInfo("Xoá trạng thái booking | ID: $bookingId");
+            $this->log->logInfo("Xoá trạng thái booking | ID: $bookingId");
     
             $resultHistory = $this->db->execute($sqlHistory, $params);
             if (!$resultHistory) {
-                $log->logError("Không thể xoá trạng thái booking với ID: $bookingId");
+                $this->log->logError("Không thể xoá trạng thái booking với ID: $bookingId");
                 throw new Exception("Lỗi khi xoá trạng thái booking");
             }
     
             // Xoá slot đã giữ
             $sqlSlots = "DELETE FROM booking_slots WHERE booking_id = :booking_id";
-            $log->logInfo("Xoá slot booking | ID: $bookingId");
+            $this->log->logInfo("Xoá slot booking | ID: $bookingId");
     
             $resultSlots = $this->db->execute($sqlSlots, $params);
             if (!$resultSlots) {
-                $log->logError("Không thể xoá slot booking với ID: $bookingId");
+                $this->log->logError("Không thể xoá slot booking với ID: $bookingId");
                 throw new Exception("Lỗi khi xoá slot booking");
             }
     
             // Xoá booking chính
             $sqlBooking = "DELETE FROM bookings WHERE id = :booking_id";
-            $log->logInfo("Xoá booking chính | ID: $bookingId");
+            $this->log->logInfo("Xoá booking chính | ID: $bookingId");
     
             $resultBooking = $this->db->execute($sqlBooking, $params);
             if (!$resultBooking) {
-                $log->logError("Không thể xoá booking với ID: $bookingId");
+                $this->log->logError("Không thể xoá booking với ID: $bookingId");
                 throw new Exception("Lỗi khi xoá booking chính");
             }
     
             // Log thông báo thành công
-            $log->logInfo("Đã xoá toàn bộ dữ liệu booking $bookingId thành công");
+            $this->log->logInfo("Đã xoá toàn bộ dữ liệu booking $bookingId thành công");
             return true;
     
         } catch (Exception $e) {
             // Log lỗi và ném lại exception
-            $log->logError("Lỗi khi xoá booking $bookingId: " . $e->getMessage());
+            $this->log->logError("Lỗi khi xoá booking $bookingId: " . $e->getMessage());
             throw $e;
         }
     }
@@ -215,34 +228,34 @@ class BookingModel
     
     public function updatePaymentInfo($bookingId, $paymentMethod, $status, $contactName, $contactEmail, $contactPhone, $note = null)
     {
-        $log = new LogService();
-        $log->logInfo("=== [START] updatePaymentInfo ===");
+        
+        $this->log->logInfo("=== [START] updatePaymentInfo ===");
         $note = $paymentMethod === 'momo'
             ? "Thanh toán đặt phòng thành công qua ví MoMo."
             : "Thanh toán đặt phòng thành công qua chuyển khoản ngân hàng.";
         $label = "Đã thanh toán";
-        $log->logInfo("Input | bookingId: $bookingId | method: $paymentMethod | status: $status | contactName: $contactName | contactEmail: $contactEmail | note: " . var_export($note, true));
+        $this->log->logInfo("Input | bookingId: $bookingId | method: $paymentMethod | status: $status | contactName: $contactName | contactEmail: $contactEmail | note: " . var_export($note, true));
     
         try {
             // 1. Lấy thông tin booking
-            $log->logInfo("Kiểm tra booking_code hiện tại...");
+            $this->log->logInfo("Kiểm tra booking_code hiện tại...");
             $sqlCheck = "SELECT booking_code FROM bookings WHERE id = :booking_id LIMIT 1";
             $paramsCheck = [':booking_id' => $bookingId];
             $booking = $this->db->fetchOne($sqlCheck, $paramsCheck);
     
             if (!$booking) {
-                $log->logError("Không tìm thấy booking với ID: $bookingId");
+                $this->log->logError("Không tìm thấy booking với ID: $bookingId");
                 throw new Exception("Không tìm thấy booking với ID: $bookingId");
             }
     
-            $log->logInfo("Tìm thấy booking");
+            $this->log->logInfo("Tìm thấy booking");
     
             $bookingCode = $booking->booking_code ?? '';
-            $log->logInfo("Booking code hiện tại: " . ($bookingCode ?: '[empty]'));
+            $this->log->logInfo("Booking code hiện tại: " . ($bookingCode ?: '[empty]'));
     
             // 2. Gán mã booking_code nếu chưa có
             if (empty($bookingCode)) {
-                $log->logInfo("Booking chưa có mã - bắt đầu tạo mã mới...");
+                $this->log->logInfo("Booking chưa có mã - bắt đầu tạo mã mới...");
                 $bookingCode = $this->generateBookingCode();
                 $sqlUpdateCode = "UPDATE bookings SET booking_code = :booking_code WHERE id = :booking_id";
                 $paramsUpdateCode = [
@@ -251,14 +264,14 @@ class BookingModel
                 ];
                 $result = $this->db->execute($sqlUpdateCode, $paramsUpdateCode);
                 if (!$result) {
-                    $log->logError("Lỗi khi cập nhật booking_code: $bookingCode cho booking ID: $bookingId");
+                    $this->log->logError("Lỗi khi cập nhật booking_code: $bookingCode cho booking ID: $bookingId");
                     throw new Exception("Không thể cập nhật mã booking_code mới");
                 }
-                $log->logInfo("Đã gán mã booking_code: $bookingCode cho booking ID: $bookingId");
+                $this->log->logInfo("Đã gán mã booking_code: $bookingCode cho booking ID: $bookingId");
             }
     
             // 3. Cập nhật payment_method, status, contact_name, contact_email
-            $log->logInfo("Bắt đầu cập nhật payment_method, status, contact_name, contact_email...");
+            $this->log->logInfo("Bắt đầu cập nhật payment_method, status, contact_name, contact_email...");
             $sqlUpdate = "
                 UPDATE bookings 
                 SET payment_method = :payment_method, 
@@ -279,18 +292,18 @@ class BookingModel
                 ':contact_phone' => $contactPhone,
             ];
     
-            $log->logInfo("Params cập nhật: " . var_export($paramsUpdate, true));
+            $this->log->logInfo("Params cập nhật: " . var_export($paramsUpdate, true));
     
             $updated = $this->db->execute($sqlUpdate, $paramsUpdate);
     
             if (!$updated) {
-                $log->logError("Không thể cập nhật thông tin cho booking ID: $bookingId");
+                $this->log->logError("Không thể cập nhật thông tin cho booking ID: $bookingId");
                 throw new Exception("Lỗi cập nhật trạng thái chính");
             }
-            $log->logInfo("Cập nhật payment/status, contact_name, contact_email thành công cho booking ID: $bookingId");
+            $this->log->logInfo("Cập nhật payment/status, contact_name, contact_email thành công cho booking ID: $bookingId");
     
             // 4. Ghi lịch sử trạng thái
-            $log->logInfo("Bắt đầu ghi lịch sử trạng thái...");
+            $this->log->logInfo("Bắt đầu ghi lịch sử trạng thái...");
             $historyId = $this->generateUUID();
             $sqlHistory = "
                 INSERT INTO booking_status_history (id, booking_id, status, changed_at, note, label) 
@@ -306,23 +319,23 @@ class BookingModel
             $inserted = $this->db->execute($sqlHistory, $paramsHistory);
     
             if (!$inserted) {
-                $log->logError("Không thể ghi lịch sử trạng thái cho booking ID: $bookingId | Query: $sqlHistory | Params: " . var_export($paramsHistory, true));
+                $this->log->logError("Không thể ghi lịch sử trạng thái cho booking ID: $bookingId | Query: $sqlHistory | Params: " . var_export($paramsHistory, true));
                 throw new Exception("Lỗi ghi lịch sử trạng thái");
             }
     
-            $log->logInfo("Ghi lịch sử trạng thái thành công cho booking ID: $bookingId | historyId: $historyId");
-            $log->logInfo("=== [END] updatePaymentInfo ===");
+            $this->log->logInfo("Ghi lịch sử trạng thái thành công cho booking ID: $bookingId | historyId: $historyId");
+            $this->log->logInfo("=== [END] updatePaymentInfo ===");
     
             return true;
         } catch (Exception $e) {
-            $log->logError("Lỗi trong updatePaymentInfo | Booking ID: $bookingId | Exception: " . $e->getMessage());
+            $this->log->logError("Lỗi trong updatePaymentInfo | Booking ID: $bookingId | Exception: " . $e->getMessage());
             throw $e;
         }
     }
 
     public function getTimeSlotsv2($bookingId) {
-        $log = new LogService();
-        $log->logInfo("Voo ddddd");
+        
+        $this->log->logInfo("Voo ddddd");
     
         $sql = "
             SELECT booking_date, time_slot 
@@ -355,17 +368,17 @@ class BookingModel
                 $timeSlots[] = $dateFormatted . ' – ' . $start->format('H:i') . ' - ' . $end->format('H:i');
             }
     
-            $log->logInfo("Lấy time slots cho booking $bookingId | Kết quả: " . json_encode($timeSlots));
+            $this->log->logInfo("Lấy time slots cho booking $bookingId | Kết quả: " . json_encode($timeSlots));
             return $timeSlots;
         }
     
-        $log->logError("Không tìm thấy time slots cho booking $bookingId");
+        $this->log->logError("Không tìm thấy time slots cho booking $bookingId");
         return [];
     }
     
     
     public function getTimeSlots($bookingId) {
-        $log = new LogService();
+        
     
         // SQL query để lấy tất cả các time_slot của một booking
         $sql = "
@@ -394,18 +407,18 @@ class BookingModel
             }
     
             // Log thông tin truy vấn
-            $log->logInfo("Lấy time slots cho booking $bookingId | Kết quả: " . json_encode($timeSlots));
+            $this->log->logInfo("Lấy time slots cho booking $bookingId | Kết quả: " . json_encode($timeSlots));
             
             return $timeSlots;
         }
     
         // Nếu không có kết quả
-        $log->logError("Không tìm thấy time slots cho booking $bookingId");
+        $this->log->logError("Không tìm thấy time slots cho booking $bookingId");
         return null;
     }
     
     public function getTimeline($bookingId) {
-        $log = new LogService();
+        
     
         $sql = "
             SELECT changed_at, note
@@ -431,16 +444,16 @@ class BookingModel
                 ];
             }
     
-            $log->logInfo("Lấy timeline cho booking $bookingId | Kết quả: " . json_encode($timeline));
+            $this->log->logInfo("Lấy timeline cho booking $bookingId | Kết quả: " . json_encode($timeline));
             return $timeline;
         }
     
-        $log->logError("Không tìm thấy timeline cho booking $bookingId");
+        $this->log->logError("Không tìm thấy timeline cho booking $bookingId");
         return null;
     }
 
     public function getBookingTimeline($bookingId) {
-        $log = new LogService();
+        
     
         $sql = "
             SELECT status, changed_at, note, label
@@ -466,11 +479,11 @@ class BookingModel
                 ];
             }
     
-            $log->logInfo("Lịch sử timeline của booking $bookingId: " . json_encode($timeline));
+            $this->log->logInfo("Lịch sử timeline của booking $bookingId: " . json_encode($timeline));
             return $timeline;
         }
     
-        $log->logError("Không tìm thấy lịch sử trạng thái cho booking $bookingId");
+        $this->log->logError("Không tìm thấy lịch sử trạng thái cho booking $bookingId");
         return null;
     }
     
@@ -478,7 +491,7 @@ class BookingModel
     // lấy 
     
     public function getCompletedTimestamps($bookingId) {
-        $log = new LogService();
+        
     
         $sql = "
             SELECT status, changed_at
@@ -509,12 +522,12 @@ class BookingModel
             }
         }
     
-        $log->logInfo("Lấy completed timestamps cho booking $bookingId | Kết quả: " . json_encode($completedTimes));
+        $this->log->logInfo("Lấy completed timestamps cho booking $bookingId | Kết quả: " . json_encode($completedTimes));
         return $completedTimes;
     }
 
     public function cancelBooking($bookingId, $userFullName, $reason) {
-        $log = new LogService();
+        
     
         $note = "Đơn đặt phòng đã bị hủy. Người hủy: {$userFullName} | Lý do: {$reason}";
     
@@ -529,10 +542,10 @@ class BookingModel
             ':note' => $note
         ];
     
-        $log->logInfo("Hủy booking $bookingId | " . json_encode($params));
+        $this->log->logInfo("Hủy booking $bookingId | " . json_encode($params));
     
         if (!$this->db->execute($sql, $params)) {
-            $log->logError("Lỗi khi hủy booking $bookingId");
+            $this->log->logError("Lỗi khi hủy booking $bookingId");
             throw new Exception("Không thể hủy booking.");
         }
     
@@ -546,11 +559,11 @@ class BookingModel
     public function getCancelInfo($bookingId) {
         $sql = "SELECT note, changed_at 
                 FROM booking_status_history 
-                WHERE booking_id = ? AND status = 'canceled' 
+                WHERE booking_id = :bookingId AND status = 'canceled' 
                 ORDER BY changed_at DESC 
                 LIMIT 1";
     
-        $row = $this->db->fetchOne($sql, [$bookingId]);
+        $row = $this->db->fetchOne($sql, [':bookingId' => $bookingId]);
     
         if (!$row) {
             return null;
@@ -574,6 +587,7 @@ class BookingModel
     }
     
     
+    
     public function findById($bookingId) {
         $sql = "SELECT * FROM bookings WHERE id = :id LIMIT 1";
         $params = [':id' => $bookingId];
@@ -581,16 +595,16 @@ class BookingModel
         try {
             return $this->db->fetchOne($sql, $params);
         } catch (Exception $e) {
-            $log = new LogService();
-            $log->logError("Lỗi khi tìm booking theo ID: $bookingId | " . $e->getMessage());
+            
+            $this->log->logError("Lỗi khi tìm booking theo ID: $bookingId | " . $e->getMessage());
             return null;
         }
     }
     
 
     public function addBookingSlots($bookingId, $date, array $slots) {
-        $log = new LogService();
-        $log->logInfo("Hello : $bookingId, day: $date");
+        
+        $this->log->logInfo("Hello : $bookingId, day: $date");
 
         foreach ($slots as $slot) {
             $sql = "
@@ -605,23 +619,23 @@ class BookingModel
                 ':time_slot' => $slot
             ];
 
-            $log->logInfo("Thêm slot cho booking | Params: " . json_encode($params));
+            $this->log->logInfo("Thêm slot cho booking | Params: " . json_encode($params));
 
             if (!$this->db->execute($sql, $params)) {
-                $log->logError("Không thể thêm slot {$slot} cho booking {$bookingId}");
+                $this->log->logError("Không thể thêm slot {$slot} cho booking {$bookingId}");
                 throw new Exception("Lỗi khi thêm slot {$slot}");
             }
         }
     }
 
     public function addStatusHistory($bookingId, $status, $note = null) {
-        $log = new LogService();
+        
 
         if ($note === null) {
             $note = $this->generateDefaultNote($status);
         }
 
-        $log->logInfo("Ghi lịch sử trạng thái booking | Params: " .$note);
+        $this->log->logInfo("Ghi lịch sử trạng thái booking | Params: " .$note);
 
         $sql = "
             INSERT INTO booking_status_history (id, booking_id, status, changed_at, note)
@@ -635,10 +649,10 @@ class BookingModel
             ':note' => $note
         ];
 
-        $log->logInfo("Ghi lịch sử trạng thái booking | Params: " . json_encode($params));
+        $this->log->logInfo("Ghi lịch sử trạng thái booking | Params: " . json_encode($params));
 
         if (!$this->db->execute($sql, $params)) {
-            $log->logError("Không thể lưu lịch sử trạng thái cho booking {$bookingId}");
+            $this->log->logError("Không thể lưu lịch sử trạng thái cho booking {$bookingId}");
             throw new Exception("Lỗi khi lưu trạng thái booking");
         }
     }
@@ -647,26 +661,38 @@ class BookingModel
     {
         if (empty($slots)) return false;
     
-        $placeholders = implode(',', array_fill(0, count($slots), '?'));
+        // Tạo placeholder dạng :slot0, :slot1, ...
+        $slotPlaceholders = [];
+        $slotParams = [];
+        foreach ($slots as $i => $slot) {
+            $key = ":slot$i";
+            $slotPlaceholders[] = $key;
+            $slotParams[$key] = $slot;
+        }
+    
+        $placeholdersString = implode(',', $slotPlaceholders);
     
         $sql = "
             SELECT bs.* 
             FROM booking_slots bs
             JOIN bookings b ON bs.booking_id = b.id
-            WHERE b.room_id = ? 
-            AND bs.booking_date = ? 
-            AND bs.time_slot IN ($placeholders)
+            WHERE b.room_id = :roomId
+            AND bs.booking_date = :bookingDate
+            AND bs.time_slot IN ($placeholdersString)
             AND b.status != 'cancelled'
         ";
     
-        $params = array_merge([$roomId, $bookingDate], $slots);
-        $params = array_values($params);  // đảm bảo index từ 0
+        $params = array_merge([
+            ':roomId' => $roomId,
+            ':bookingDate' => $bookingDate
+        ], $slotParams);
     
         return $this->db->fetchAll($sql, $params);
     }
+    
 
     public function updateBookingStatus($bookingId, $newStatus, $note, $label) {
-        $log = new LogService();
+        
     
         try {
             // Thêm vào lịch sử
@@ -687,10 +713,10 @@ class BookingModel
                 ':booking_id' => $bookingId
             ]);
     
-            $log->logInfo("Cập nhật trạng thái đơn hàng $bookingId thành $newStatus");
+            $this->log->logInfo("Cập nhật trạng thái đơn hàng $bookingId thành $newStatus");
             return true;
         } catch (Exception $e) {
-            $log->logError("Lỗi khi cập nhật trạng thái đơn hàng: " . $e->getMessage());
+            $this->log->logError("Lỗi khi cập nhật trạng thái đơn hàng: " . $e->getMessage());
             return false;
         }
     }
@@ -698,10 +724,10 @@ class BookingModel
     
 
     // public function getBookedSlots($roomId, $date) {
-    //     $log = new LogService();
+    //     
     
     //     // Ghi log khi bắt đầu thực hiện truy vấn
-    //     $log->logInfo("Lấy danh sách khung giờ đã đặt cho phòng {$roomId} vào ngày {$date}");
+    //     $this->log->logInfo("Lấy danh sách khung giờ đã đặt cho phòng {$roomId} vào ngày {$date}");
     
     //     // Truy vấn SQL để lấy các khung giờ đã đặt
     //     $sql = "SELECT time_slot FROM booking_slots 
@@ -710,26 +736,26 @@ class BookingModel
     
     //     try {
     //         // Ghi log câu SQL đã thực hiện
-    //         $log->logInfo("SQL Query: {$sql}");
+    //         $this->log->logInfo("SQL Query: {$sql}");
     
     //         // Thực thi truy vấn và lấy kết quả
     //         $bookedSlots = $this->db->fetchAll($sql); // sử dụng fetchAll để lấy tất cả kết quả
     
     //         // Ghi log kết quả trả về
-    //         $log->logInfo("Kết quả truy vấn: " . json_encode($bookedSlots));
+    //         $this->log->logInfo("Kết quả truy vấn: " . json_encode($bookedSlots));
     
     //         return $bookedSlots; // Trả về danh sách các khung giờ đã đặt
     //     } catch (Exception $e) {
     //         // Ghi log khi có lỗi xảy ra
-    //         $log->logError("Lỗi khi thực hiện truy vấn: " . $e->getMessage());
+    //         $this->log->logError("Lỗi khi thực hiện truy vấn: " . $e->getMessage());
     //         throw new Exception("Không thể lấy khung giờ đã đặt.");
     //     }
     // }
     
     public function getBookedSlots($roomId, $date) {
-        $log = new LogService();
+        
     
-        $log->logInfo("Lấy danh sách khung giờ đã đặt kèm dọn phòng cho phòng {$roomId} vào ngày {$date}");
+        $this->log->logInfo("Lấy danh sách khung giờ đã đặt kèm dọn phòng cho phòng {$roomId} vào ngày {$date}");
     
         $sql = "SELECT time_slot FROM booking_slots 
                 WHERE booking_date = :date 
@@ -744,12 +770,12 @@ class BookingModel
     
         // Danh sách khung giờ gốc
         $bookedSlots = array_map(fn($item) => $item->time_slot, $result);
-        $log->logInfo("Khung giờ đã đặt: " . json_encode($bookedSlots));
+        $this->log->logInfo("Khung giờ đã đặt: " . json_encode($bookedSlots));
     
         // Dọn phòng trước & sau mỗi slot
         $allBlocked = [];
         foreach ($bookedSlots as $time) {
-            $log->logInfo("Button time: {$time}");  // Kiểm tra các giá trị thời gian ban đầu
+            $this->log->logInfo("Button time: {$time}");  // Kiểm tra các giá trị thời gian ban đầu
 
             // Thêm khung giờ đã đặt
             $allBlocked[] = $time;
@@ -758,22 +784,22 @@ class BookingModel
             try {
                 $timeBefore = $this->subtract30($time); // Dọn trước
                 $timeAfter = $this->add30($time);      // Dọn sau
-                $log->logInfo("Khung giờ dọn trước: {$timeBefore}, Khung giờ dọn sau: {$timeAfter}");
+                $this->log->logInfo("Khung giờ dọn trước: {$timeBefore}, Khung giờ dọn sau: {$timeAfter}");
                 
                 // Thêm vào mảng $allBlocked
                 $allBlocked[] = $timeBefore;
                 $allBlocked[] = $timeAfter;
             } catch (Exception $e) {
-                $log->logError("Lỗi xử lý thời gian: {$time} | Message: " . $e->getMessage());
+                $this->log->logError("Lỗi xử lý thời gian: {$time} | Message: " . $e->getMessage());
             }
         }
 
         // Kiểm tra toàn bộ mảng $allBlocked sau vòng lặp
-        $log->logInfo("Tất cả các khung giờ bị chặn (bao gồm dọn phòng): " . json_encode($allBlocked));
+        $this->log->logInfo("Tất cả các khung giờ bị chặn (bao gồm dọn phòng): " . json_encode($allBlocked));
 
         // Lọc trùng
         $allBlocked = array_values(array_unique($allBlocked));
-        $log->logInfo("Khung giờ bị chặn (gồm dọn phòng): " . json_encode($allBlocked));
+        $this->log->logInfo("Khung giờ bị chặn (gồm dọn phòng): " . json_encode($allBlocked));
 
         return $allBlocked;
 
@@ -782,8 +808,8 @@ class BookingModel
     
     // Đếm tổng số bản ghi hoặc đã lọc (áp dụng các bộ lọc nếu có)
     public function countBookings($statusFilter = '', $roomNameFilter = '', $search = '') {
-        $log = new LogService();
-        $log->logInfo("[BEGIN] countBookings");
+        
+        $this->log->logInfo("[BEGIN] countBookings");
 
         $whereClause = '';
 
@@ -813,12 +839,12 @@ class BookingModel
         $result = $this->db->fetchOne($sql);
 
         if ($result === false) {
-            $log->logError("[ERROR] countBookings query failed");
+            $this->log->logError("[ERROR] countBookings query failed");
         } else {
-            $log->logInfo("[INFO] countBookings result: " . print_r($result, true));
+            $this->log->logInfo("[INFO] countBookings result: " . print_r($result, true));
         }
 
-        $log->logInfo("[END] countBookings");
+        $this->log->logInfo("[END] countBookings");
 
         return $result ? intval($result->total) : 0;
     }
@@ -834,7 +860,7 @@ class BookingModel
         $orderDir = 'DESC'
     ) 
     {
-        $log = new LogService();
+        
         $offset = intval($offset);
         $limit = intval($limit);
         $search = trim($search);
@@ -848,7 +874,7 @@ class BookingModel
             $orderColumn = 'booking_code';
         }
     
-        $log->logInfo("Admin fetching bookings | Offset: {$offset}, Limit: {$limit}, Status: '{$statusFilter}', Room: '{$roomNameFilter}', Search: '{$search}', Order: {$orderColumn} {$orderDir}");
+        $this->log->logInfo("Admin fetching bookings | Offset: {$offset}, Limit: {$limit}, Status: '{$statusFilter}', Room: '{$roomNameFilter}', Search: '{$search}', Order: {$orderColumn} {$orderDir}");
     
         // Tạo mảng điều kiện WHERE
         $filters = [];
@@ -899,7 +925,7 @@ class BookingModel
         $bookings = $this->db->fetchAll($sql);
     
         if ($bookings === false) {
-            $log->logError("Admin booking query failed.");
+            $this->log->logError("Admin booking query failed.");
             return [];
         }
     
@@ -987,28 +1013,28 @@ class BookingModel
     
     private function generateBookingCode()
     {
-        $log = new LogService();
+        
         $today = date('Ymd');
         $prefix = 'PR' . $today;
     
         try {
-            $log->logInfo("Bắt đầu tạo booking_code | Prefix: $prefix");
+            $this->log->logInfo("Bắt đầu tạo booking_code | Prefix: $prefix");
     
             $sql = "SELECT COUNT(*) as count FROM bookings WHERE booking_code LIKE :prefix";
             $params = [':prefix' => $prefix . '%'];
     
-            $log->logInfo("Thực thi truy vấn đếm booking_code | SQL: $sql | Params: " . json_encode($params));
+            $this->log->logInfo("Thực thi truy vấn đếm booking_code | SQL: $sql | Params: " . json_encode($params));
             $result = $this->db->fetchOne($sql, $params);
     
-            $log->logInfo("Kết quả đếm: " . var_export($result, true));
+            $this->log->logInfo("Kết quả đếm: " . var_export($result, true));
             $count = property_exists($result, 'count') ? (int)$result->count + 1 : 1;
     
             $bookingCode = $prefix . str_pad($count, 4, '0', STR_PAD_LEFT);
-            $log->logInfo("Tạo booking_code mới: $bookingCode");
+            $this->log->logInfo("Tạo booking_code mới: $bookingCode");
     
             return $bookingCode;
         } catch (Exception $e) {
-            $log->logError("Lỗi tạo booking_code: " . $e->getMessage());
+            $this->log->logError("Lỗi tạo booking_code: " . $e->getMessage());
             throw $e;
         }
     }

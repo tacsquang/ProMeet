@@ -1,11 +1,21 @@
 <?php
 namespace App\Controllers\Admin;
-use App\Models\RoomModel;
-use App\Models\BookingModel;
-use App\Models\UserModel;
-use App\Core\LogService;
+use App\Core\Container;
 
 class BookingController {
+    protected $log;
+    protected $roomModel;
+    protected $bookingModel;
+    protected $userModel;
+
+    public function __construct(Container $container)
+    {
+        $this->log = $container->get('logger');
+        $this->roomModel = $container->get('RoomModel');
+        $this->bookingModel = $container->get('BookingModel');
+        $this->userModel = $container->get('UserModel');
+    }
+
     public function index() {
         #echo "This is global RoomController.";
         $view = new \App\Core\View();
@@ -21,19 +31,14 @@ class BookingController {
     }
 
     public function detail($bookingId) {
-        #echo "This is global RoomController.";
 
-        //         
-        $log = new LogService();
-        
-        $bookingModel = new BookingModel();
-        $booking  = $bookingModel->findById($bookingId);
-        $roomModel = new RoomModel();
-        $room = $roomModel->getRoomById($booking->room_id);
-        $userModel = new UserModel();
-        $user = $userModel->findById($booking->user_id);
-        $timeslots = $bookingModel->getTimeSlotsv2($bookingId);
-        $timeline = $bookingModel->getBookingTimeline($bookingId);
+        $booking  = $this->bookingModel->findById($bookingId);
+
+        $room = $this->roomModel->getRoomById($booking->room_id);
+
+        $user = $this->userModel->findById($booking->user_id);
+        $timeslots = $this->bookingModel->getTimeSlotsv2($bookingId);
+        $timeline = $this->bookingModel->getBookingTimeline($bookingId);
 
 
         $view = new \App\Core\View();
@@ -63,11 +68,11 @@ class BookingController {
     }
 
     public function update_booking_status() {
-        $log = new LogService();
-        $log->logInfo("Bắt đầu update_booking_status");
+        
+        $this->log->logInfo("Bắt đầu update_booking_status");
     
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $log->logInfo("Xử lý POST update_booking_status");
+            $this->log->logInfo("Xử lý POST update_booking_status");
     
             $data = json_decode(file_get_contents('php://input'), true);
     
@@ -79,27 +84,26 @@ class BookingController {
     
             // Validate input
             if (empty($bookingId) || empty($newStatus)) {
-                $log->logError("Thiếu thông tin: booking_id hoặc new_status");
+                $this->log->logError("Thiếu thông tin: booking_id hoặc new_status");
                 echo json_encode(['success' => false, 'message' => 'Thiếu thông tin bắt buộc']);
                 return;
             }
     
-            $log->logInfo("Dữ liệu nhận được: booking_id = $bookingId | new_status = $newStatus | note = $note | label = $label");
+            $this->log->logInfo("Dữ liệu nhận được: booking_id = $bookingId | new_status = $newStatus | note = $note | label = $label");
     
             try {
-                // Gọi model cập nhật
-                $bookingModel = new BookingModel();
-                $result = $bookingModel->updateBookingStatus($bookingId, $newStatus, $note, $label);
+
+                $result = $this->bookingModel->updateBookingStatus($bookingId, $newStatus, $note, $label);
     
                 if ($result) {
-                    $log->logInfo("Cập nhật trạng thái thành công cho booking ID: $bookingId");
+                    $this->log->logInfo("Cập nhật trạng thái thành công cho booking ID: $bookingId");
                     echo json_encode(['success' => true, 'message' => 'Cập nhật trạng thái thành công']);
                 } else {
                     throw new Exception("Không rõ lỗi khi cập nhật trạng thái");
                 }
     
             } catch (Exception $e) {
-                $log->logError("Lỗi khi cập nhật trạng thái: " . $e->getMessage());
+                $this->log->logError("Lỗi khi cập nhật trạng thái: " . $e->getMessage());
                 echo json_encode(['success' => false, 'message' => 'Có lỗi xảy ra khi cập nhật trạng thái đơn hàng']);
             }
     
@@ -110,9 +114,7 @@ class BookingController {
     }
 
     public function getAll() {
-        $bookingModel = new BookingModel();
-        $log = new LogService();
-    
+
         // Lấy các tham số lọc
         $statusFilter = isset($_GET['status']) ? $_GET['status'] : '';
         $roomNameFilter = isset($_GET['booking_date']) ? $_GET['booking_date'] : '';
@@ -132,19 +134,19 @@ class BookingController {
     
         $orderColumn = ($orderColumnIndex !== null && isset($columns[$orderColumnIndex])) ? $columns[$orderColumnIndex] : null;
     
-        $log->logInfo("Request received - draw: {$draw}, start: {$start}, length: {$length}, search: {$searchValue}, status filter: {$statusFilter}, room name filter: {$roomNameFilter}, order by: {$orderColumn} {$orderDir}");
+        $this->log->logInfo("Request received - draw: {$draw}, start: {$start}, length: {$length}, search: {$searchValue}, status filter: {$statusFilter}, room name filter: {$roomNameFilter}, order by: {$orderColumn} {$orderDir}");
     
         // Đếm tổng số bản ghi (áp dụng các bộ lọc nếu có)
-        $totalRecords = $bookingModel->countBookings($statusFilter, $roomNameFilter, '');  // Đếm tất cả bản ghi, không có tìm kiếm
+        $totalRecords = $this->bookingModel->countBookings($statusFilter, $roomNameFilter, '');  // Đếm tất cả bản ghi, không có tìm kiếm
         $totalFiltered = $totalRecords;
         
         if ($searchValue !== '') {
-            $totalFiltered = $bookingModel->countBookings($statusFilter, $roomNameFilter, $searchValue);  // Đếm bản ghi đã lọc với tìm kiếm
+            $totalFiltered = $this->bookingModel->countBookings($statusFilter, $roomNameFilter, $searchValue);  // Đếm bản ghi đã lọc với tìm kiếm
         }
         
     
         // Lấy danh sách booking có lọc, sắp xếp
-        $bookings = $bookingModel->fetchBookingsForAdmin($start, $length, $statusFilter, $roomNameFilter, $searchValue, $orderColumn, $orderDir);
+        $bookings = $this->bookingModel->fetchBookingsForAdmin($start, $length, $statusFilter, $roomNameFilter, $searchValue, $orderColumn, $orderDir);
     
         // Thêm STT
         $bookingsWithStt = array_map(function($booking, $index) use ($start) {
@@ -169,10 +171,8 @@ class BookingController {
         // Kiểm tra nếu có tham số 'time_range' trong yêu cầu GET
         $timeRange = $_GET['time_range'] ?? 'all';
     
-        $bookingModel = new BookingModel();
-    
         // Gọi hàm lấy dữ liệu thống kê từ model
-        $statistics = $bookingModel->getStatisticsByTimeRange($timeRange);
+        $statistics = $this->bookingModel->getStatisticsByTimeRange($timeRange);
     
         // Trả về dữ liệu JSON
         header('Content-Type: application/json');  

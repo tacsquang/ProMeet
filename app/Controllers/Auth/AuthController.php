@@ -3,10 +3,19 @@ namespace App\Controllers\Auth;
 
 use App\Core\View;
 use App\Models\UserModel;
-use App\Core\LogService;
+use App\Core\Container;
 
 class AuthController
 {
+    protected $log;
+    protected $userModel;
+
+    public function __construct(Container $container)
+    {
+        $this->log = $container->get('logger');
+        $this->userModel = $container->get('UserModel');
+    }
+
     public function login() {
         #var_dump($_SESSION);
 
@@ -16,17 +25,14 @@ class AuthController
             exit;
         }
 
-
-
-        $log = new LogService();
-        $log->logInfo("Login attempt | Method: {$_SERVER['REQUEST_METHOD']} | URL: {$_SERVER['REQUEST_URI']}");
+        $this->log->logInfo("Login attempt | Method: {$_SERVER['REQUEST_METHOD']} | URL: {$_SERVER['REQUEST_URI']}");
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $email = $_POST['email'] ?? '';
             $password = $_POST['password'] ?? '';
 
-            $userModel = new UserModel();
-            $user = $userModel->findByEmail($email);
+            
+            $user = $this->userModel->findByEmail($email);
 
             if ($user && password_verify($password, $user->password_hash)) {
                 $_SESSION['user'] = [
@@ -35,7 +41,7 @@ class AuthController
                     'role' => $user->role
                 ];
 
-                $log->logInfo("User '{$user->username}' (ID: {$user->id}) logged in successfully.");
+                $this->log->logInfo("User '{$user->username}' (ID: {$user->id}) logged in successfully.");
 
                 // Kiểm tra nếu là admin thì không cần chuyển hướng về URL đã lưu
                 if ($user->role === 'admin') {
@@ -58,7 +64,7 @@ class AuthController
                 // header('Location: /BTL_LTW/ProMeet/public/home/index');
                 exit;
             } else {
-                $log->logWarning("Login failed for email: '{$email}'");
+                $this->log->logWarning("Login failed for email: '{$email}'");
 
                 $view = new View();
                 $view->setLayout(null);
@@ -71,7 +77,7 @@ class AuthController
             $success = $_SESSION['success_message'] ?? '';
             unset($_SESSION['success_message']);
 
-            $log->logInfo("Login attempt");
+            $this->log->logInfo("Login attempt");
             $view = new View();
             $view->setLayout(null);
             $view->render('public/auth/login', [
@@ -88,8 +94,8 @@ class AuthController
             $password = $_POST['password'] ?? '';
             $confirm = $_POST['confirm_password'] ?? '';
     
-            $log = new LogService();
-            $log->logInfo("Register attempt for email: {$email}");
+    
+            $this->log->logInfo("Register attempt for email: {$email}");
     
             // Kiểm tra hợp lệ
             if (!$username || !$email || !$password || !$confirm) {
@@ -99,12 +105,12 @@ class AuthController
             } elseif ($password !== $confirm) {
                 $error = 'Mật khẩu xác nhận không khớp.';
             } else {
-                $userModel = new UserModel();
+                
     
-                if ($userModel->findByEmail($email)) {
+                if ($this->userModel->findByEmail($email)) {
                     $error = 'Email đã được sử dụng.';
                 } else {
-                    $created = $userModel->create([
+                    $created = $this->userModel->create([
                         'username' => $username,
                         'email' => $email,
                         'password_hash' => password_hash($password, PASSWORD_DEFAULT),
@@ -113,12 +119,12 @@ class AuthController
                     
                     if ($created) {
                         $_SESSION['success_message'] = 'Tạo tài khoản thành công. Hãy đăng nhập để khám phá ProMeet.';
-                        $log->logInfo("New user '{$username}' registered successfully.");
+                        $this->log->logInfo("New user '{$username}' registered successfully.");
                         header('Location: ' . BASE_URL . '/auth/login');
                         exit;
                     } else {
                         $error = 'Có lỗi xảy ra. Vui lòng thử lại sau.';
-                        $log->logError("Failed to create user '{$username}'.");
+                        $this->log->logError("Failed to create user '{$username}'.");
                     }
                 }
             }
@@ -146,8 +152,8 @@ class AuthController
     }
 
     public function saveRedirectUrl() {
-        $log = new LogService();
-        $log->logInfo("Bắt đầu lưu redirect URL");
+
+        $this->log->logInfo("Bắt đầu lưu redirect URL");
         var_dump($_SESSION);
 
         // Xử lý AJAX lưu redirect URL

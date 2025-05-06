@@ -1,9 +1,17 @@
 <?php
 namespace App\Controllers\Public;
-use App\Models\UserModel;
-use App\Core\LogService;
+use App\Core\Container;
 
 class AccountController {
+    protected $log;
+    protected $userModel;
+
+    public function __construct(Container $container)
+    {
+        $this->log = $container->get('logger');
+        $this->userModel = $container->get('UserModel');
+    }
+
     public function index(){
         $view = new \App\Core\View();
         $userId = $_SESSION['user']['id'] ?? null;
@@ -12,8 +20,8 @@ class AccountController {
             exit;
         }
 
-        $userModel = new UserModel();
-        $user = $userModel->findById($userId);
+        
+        $user = $this->userModel->findById($userId);
 
         if (!$user) {
             // Nếu không tìm thấy người dùng, xử lý lỗi
@@ -60,13 +68,13 @@ class AccountController {
         }
     
         // Kiểm tra mật khẩu hiện tại (giả sử bạn có UserModel::checkPassword và updatePassword)
-        $userModel = new UserModel();
-        if (!$userModel->checkPassword($userId, $current)) {
+        
+        if (!$this->userModel->checkPassword($userId, $current)) {
             echo json_encode(['success' => false, 'level' => 'error', 'message' => 'Mật khẩu hiện tại không đúng.']);
             return;
         }
     
-        $result = $userModel->updatePassword($userId, $new);
+        $result = $this->userModel->updatePassword($userId, $new);
 
         if ($result) {
             echo json_encode([
@@ -84,12 +92,12 @@ class AccountController {
 
     public function uploadAvatar()
     {
-        $log = new LogService();
-        $log->logInfo("=== [UPLOAD AVATAR] Start uploading avatar ===");
+        
+        $this->log->logInfo("=== [UPLOAD AVATAR] Start uploading avatar ===");
     
         // Kiểm tra nếu là phương thức POST
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $log->logError("[UPLOAD AVATAR] Invalid request method: " . $_SERVER['REQUEST_METHOD']);
+            $this->log->logError("[UPLOAD AVATAR] Invalid request method: " . $_SERVER['REQUEST_METHOD']);
             echo json_encode(['error' => 'Invalid request method']);
             exit;
         }
@@ -97,24 +105,24 @@ class AccountController {
         // Kiểm tra xem có file ảnh được upload không
         $image = $_FILES['avatar'] ?? null;
         if ($image && $image['error'] === UPLOAD_ERR_OK) {
-            $log->logInfo("[UPLOAD AVATAR] File received: " . json_encode($image));
+            $this->log->logInfo("[UPLOAD AVATAR] File received: " . json_encode($image));
     
             // Lấy ID người dùng từ session
             $userId = $_SESSION['user']['id'] ?? null;
             if (!$userId) {
-                $log->logError("[UPLOAD AVATAR] Missing user ID in session");
+                $this->log->logError("[UPLOAD AVATAR] Missing user ID in session");
                 echo json_encode(['error' => 'User ID is required']);
                 exit;
             }
-            $log->logInfo("[UPLOAD AVATAR] User ID: {$userId}");
+            $this->log->logInfo("[UPLOAD AVATAR] User ID: {$userId}");
     
             // Tạo thư mục lưu trữ ảnh avatar nếu chưa tồn tại
             $uploadDir = __DIR__ . '/../../../public/uploads/avatars/' . $userId . '/';
             if (!is_dir($uploadDir)) {
                 if (mkdir($uploadDir, 0777, true)) {
-                    $log->logInfo("[UPLOAD AVATAR] Upload directory created: {$uploadDir}");
+                    $this->log->logInfo("[UPLOAD AVATAR] Upload directory created: {$uploadDir}");
                 } else {
-                    $log->logError("[UPLOAD AVATAR] Failed to create upload directory: {$uploadDir}");
+                    $this->log->logError("[UPLOAD AVATAR] Failed to create upload directory: {$uploadDir}");
                     echo json_encode(['error' => 'Failed to create upload directory']);
                     exit;
                 }
@@ -123,16 +131,16 @@ class AccountController {
             // Đặt tên file ảnh và xác định vị trí lưu trữ
             $filename = time() . '_' . basename($image['name']);
             $target = $uploadDir . $filename;
-            $log->logInfo("[UPLOAD AVATAR] Target file path: {$target}");
+            $this->log->logInfo("[UPLOAD AVATAR] Target file path: {$target}");
     
             // Di chuyển ảnh vào thư mục
             if (move_uploaded_file($image['tmp_name'], $target)) {
                 $relativeUrl = '/uploads/avatars/' . $userId . '/' . $filename;
-                $log->logInfo("[UPLOAD AVATAR] Avatar uploaded successfully: {$relativeUrl}");
+                $this->log->logInfo("[UPLOAD AVATAR] Avatar uploaded successfully: {$relativeUrl}");
     
                 // Cập nhật thông tin avatar vào cơ sở dữ liệu
-                $userModel = new UserModel();
-                $updateResult = $userModel->updateAvatar($userId, $relativeUrl);
+                
+                $updateResult = $this->userModel->updateAvatar($userId, $relativeUrl);
     
                 if ($updateResult) {
                     // Sau khi upload và cập nhật thành công, trả về URL mới của ảnh đại diện
@@ -142,23 +150,23 @@ class AccountController {
                     ]);
                 } else {
                     // Nếu có lỗi khi cập nhật avatar
-                    $log->logError("[UPLOAD AVATAR] Failed to update avatar in the database for user ID: {$userId}");
+                    $this->log->logError("[UPLOAD AVATAR] Failed to update avatar in the database for user ID: {$userId}");
                     echo json_encode(['error' => 'Failed to update avatar in the database']);
                 }
             } else {
-                $log->logError("[UPLOAD AVATAR] Failed to move uploaded file: {$image['tmp_name']} to {$target}");
+                $this->log->logError("[UPLOAD AVATAR] Failed to move uploaded file: {$image['tmp_name']} to {$target}");
                 echo json_encode(['error' => 'Failed to upload image']);
             }
         } else {
             if (isset($image)) {
-                $log->logError("[UPLOAD AVATAR] Upload error: " . $image['error']);
+                $this->log->logError("[UPLOAD AVATAR] Upload error: " . $image['error']);
             } else {
-                $log->logError("[UPLOAD AVATAR] No file uploaded");
+                $this->log->logError("[UPLOAD AVATAR] No file uploaded");
             }
             echo json_encode(['error' => 'No file uploaded or upload error']);
         }
     
-        $log->logInfo("=== [UPLOAD AVATAR] Avatar upload process completed ===");
+        $this->log->logInfo("=== [UPLOAD AVATAR] Avatar upload process completed ===");
     }
 
     public function updateProfile() {
@@ -178,8 +186,8 @@ class AccountController {
             return;
         }
     
-        $userModel = new UserModel();
-        $ok = $userModel->updateProfile($userId, $name, $phone, $birthday, $gender);
+        
+        $ok = $this->userModel->updateProfile($userId, $name, $phone, $birthday, $gender);
         if ($ok) {
             $_SESSION['user']['name'] = $name;
             echo json_encode(['success' => true]);

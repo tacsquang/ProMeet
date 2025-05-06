@@ -7,32 +7,38 @@ use App\Core\LogService;
 class RoomModel 
 {
     private $db;
+    private $log;
 
-    public function __construct() {
-        $this->db = new Database();
+    public function __construct(Database $db, LogService $log)
+    {
+        $this->db = $db;
+        $this->log = $log;
     }
 
     public function insertRoom($data)
     {
         $sql = "
-            INSERT INTO rooms (id, name, price, capacity, category, location_name, latitude, longitude, html_description, created_at, updated_at) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+            INSERT INTO rooms 
+            (id, name, price, capacity, category, location_name, latitude, longitude, html_description, created_at, updated_at) 
+            VALUES 
+            (:id, :name, :price, :capacity, :category, :location_name, :latitude, :longitude, :html_description, NOW(), NOW())
         ";
-
+    
         $params = [
-            $data['id'],
-            $data['name'],
-            $data['price'],
-            $data['capacity'],
-            $data['category'],
-            $data['location_name'],
-            $data['latitude'],
-            $data['longitude'],
-            $data['html_description'],
+            ':id'              => $data['id'],
+            ':name'            => $data['name'],
+            ':price'           => $data['price'],
+            ':capacity'        => $data['capacity'],
+            ':category'        => $data['category'],
+            ':location_name'   => $data['location_name'],
+            ':latitude'        => $data['latitude'],
+            ':longitude'       => $data['longitude'],
+            ':html_description'=> $data['html_description'],
         ];
-
+    
         return $this->db->execute($sql, $params);
     }
+    
 
     public function insertRoomImages($roomId, $images = [])
     {
@@ -69,14 +75,22 @@ class RoomModel
 
     public function updateStatus($roomId, $status)
     {
-        $sql = "UPDATE rooms SET is_active = ? WHERE id = ?";
-        return $this->db->execute($sql, [$status, $roomId]);
+        $sql = "UPDATE rooms SET is_active = :is_active WHERE id = :id";
+        $params = [
+            ':is_active' => $status,
+            ':id' => $roomId
+        ];
+        return $this->db->execute($sql, $params);
     }
 
     public function updateDescription($roomId, $description)
     {
-        $sql = "UPDATE rooms SET html_description = ? WHERE id = ?";
-        return $this->db->execute($sql, [$description, $roomId]);
+        $sql = "UPDATE rooms SET html_description = :html_description WHERE id = :id";
+        $params = [
+            ':html_description' => $description,
+            ':id' => $roomId
+        ];
+        return $this->db->execute($sql, $params);
     }
 
 
@@ -94,12 +108,11 @@ class RoomModel
     }
 
     public function fetchRooms($offset = 0, $limit = 8, $filters = []) {
-        $log = new LogService();
     
         $offset = intval($offset);
         $limit = intval($limit);
     
-        $log->logInfo("Preparing room list | Offset: {$offset}, Limit: {$limit}, Filters: " . json_encode($filters, JSON_UNESCAPED_UNICODE));
+        $this->log->logInfo("Preparing room list | Offset: {$offset}, Limit: {$limit}, Filters: " . json_encode($filters, JSON_UNESCAPED_UNICODE));
     
         $where = "WHERE is_active = 1";
         $params = [];
@@ -147,12 +160,12 @@ class RoomModel
             LIMIT {$offset}, {$limit}
         ";
     
-        $log->logInfo("SQL Query: {$sql} | Params: " . json_encode($params, JSON_UNESCAPED_UNICODE));
+        $this->log->logInfo("SQL Query: {$sql} | Params: " . json_encode($params, JSON_UNESCAPED_UNICODE));
     
         $rooms = $this->db->fetchAll($sql, $params);
     
         if ($rooms === false) {
-            $log->logError("Room query failed.");
+            $this->log->logError("Room query failed.");
             return [
                 'rooms' => [],
                 'totalPages' => 1
@@ -164,7 +177,7 @@ class RoomModel
         $countData = $this->db->fetchOne($countSql, $params);
         $totalPages = $countData ? ceil($countData->total / $limit) : 1;
     
-        $log->logInfo("Total rooms matched: " . ($countData->total ?? 0) . " | Total Pages: {$totalPages}");
+        $this->log->logInfo("Total rooms matched: " . ($countData->total ?? 0) . " | Total Pages: {$totalPages}");
     
         // Map màu cho badge loại phòng
         $colorMap = [
@@ -203,13 +216,11 @@ class RoomModel
     
     
     public function fetchRoomDetail($id) {
-        $log = new LogService();
-    
         $sql = "SELECT * FROM rooms WHERE id = :id LIMIT 1";
         $room = $this->db->fetchOne($sql, [':id' => $id]);
     
         if (!$room) {
-            $log->logError("Room not found: ID {$id}");
+            $this->log->logError("Room not found: ID {$id}");
             return null;
         }
     
@@ -252,8 +263,8 @@ class RoomModel
 
 
     public function fetchSmartSuggestedRooms($roomId, $roomType, $location) {
-        $log = new LogService();
-        $log->logInfo("Fetching smart suggestions | Exclude ID: $roomId | Type: $roomType | Location: $location");
+        
+        $this->log->logInfo("Fetching smart suggestions | Exclude ID: $roomId | Type: $roomType | Location: $location");
     
         $params = [':roomId' => $roomId];
         $conditions = [];
@@ -285,7 +296,7 @@ class RoomModel
             LIMIT 8
         ";
     
-        $log->logInfo("Smart Suggestion SQL: {$sql} | Params: " . json_encode($params, JSON_UNESCAPED_UNICODE));
+        $this->log->logInfo("Smart Suggestion SQL: {$sql} | Params: " . json_encode($params, JSON_UNESCAPED_UNICODE));
     
         $rooms = $this->db->fetchAll($sql, $params);
         $excludeIds = array_column($rooms, 'id');  // Lưu lại ID của các phòng đã lấy
@@ -322,14 +333,14 @@ class RoomModel
                 LIMIT {$remainingRooms}
             ";
     
-            $log->logInfo("Additional SQL: {$additionalSql} | Params: " . json_encode($params, JSON_UNESCAPED_UNICODE));
+            $this->log->logInfo("Additional SQL: {$additionalSql} | Params: " . json_encode($params, JSON_UNESCAPED_UNICODE));
             $additionalRooms = $this->db->fetchAll($additionalSql, $params);
     
             // Gộp kết quả ban đầu với kết quả bổ sung
             if ($additionalRooms !== false) {
                 $rooms = array_merge($rooms, $additionalRooms);
             } else {
-                $log->logError("No additional rooms found.");
+                $this->log->logError("No additional rooms found.");
             }
         }
     
@@ -376,7 +387,7 @@ class RoomModel
     }
     
     public function fetchRoomsForAdmin($offset = 0, $limit = 10, $search = '', $orderColumn = 'id', $orderDir = 'DESC') {
-        $log = new LogService();
+        
         $offset = intval($offset);
         $limit = intval($limit);
         $search = trim($search);
@@ -388,7 +399,7 @@ class RoomModel
             $orderColumn = 'id';
         }
     
-        $log->logInfo("Admin fetching rooms | Offset: {$offset}, Limit: {$limit}, Search: '{$search}', Order: {$orderColumn} {$orderDir}");
+        $this->log->logInfo("Admin fetching rooms | Offset: {$offset}, Limit: {$limit}, Search: '{$search}', Order: {$orderColumn} {$orderDir}");
     
         $whereClause = '';
         if ($search !== '') {
@@ -407,7 +418,7 @@ class RoomModel
         $rooms = $this->db->fetchAll($sql);
     
         if ($rooms === false) {
-            $log->logError("Admin room query failed.");
+            $this->log->logError("Admin room query failed.");
             return [];
         }
     
@@ -416,19 +427,19 @@ class RoomModel
     
     
     public function countAllRooms() {
-        $log = new LogService();
-        $log->logInfo("[BEGIN] countAllRooms");
+        
+        $this->log->logInfo("[BEGIN] countAllRooms");
     
         $sql = "SELECT COUNT(*) as total FROM rooms";
         $result = $this->db->fetchOne($sql);
     
         if ($result === false) {
-            $log->logError("[ERROR] countAllRooms query failed");
+            $this->log->logError("[ERROR] countAllRooms query failed");
         } else {
-            $log->logInfo("[INFO] countAllRooms result: " . print_r($result, true)); // In ra kết quả
+            $this->log->logInfo("[INFO] countAllRooms result: " . print_r($result, true)); // In ra kết quả
         }
     
-        $log->logInfo("[END] countAllRooms");
+        $this->log->logInfo("[END] countAllRooms");
     
         return $result ? intval($result->total) : 0; // Sửa lại từ $result['total'] thành $result->total
     }

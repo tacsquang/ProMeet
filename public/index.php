@@ -23,6 +23,7 @@ define('ROOT_PATH', dirname(__DIR__));
 
 // Autoload class theo chuẩn PSR-4
 require_once ROOT_PATH . '/autoload.php';
+require_once ROOT_PATH . '/app/bootstrap.php';
 
 define('BASE_URL', '/BTL_LTW/ProMeet/public');
 #echo "BASE_URL: " . BASE_URL . "<br>";

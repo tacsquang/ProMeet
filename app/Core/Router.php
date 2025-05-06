@@ -1,138 +1,121 @@
 <?php
 
 namespace App\Core;
+
 use App\Core\LogService;
+use App\Core\Container;
 
 class Router
 {
+    protected $log;
+    protected $controllerClass;
+    protected $methodName;
+    protected $params;
+
+    public function __construct()
+    {
+        // Tạo instance LogService trong constructor
+        $this->log = LogService::getInstance();
+    }
+
     public function dispatch()
     {
-        $log = new LogService();
-        //$log->logInfo("GET Parameters: " . json_encode($_GET));
-
+        // Bắt đầu session nếu chưa có
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
 
+        // Lấy URL từ tham số GET hoặc sử dụng 'home/index' mặc định
         $url = $_GET['url'] ?? 'home/index';
         $url = trim($url, '/');
         $segments = explode('/', $url);
-       $log->logInfo("URL gốc: $url");
 
-        //$log->logInfo("URLLLL: $segments[0]");
+        $this->log->logInfo("URL gốc: $url");
 
+        // Kiểm tra phân vùng controller (auth/public/admin)
         if (strtolower($segments[0]) === 'auth') {
-            $controllerName = ucfirst($segments[0]) . 'Controller';
-            $methodName = $segments[1] ?? 'login';
-            $params = array_slice($segments, 2);
-            $controllerClass = "App\\Controllers\\Auth\\$controllerName";
-
+            $this->handleAuthController($segments);
         } else {
-            $controllerName = !empty($segments[0]) ? ucfirst($segments[0]) . 'Controller' : 'HomeController';
-            $methodName = $segments[1] ?? 'index';
-            $params = array_slice($segments, 2);
-
-            $userRole = isset($_SESSION['user']['role']) ? strtolower($_SESSION['user']['role']) : 'public';
-
-            switch ($userRole) {
-                case 'user':
-                    $roleNamespace = 'Public';
-                    break;
-                case 'admin':
-                    $roleNamespace = 'Admin';
-                    break;
-                default:
-                    $roleNamespace = 'Public';
-                    break;
-            }
-
-            $controllerClass = "App\\Controllers\\$roleNamespace\\$controllerName";
+            $this->handleRoleBasedController($segments);
         }
-        //$log->logInfo("ControllerClass:  $controllerClass");
 
-        // 🚨 Phân quyền truy cập
+        // Phân quyền truy cập (admin/user)
+        $this->checkAccessControl($segments);
+
+        // Dispatch controller
+        $this->dispatchController();
+    }
+
+    protected function handleAuthController($segments)
+    {
+        // Xử lý controller thuộc nhóm 'auth'
+        $controllerName = ucfirst($segments[0]) . 'Controller';
+        $this->methodName = $segments[1] ?? 'login';
+        $this->params = array_slice($segments, 2);
+        $this->controllerClass = "App\\Controllers\\Auth\\$controllerName";
+    }
+
+    protected function handleRoleBasedController($segments)
+    {
+        // Xử lý controller theo role (admin/user/public)
+        $controllerName = !empty($segments[0]) ? ucfirst($segments[0]) . 'Controller' : 'HomeController';
+        $this->methodName = $segments[1] ?? 'index';
+        $this->params = array_slice($segments, 2);
+
+        $userRole = isset($_SESSION['user']['role']) ? strtolower($_SESSION['user']['role']) : 'public';
+
+        switch ($userRole) {
+            case 'user':
+                $roleNamespace = 'Public';
+                break;
+            case 'admin':
+                $roleNamespace = 'Admin';
+                break;
+            default:
+                $roleNamespace = 'Public';
+                break;
+        }
+
+        $this->controllerClass = "App\\Controllers\\$roleNamespace\\$controllerName";
+    }
+
+    protected function checkAccessControl($segments)
+    {
+        // Kiểm tra quyền truy cập
         if (isset($_SESSION['user'])) {
             $userRole = strtolower($_SESSION['user']['role']);
 
-            // Nếu user là "user" mà cố gắng vào admin
-            if (strpos($controllerClass, 'Admin\\') !== false && $userRole !== 'admin') {
+            // Nếu là admin mà cố vào Public hoặc ngược lại, có thể xử lý tùy logic
+            if (strpos($this->controllerClass, 'Admin\\') !== false && $userRole !== 'admin') {
+                $this->log->logError("Access Denied: You do not have permission to access this page.");
                 die('Access Denied: You do not have permission to access this page.');
             }
-
-            // Nếu user là "admin" mà vào Public thì có thể cho phép hoặc chặn tuỳ logic
-            // Ví dụ chặn: (nếu muốn)
-            // if (strpos($controllerClass, 'Public\\') !== false && $userRole === 'admin') {
-            //     die('Admins cannot access public pages directly.');
-            // }
-
         } else {
             // Nếu chưa đăng nhập mà vào Admin
-            if (strpos($controllerClass, 'Admin\\') !== false) {
-                header('Location: /BTL_LTW/ProMeet/public/auth/login');
+            if (strpos($this->controllerClass, 'Admin\\') !== false) {
+                header('Location: /auth/login');
                 exit;
             }
         }
+    }
 
-        // 🚀 Dispatch controller
-        if (class_exists($controllerClass)) {
-            $controller = new $controllerClass();
-            if (method_exists($controller, $methodName)) {
-                call_user_func_array([$controller, $methodName], $params);
+    protected function dispatchController()
+    {
+        // Kiểm tra và khởi tạo controller
+        if (class_exists($this->controllerClass)) {
+
+            $container = Container::getInstance();
+            $controller = new $this->controllerClass($container);
+
+            if (method_exists($controller, $this->methodName)) {
+                call_user_func_array([$controller, $this->methodName], $this->params);
             } else {
-                $log->logError("Method [$methodName] not found in [$controllerClass].");
-                echo "Method [$methodName] not found in [$controllerClass].";
+                $this->log->logError("Method [$this->methodName] not found in [$this->controllerClass].");
+                echo "Method [$this->methodName] not found in [$this->controllerClass].";
             }
         } else {
-            $log->logError("Controller [$controllerClass] not found.");
-            echo "Controller [$controllerClass] not found.";
+            $this->log->logError("Controller [$this->controllerClass] not found.");
+            echo "Controller [$this->controllerClass] not found.";
         }
     }
 }
-
-
-
-
-
-
-
-
-// /
-// <!-- <?php
-
-// namespace App\Core;
-
-// class Router
-// {
-//     public function dispatch()
-//     {
-//         #echo "Router is working!<br>";
-//         $url = $_GET['url'] ?? '';  // Lấy URL sau domain
-        
-//         $url = trim($url, '/');
-        
-//         $segments = explode('/', $url);
-
-//         #echo "URL segments: <br>";
-//         // foreach ($segments as $segment) {
-//         //     echo $segment . "<br>";
-//         // }
-
-//         $controllerName = !empty($segments[0]) ? ucfirst($segments[0]) . 'Controller' : 'HomeController';
-//         $methodName = $segments[1] ?? 'index';
-//         $params = array_slice($segments, 2);
-
-//         $controllerClass = 'App\\Controllers\\' . $controllerName;
-
-//         if (class_exists($controllerClass)) {
-//             $controller = new $controllerClass();
-
-//             if (method_exists($controller, $methodName)) {
-//                 call_user_func_array([$controller, $methodName], $params);
-//             } else {
-//                 echo "Method [$methodName] not found in controller [$controllerName].";
-//             }
-//         } else {
-//             echo "Controller [$controllerName] not found.";
-//         }
-//     }
-// } -->
