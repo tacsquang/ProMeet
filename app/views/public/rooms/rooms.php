@@ -1,4 +1,9 @@
-
+<?php
+  $currentPage = 'rooms';
+  $metaTitle = "Danh sách phòng họp - ProMeet";
+  $metaDescription = "Tìm kiếm và chọn phòng họp phù hợp với nhu cầu công việc của bạn từ danh sách phòng hiện có của ProMeet.";
+  $canonicalUrl = BASE_URL . "/rooms"; 
+?>
     
     <style>
 

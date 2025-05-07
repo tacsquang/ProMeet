@@ -1,3 +1,11 @@
+<?php
+  $currentPage = 'room-detail';
+  $roomName = "Phòng A"; // Tên phòng từ cơ sở dữ liệu
+  $roomId = isset($rooms['id']) ? $rooms['id'] : "";
+  $metaTitle = "Phòng họp " . $roomName . " - ProMeet";
+  $metaDescription = "Khám phá chi tiết về phòng họp " . $roomName . ", xem các tiện ích, đánh giá và đặt phòng ngay hôm nay.";
+  $canonicalUrl = BASE_URL . "/rooms/" . $roomId; // Đường dẫn chi tiết cho từng phòng
+?>
 
 <style>
       html, body {

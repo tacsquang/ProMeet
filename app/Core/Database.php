@@ -6,87 +6,114 @@ use PDO;
 use PDOException;
 use App\Core\LogService;
 
-class Database 
+class Database
 {
     private $pdo;
+    private static $instance = null;
 
-    public function __construct() {
+    private function __construct()
+    {
         $this->connect();
     }
 
-    private function connect() {
-        $log = new LogService();
-        $log->logInfo("Connecting to database...");
+    // Singleton pattern để tạo ra 1 instance duy nhất
+    public static function getInstance(): Database
+    {
+        if (self::$instance === null) {
+            self::$instance = new Database();
+        }
 
+        return self::$instance;
+    }
+
+    private function connect()
+    {
         $config = require __DIR__ . '/../../config/database.php';
-
         $dsn = "mysql:host={$config['host']};port={$config['port']};dbname={$config['database']};charset={$config['charset']}";
 
         try {
             $this->pdo = new PDO($dsn, $config['username'], $config['password']);
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         } catch (PDOException $e) {
-            $log->logError("DB Connect Failed: " . $e->getMessage());
-            die("Database connection failed, please try again later.");
+            LogService::getInstance()->logError("DB Connect Failed: " . $e->getMessage());
+            throw new PDOException("Database connection failed, please try again later.");
         }
     }
 
-    // Lấy nhiều bản ghi
-    public function fetchAll($sql, $params = []) {
-        $log = new LogService();
+    // Phương thức chung thực thi SQL
+    private function executeQuery($sql, $params = [])
+    {
         try {
             $stmt = $this->pdo->prepare($sql);
     
-            // Phân biệt bind tên và bind số
-            if (!empty($params) && is_string(array_key_first($params))) {
-                // bind theo tên
-                foreach ($params as $key => $param) {
-                    $stmt->bindValue($key, $param, is_int($param) ? PDO::PARAM_INT : PDO::PARAM_STR);
-                }
-            } else {
-                // bind theo số thứ tự ?
-                foreach (array_values($params) as $index => $param) {
-                    $stmt->bindValue($index + 1, $param, is_int($param) ? PDO::PARAM_INT : PDO::PARAM_STR);
+            if (!empty($params)) {
+                foreach ($params as $key => $value) {
+                    // Nếu là named placeholder, phải có dấu :
+                    $paramKey = is_string($key) ? ':' . ltrim($key, ':') : $key;
+                    $stmt->bindValue($paramKey, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
                 }
             }
     
             $stmt->execute();
-            return $stmt->fetchAll(PDO::FETCH_OBJ);
+            return $stmt;
+    
         } catch (PDOException $e) {
-            $log->logError("DB FetchAll Failed: {$e->getMessage()} | SQL: $sql | Params: " . json_encode($params));
-            return false;
+            LogService::getInstance()->logError("DB Query Failed: " . $e->getMessage() . " | SQL: $sql | Params: " . json_encode($params));
+            throw $e;
         }
     }
     
-    
 
-    // Lấy 1 bản ghi
-    public function fetchOne($sql, $params = []) {
-        $log = new LogService();
-        try {
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute($params);
-            return $stmt->fetch(PDO::FETCH_OBJ);
-        } catch (PDOException $e) {
-            $log->logError("DB FetchOne Failed: {$e->getMessage()} | SQL: $sql | Params: " . json_encode($params));
-            return false;
-        }
+
+    // Lấy tất cả bản ghi
+    public function fetchAll($sql, $params = [])
+    {
+        $stmt = $this->executeQuery($sql, $params);
+        return $stmt->fetchAll(PDO::FETCH_OBJ);
+    }
+
+    // Lấy một bản ghi
+    public function fetchOne($sql, $params = [])
+    {
+        $stmt = $this->executeQuery($sql, $params);
+        return $stmt->fetch(PDO::FETCH_OBJ);
     }
 
     // Thực thi lệnh INSERT, UPDATE, DELETE
-    public function execute($sql, $params = []) {
-        $log = new LogService();
+    public function execute($sql, $params = [])
+    {
         try {
-            $stmt = $this->pdo->prepare($sql);
-            return $stmt->execute($params);
-        } catch (PDOException $e) {
-            $log->logError("DB Execute Failed: {$e->getMessage()} | SQL: $sql | Params: " . json_encode($params));
+            $stmt = $this->executeQuery($sql, $params);
+            return $stmt->rowCount();  // trả về số dòng ảnh hưởng
+        } catch (\PDOException $e) {
+            LogService::getInstance()->logError("Execute failed: " . $e->getMessage() . " | SQL: $sql | Params: " . json_encode($params));
             return false;
         }
     }
+    
+    
 
     // Lấy ID của bản ghi vừa insert
-    public function lastInsertId() {
+    public function lastInsertId()
+    {
         return $this->pdo->lastInsertId();
     }
+
+    // Xử lý transaction (commit, rollback)
+    public function beginTransaction()
+    {
+        $this->pdo->beginTransaction();
+    }
+
+    public function commit()
+    {
+        $this->pdo->commit();
+    }
+
+    public function rollBack()
+    {
+        $this->pdo->rollBack();
+    }
 }
+
+?>

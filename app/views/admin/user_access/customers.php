@@ -17,8 +17,8 @@
                 <div class="col-12 col-md-6 order-md-2 order-first">
                     <nav aria-label="breadcrumb" class="breadcrumb-header float-start float-lg-end">
                         <ol class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="index.html">User Access</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Customers</li>
+                            <li class="breadcrumb-item"><a href="">Quản lý người dùng</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Khách hàng</li>
                         </ol>
                     </nav>
                 </div>
@@ -271,7 +271,7 @@ $(document).ready(function () {
                     return `
                         <div class="d-flex align-items-center gap-2">
                             <img src="${BASE_URL + avatar}" alt="avatar" class="rounded-circle" width="40" height="40">
-                            <span>${data.username}</span>
+                            <span>${data.name}</span>
                         </div>
                     `;
                 }
@@ -288,7 +288,7 @@ $(document).ready(function () {
             {
                 data: 'sex',
                 render: function (data) {
-                    return data === 'male' ? 'Nam' : (data === 'female' ? 'Nữ' : '');
+                    return data === 0 ? 'Nam' : (data === 1 ? 'Nữ' : '');
                 }
             },
             {

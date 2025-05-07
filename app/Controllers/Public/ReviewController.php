@@ -1,51 +1,56 @@
 <?php
 namespace App\Controllers\Public;
-
-use App\Models\ReviewModel;
-use App\Models\BookingModel;
-use App\Core\LogService;
+use App\Core\Container;
 
 class ReviewController
 {
+    protected $log;
+    protected $reviewModel;
+    protected $bookingModel;
+
+    public function __construct(Container $container)
+    {
+        $this->log = $container->get('logger');
+        $this->reviewModel = $container->get('ReviewModel');
+        $this->bookingModel = $container->get('BookingModel');
+    }
+
     public function fetchReviews()
     {
-        $log = new LogService();
-        $log->logInfo("Bắt đầu fetchReviews");
+        $this->log->logInfo("Bắt đầu fetchReviews");
 
         $roomId = $_GET['room_id'] ?? null;
         $page = max(1, intval($_GET['page'] ?? 1));
         $sort = $_GET['sort'] ?? 'newest';
         $limit = 3;
 
-        $log->logInfo("Tham số nhận vào - room_id: " . ($roomId ?: 'null') . ", page: {$page}, sort: {$sort}");
+        $this->log->logInfo("Tham số nhận vào - room_id: " . ($roomId ?: 'null') . ", page: {$page}, sort: {$sort}");
 
         if (!$roomId) {
             http_response_code(400);
-            $log->logError("Thiếu room_id trong request.");
+            $this->log->logError("Thiếu room_id trong request.");
             echo json_encode(['error' => 'Missing room_id']);
             return;
         }
 
         $offset = ($page - 1) * $limit;
-        $log->logInfo("Tính toán offset: {$offset} (limit: {$limit})");
-
-        $model = new ReviewModel();
+        $this->log->logInfo("Tính toán offset: {$offset} (limit: {$limit})");
 
         try {
-            $reviews = $model->fetchReviews($roomId, $offset, $limit, $sort);
-            $log->logInfo("Lấy danh sách reviews thành công, số lượng: " . count($reviews));
+            $reviews = $this->reviewModel->fetchReviews($roomId, $offset, $limit, $sort);
+            $this->log->logInfo("Lấy danh sách reviews thành công, số lượng: " . count($reviews));
         } catch (\Exception $e) {
-            $log->logError("Lỗi khi lấy danh sách reviews: " . $e->getMessage());
+            $this->log->logError("Lỗi khi lấy danh sách reviews: " . $e->getMessage());
             http_response_code(500);
             echo json_encode(['error' => 'Internal Server Error']);
             return;
         }
 
         try {
-            $total = $model->countReviews($roomId);
-            $log->logInfo("Tổng số review của phòng {$roomId}: {$total}");
+            $total = $this->reviewModel->countReviews($roomId);
+            $this->log->logInfo("Tổng số review của phòng {$roomId}: {$total}");
         } catch (\Exception $e) {
-            $log->logError("Lỗi khi đếm số lượng reviews: " . $e->getMessage());
+            $this->log->logError("Lỗi khi đếm số lượng reviews: " . $e->getMessage());
             http_response_code(500);
             echo json_encode(['error' => 'Internal Server Error']);
             return;
@@ -57,15 +62,15 @@ class ReviewController
             'currentPage' => $page
         ];
 
-        $log->logInfo("Trả dữ liệu JSON: " . json_encode($response));
+        $this->log->logInfo("Trả dữ liệu JSON: " . json_encode($response));
 
         echo json_encode($response);
     }
 
     public function submit_review()
     {
-        $log = new LogService();
-        $log->logInfo("Bắt đầu tạo review");
+        
+        $this->log->logInfo("Bắt đầu tạo review");
     
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
@@ -92,13 +97,11 @@ class ReviewController
             echo json_encode(['error' => 'Vui lòng điền đầy đủ thông tin đánh giá.']);
             return;
         }
-    
-        $bookingModel = new BookingModel();
-        $reviewModel = new ReviewModel();
+
     
         try {
             // Kiểm tra booking có tồn tại và thuộc về user
-            $booking = $bookingModel->findById($bookingId);
+            $booking = $this->bookingModel->findById($bookingId);
             if (!$booking || $booking->user_id !== $userId || $booking->room_id !== $roomId) {
                 http_response_code(403);
                 echo json_encode(['error' => 'Không thể gửi đánh giá cho đơn này.']);
@@ -106,14 +109,14 @@ class ReviewController
             }
     
             // Kiểm tra đã đánh giá chưa (optional)
-            if ($reviewModel->hasReview($bookingId)) {
+            if ($this->reviewModel->hasReview($bookingId)) {
                 http_response_code(409);
                 echo json_encode(['error' => 'Bạn đã đánh giá đơn này rồi.']);
                 return;
             }
     
             // Tạo review
-            $reviewModel->createReview([
+            $this->reviewModel->createReview([
                 'room_id' => $roomId,
                 'user_id' => $userId,
                 'booking_id' => $bookingId,
@@ -121,13 +124,13 @@ class ReviewController
                 'comment' => $comment
             ]);
     
-            $log->logInfo("Đánh giá booking {$bookingId} thành công.");
+            $this->log->logInfo("Đánh giá booking {$bookingId} thành công.");
     
             http_response_code(200);
             echo json_encode(['success' => true]);
     
         } catch (\Exception $e) {
-            $log->logError("Lỗi khi tạo review: " . $e->getMessage());
+            $this->log->logError("Lỗi khi tạo review: " . $e->getMessage());
             http_response_code(500);
             echo json_encode(['error' => 'Có lỗi xảy ra khi gửi đánh giá.']);
         }

@@ -95,17 +95,17 @@
                             <td>${firstDisplay}</td>
                             <td>
                                 <span class="badge 
-                                    ${booking.status === 'confirmed' ? 'bg-primary' : 
-                                    booking.status === 'pending' ? 'bg-info text-dark' : 
-                                    booking.status === 'canceled' ? 'bg-danger' : 
-                                    booking.status === 'completed' ? 'bg-success' : 
-                                    booking.status === 'paid' ? 'bg-warning text-dark' : ''}
+                                    ${booking.status === 2 ? 'bg-primary' : 
+                                    booking.status === 0 ? 'bg-info text-dark' : 
+                                    booking.status === 4 ? 'bg-danger' : 
+                                    booking.status === 3 ? 'bg-success' : 
+                                    booking.status === 1 ? 'bg-warning text-dark' : ''}
                                 ">
-                                    ${booking.status === 'confirmed' ? 'Đã xác nhận' : 
-                                    booking.status === 'pending' ? 'Chờ thanh toán' : 
-                                    booking.status === 'canceled' ? 'Đã hủy' : 
-                                    booking.status === 'completed' ? 'Đã hoàn thành' : 
-                                    booking.status === 'paid' ? 'Chờ xác nhận' : 'Không xác định'}
+                                    ${booking.status === 2 ? 'Đã xác nhận' : 
+                                    booking.status === 0 ? 'Chờ thanh toán' : 
+                                    booking.status === 4 ? 'Đã hủy' : 
+                                    booking.status === 3 ? 'Đã hoàn thành' : 
+                                    booking.status === 1 ? 'Chờ xác nhận' : 'Không xác định'}
                                 </span>
                             </td>                            
                             <td>${new Intl.NumberFormat().format(booking.total_price)} đ</td>

@@ -1,3 +1,17 @@
+<?php
+  $currentPage = 'home';
+  $metaTitle = "ProMeet - Đặt phòng họp chuyên nghiệp, nhanh chóng và linh hoạt";
+  $metaDescription = "Tìm và đặt phòng họp hiện đại chỉ với vài cú click cùng ProMeet. Không gian linh hoạt, thiết kế chuyên nghiệp, giá cả minh bạch.";
+  $canonicalUrl = BASE_URL . "/home";
+?>
+
+
+
+
+
+
+
+
 <!-- AOS CSS -->
 <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 <link rel="preload" as="image" href="<?= BASE_URL ?>/assets/images/home-slideshow.jpg">
@@ -156,7 +170,7 @@
         <div class="hero-slide" style="background-image: url('<?= BASE_URL ?>/assets/images/home-slideshow.webp');">
           <div class="overlay"></div>
           <div class="content text-center text-white">
-            <h1 class="display-5 fw-bold">Không gian họp chuyên nghiệp</h1>
+            <h2 class="display-5 fw-bold">Không gian họp chuyên nghiệp</h2>
             <p class="lead mt-3">Thiết kế hiện đại, trang thiết bị đầy đủ cho mọi nhu cầu tổ chức.</p>
             <a href="#rooms" class="btn btn-outline-light btn-lg px-4 mt-4">Xem phòng</a>
           </div>
@@ -168,7 +182,7 @@
         <div class="hero-slide" style="background-image: url('<?= BASE_URL ?>/assets/images/home-slideshow2.webp');">
           <div class="overlay"></div>
           <div class="content text-center text-white">
-            <h1 class="display-5 fw-bold">Đặt phòng dễ dàng</h1>
+            <h2 class="display-5 fw-bold">Đặt phòng dễ dàng</h2>
             <p class="lead mt-3">Chỉ vài thao tác để sở hữu không gian họp lý tưởng.</p>
             <a href="#contact" class="btn btn-light btn-lg px-4 mt-4">Liên hệ ngay</a>
           </div>
@@ -200,9 +214,9 @@
       <!-- Image -->
       <div class="col-md-6 text-center" data-aos="fade-left">
         <img src="https://th.bing.com/th/id/OIP.u2AOsR-sfjYijkbhvQn4nQHaEx?w=550&h=354&rs=1&pid=ImgDetMain" 
-             alt="Giới thiệu" 
-             class="img-fluid rounded-4 shadow-sm" 
-             style="max-height: 350px; object-fit: cover;">
+              alt="Hệ thống đặt phòng họp ProMeet" 
+              class="img-fluid rounded-4 shadow-sm" 
+              style="max-height: 350px; object-fit: cover;">
       </div>
     </div>
   </div>

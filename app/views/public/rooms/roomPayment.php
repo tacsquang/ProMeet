@@ -1,7 +1,5 @@
 
     <style>
-
-
         .stepper-wrapper {
             display: flex;
             justify-content: space-between;
@@ -172,11 +170,11 @@
             <div id="step-3" class="step d-none">
                 <h5 class="mb-4 text-primary"><i class="bi bi-wallet2 me-2"></i> Chọn phương thức thanh toán</h5>
                 <div class="form-check mb-3">
-                    <input class="form-check-input" type="radio" name="payment" id="bank" value="bank" checked onchange="toggleQR()">
+                    <input class="form-check-input" type="radio" name="payment" id="bank" value="0" checked onchange="toggleQR()">
                     <label class="form-check-label" for="bank">Chuyển khoản ngân hàng</label>
                 </div>
                 <div class="form-check mb-4">
-                    <input class="form-check-input" type="radio" name="payment" id="momo" value="momo" onchange="toggleQR()">
+                    <input class="form-check-input" type="radio" name="payment" id="momo" value="1" onchange="toggleQR()">
                     <label class="form-check-label" for="momo">Ví MoMo</label>
                 </div>
                 <div id="qr-section" class="text-center mb-4">

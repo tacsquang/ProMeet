@@ -1,3 +1,21 @@
+<?php
+    $fa_count = 0;
+    $vi_count = 0;
+    $total_booking = 0;
+
+    if ($room_stat) {
+        $fa_count = htmlspecialchars($room_stat->favorite_count) ?: 0;
+        $vi_count = htmlspecialchars($room_stat->view_count) ?: 0;
+        $total_booking = htmlspecialchars($room_stat->booking_count) ?: 0;
+    }
+    
+    // Booking stats (chart)
+    $dates = isset($bookingStats['labels']) ? $bookingStats['labels'] : [];
+    $totals = isset($bookingStats['totals']) ? $bookingStats['totals'] : [];
+
+
+
+?>
 <div id="main">
     <header class="mb-3">
         <a href="#" class="burger-btn d-block d-xl-none">
@@ -30,7 +48,7 @@
         <div class="col-12 col-lg-6">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
-                    <h5 class="card-title mb-0">Lượt đặt theo tháng</h5>
+                    <h5 class="card-title mb-0">Số giờ sử dụng phòng theo ngày</h5>
                 </div>
                 <div class="card-body">
                     <div class="ratio ratio-16x9">
@@ -52,7 +70,7 @@
                             </div>
                             <div>
                                 <h6 class="text-muted font-semibold">Lượt xem</h6>
-                                <h6 class="font-extrabold mb-0">112.000</h6>
+                                <h6 class="font-extrabold mb-0"><?= $vi_count ?></h6>
                             </div>
                         </div>
                     </div>
@@ -66,7 +84,7 @@
                             </div>
                             <div>
                                 <h6 class="text-muted font-semibold">Tổng lượt đặt</h6>
-                                <h6 class="font-extrabold mb-0">183.000</h6>
+                                <h6 class="font-extrabold mb-0"><?= $total_booking ?></h6>
                             </div>
                         </div>
                     </div>
@@ -80,7 +98,7 @@
                             </div>
                             <div>
                                 <h6 class="text-muted font-semibold">Lượt yêu thích</h6>
-                                <h6 class="font-extrabold mb-0">80.000</h6>
+                                <h6 class="font-extrabold mb-0"><?= $fa_count ?></h6>
                             </div>
                         </div>
                     </div>
@@ -161,18 +179,20 @@
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Sức chứa</label>
+                            <label class="form-label">Loại</label>
                             <select class="form-select" id="category" name="category" disabled>
-                                <option value="Basic" <?= htmlspecialchars($room['label']) == 'Basic' ? 'selected' : '' ?>>Basic</option>
-                                <option value="Standard" <?= htmlspecialchars($room['label']) == 'Standard' ? 'selected' : '' ?>>Standard</option>
-                                <option value="Premium" <?= htmlspecialchars($room['label']) == 'Premium' ? 'selected' : '' ?>>Premium</option>
+                                <option value="0" <?= htmlspecialchars($room['label']) == 'Basic' ? 'selected' : '' ?>>Basic</option>
+                                <option value="1" <?= htmlspecialchars($room['label']) == 'Standard' ? 'selected' : '' ?>>Standard</option>
+                                <option value="2" <?= htmlspecialchars($room['label']) == 'Premium' ? 'selected' : '' ?>>Premium</option>
                             </select>
                         </div>
 
 
                         <div class="col-md-6">
                             <label class="form-label">Địa điểm</label>
-                            <input type="text" class="form-control" id="location_name" name="location_name" value="<?= htmlspecialchars($room['address']) ?>" readonly>
+                            <select class="form-select" id="location_name" name="location_name" disabled>
+                                <option value="">Đang tải...</option>
+                            </select>
                         </div>
 
                         <div class="col-md-3">
@@ -275,8 +295,15 @@
 
 </section>
 
+<script>
+    const BASE_URL = "<?php echo BASE_URL; ?>";
+    const room_id = <?= json_encode($room['id']) ?>;
+    const labels = <?php echo json_encode($dates); ?>;
+    const data = <?php echo json_encode($totals); ?>;
+</script>
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="<?= BASE_URL ?>/assets/tinymce/tinymce.min.js"></script>
+<script src="<?= BASE_URL ?>/mazer/assets/extensions/tinymce/tinymce.min.js"></script>
 <script src="<?= BASE_URL ?>/mazer/assets/extensions/chart.js/chart.umd.js"></script>
 <script src="<?= BASE_URL ?>/assets/js/room-chart.js"></script>
 
@@ -321,12 +348,20 @@
     }
 </script>
 
-<script>
-    const BASE_URL = "<?php echo BASE_URL; ?>";
-    const room_id = <?= json_encode($room['id']) ?>;
-</script>
+
 
 <script>
+    const selectedValue = '<?= $room['address'] ?>'; // Ví dụ: "quan_1"
+
+    $.getJSON(BASE_URL + '/assets/data/locations.json', function (data) {
+        let options = '';
+        data.forEach(function (location) {
+            const selected = location.value === selectedValue ? 'selected' : '';
+            options += `<option value="${location.value}" ${selected}>${location.label}</option>`;
+        });
+        $('#location_name').html(options);
+    });
+
     $(document).ready(function () {
         $('#statusSwitch').on('change', function () {
             const $checkbox = $(this);

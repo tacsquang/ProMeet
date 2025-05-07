@@ -1,30 +1,30 @@
 <?php
 namespace App\Models;
-
 use App\Core\Database;
 use App\Core\LogService;
 
 class UserModel
 {
     private $db;
+    private $log;
 
-    public function __construct() {
-        $this->db = new Database();
-        $this->log = new LogService();
+    public function __construct(Database $db, LogService $log)
+    {
+        $this->db = $db;
+        $this->log = $log;
     }
 
     public function create($data) {
-        $sql = "INSERT INTO users (id, username, email, password_hash, role) VALUES (:id, :username, :email, :password_hash, :role)";
+        $sql = "INSERT INTO users (id, name, email, password_hash, role) VALUES (UUID(), :name, :email, :password_hash, :role)";
         $params = [
-            'id' => $this->generateUUID(),
-            'username' => $data['username'],
+            'name' => $data['name'],
             'email' => $data['email'],
             'password_hash' => $data['password_hash'],
             'role' => $data['role']
         ];
 
         if ($this->db->execute($sql, $params)) {
-            $this->log->logInfo("User '{$data['username']}' (Email: {$data['email']}) registered successfully.");
+            $this->log->logInfo("User '{$data['name']}' (Email: {$data['email']}) registered successfully.");
             return true;
         }
 
@@ -33,23 +33,105 @@ class UserModel
 
     public function findByEmail($email) {
         $this->log->logInfo("Fetching user by email: $email");
-        return $this->db->fetchOne("SELECT * FROM users WHERE email = ?", [$email]);
+        return $this->db->fetchOne("SELECT * FROM users WHERE email = :email", ['email' => $email]);;
     }
 
     public function findById($id) {
         $this->log->logInfo("Fetching user by id: $id");
-        return $this->db->fetchOne("SELECT * FROM users WHERE id = ?", [$id]);
+        return $this->db->fetchOne("SELECT * FROM users WHERE id = :id", ['id' => $id]);
     }
+
+    public function getTotalUsers()
+    {
+        $sql = "SELECT COUNT(*) AS total FROM users WHERE role = 0 AND is_ban = 0";
+        return $this->db->fetchOne($sql)->total ?? 0;
+    }
+
+    public function getVisitorGenders()
+    {
+        $sql = "
+            SELECT sex, COUNT(*) AS total
+            FROM users
+            WHERE role = 0 AND is_ban = 0
+            GROUP BY sex
+        ";
+        $rows = $this->db->fetchAll($sql);
+
+        $labels = ['Nam', 'Nữ'];
+        $series = [0, 0]; // index 0: Nam (sex = 1), index 1: Nữ (sex = 0)
+
+        foreach ($rows as $row) {
+            if ($row->sex == 1) $series[0] = (int) $row->total;
+            elseif ($row->sex == 0) $series[1] = (int) $row->total;
+        }
+
+        return [
+            'labels' => $labels,
+            'series' => $series
+        ];
+    }
+
+
+    // Lưu token remember me vào database
+    public function storeRememberToken($userId, $token, $expiryTime) {
+        $query = "INSERT INTO remember_tokens (id, user_id, remember_token, expiry_time)
+                  VALUES (UUID(), :user_id, :remember_token, :expiry_time)
+                  ON DUPLICATE KEY UPDATE remember_token = :remember_token, expiry_time = :expiry_time";
+    
+        $params = [
+            ':user_id' => $userId,
+            ':remember_token' => $token,
+            ':expiry_time' => $expiryTime
+        ];
+    
+        return $this->db->execute($query, $params);
+    }
+    
+
+    // Tìm người dùng theo token remember me
+    public function findByRememberToken($token) {
+        $query = "SELECT u.* FROM users u
+                  JOIN remember_tokens rt ON u.id = rt.user_id
+                  WHERE rt.remember_token = :token AND rt.expiry_time > :now";
+        $params = [
+            ':token' => $token,
+            ':now' => time()
+        ];
+    
+        return $this->db->fetchOne($query, $params);
+    }
+    
+
+    // Cập nhật thời gian hết hạn của token
+    public function updateRememberTokenExpiry($userId, $expiryTime) {
+        $query = "UPDATE remember_tokens SET expiry_time = :expiry_time WHERE user_id = :user_id";
+    
+        $params = [
+            ':expiry_time' => $expiryTime,
+            ':user_id' => $userId
+        ];
+        return $this->db->execute($query, $params);
+    }
+    
+    public function clearRememberToken($token) {
+        $query = "DELETE FROM remember_tokens WHERE remember_token = :token";
+        return $this->db->execute($query, [':token' => $token]);
+    }
+
 
     public function updateAvatar($userId, $relativeUrl) {
         // Log thông tin
         $this->log->logInfo("Updating avatar for user with ID: $userId");
     
         // Cập nhật URL ảnh đại diện của người dùng
-        $query = "UPDATE users SET avatar_url = ? WHERE id = ?";
+        $query = "UPDATE users SET avatar_url = :avatar_url WHERE id = :id";
+        $params = [
+            ':avatar_url' => $relativeUrl,
+            ':id' => $userId
+        ];
         
         // Thực hiện câu lệnh cập nhật
-        $result = $this->db->execute($query, [$relativeUrl, $userId]);
+        $result = $this->db->execute($query, $params);
     
         if ($result) {
             $this->log->logInfo("Avatar updated successfully for user with ID: $userId");
@@ -64,21 +146,35 @@ class UserModel
         // Log thông tin
         $this->log->logInfo("Updating profile for user with ID: $userId");
     
-        // Câu lệnh SQL cập nhật
-        $query = "UPDATE users SET username = ?, phone = ?, birth_date = ?, sex = ? WHERE id = ?";
-        $params = [$name, $phone, $birthday, $gender, $userId];
+        // Câu lệnh SQL cập nhật sử dụng named placeholders
+        $query = "UPDATE users SET name = :name, phone = :phone, birth_date = :birth_date, sex = :sex WHERE id = :id";
+        
+        // Dữ liệu để binding vào câu lệnh SQL
+        $params = [
+            'name' => $name,
+            'phone' => $phone,
+            'birth_date' => $birthday,
+            'sex' => $gender,
+            'id' => $userId
+        ];
     
         // Thực thi cập nhật
         $result = $this->db->execute($query, $params);
     
-        if ($result) {
+        $affected = $this->db->execute($query, $params);
+
+        if ($affected > 0) {
             $this->log->logInfo("Profile updated successfully for user with ID: $userId");
             return true;
+        } elseif ($affected === 0) {
+            $this->log->logWarning("No changes detected when updating profile for user ID: $userId");
+            return true; // hoặc false tùy theo bạn muốn xử lý sao
         } else {
-            $this->log->logError("Failed to update profile for user with ID: $userId");
+            $this->log->logError("Failed to update profile for user ID: $userId");
             return false;
         }
     }
+    
 
     public function checkPassword($userId, $currentPassword) {
         $this->log->logInfo("Checking current password for user ID: $userId");
@@ -103,11 +199,19 @@ class UserModel
     
         $hashed = password_hash($newPassword, PASSWORD_DEFAULT);
     
-        $query = "UPDATE users SET password_hash = ? WHERE id = ?";
-        $result = $this->db->execute($query, [$hashed, $userId]);
+        $query = "UPDATE users SET password_hash = :password_hash WHERE id = :id";
+        $params = [
+            'password_hash' => $hashed,
+            'id' => $userId
+        ];
+
+        $result = $this->db->execute($query, $params);
     
-        if ($result) {
+        if ($result > 0) {
             $this->log->logInfo("Password updated successfully for user ID: $userId");
+            return true;
+        } else if ($result === 0) {
+            $this->log->logInfo("Password no change for user ID: $userId");
             return true;
         } else {
             $this->log->logError("Failed to update password for user ID: $userId");
@@ -120,15 +224,19 @@ class UserModel
         $this->log->logInfo("Updating email for user with ID: $userId");
     
         // Kiểm tra nếu email mới đã tồn tại trong hệ thống
-        $existingUser = $this->db->fetchOne("SELECT id FROM users WHERE email = ?", [$newEmail]);
+        $existingUser = $this->db->fetchOne("SELECT id FROM users WHERE email = :email", [':email' => $newEmail]);
         if ($existingUser) {
             $this->log->logError("Email đã tồn tại: $newEmail");
             return false; // Trả về false nếu email đã tồn tại
         }
     
         // Cập nhật email người dùng
-        $query = "UPDATE users SET email = ? WHERE id = ?";
-        $result = $this->db->execute($query, [$newEmail, $userId]);
+        $query = "UPDATE users SET email = :email WHERE id = :id";
+        $params = [
+            ':email' => $newEmail,
+            ':id' => $userId
+        ];
+        $result = $this->db->execute($query, $params);
     
         if ($result) {
             $this->log->logInfo("Email updated successfully for user with ID: $userId");
@@ -156,7 +264,7 @@ class UserModel
     public function countFilteredUsers($search) {
         $sql = "SELECT COUNT(*) as total FROM users 
                 WHERE role = 'user' AND (
-                    username LIKE :kw OR 
+                    name LIKE :kw OR 
                     email LIKE :kw OR 
                     phone LIKE :kw
                 )";
@@ -168,7 +276,7 @@ class UserModel
     public function fetchUsersForAdmin($start, $length, $search, $orderColumn, $orderDir) {
         // 1. Các cột được phép sắp xếp
         $allowedColumns = [
-            'username', 'email', 'phone', 'birth_date', 'sex', 'is_ban', 'created_at'
+            'name', 'email', 'phone', 'birth_date', 'sex', 'is_ban', 'created_at'
         ];
     
         // 2. Kiểm tra và xử lý cột sắp xếp hợp lệ
@@ -178,14 +286,14 @@ class UserModel
         $orderDir = strtolower($orderDir) === 'desc' ? 'DESC' : 'ASC';
     
         // 4. Chuẩn bị câu lệnh SQL
-        $sql = "SELECT id, username, email, phone, birth_date, sex, avatar_url, is_ban
+        $sql = "SELECT id, name, email, phone, birth_date, sex, avatar_url, is_ban
                 FROM users
                 WHERE role = 'user'";
     
         // 5. Thêm điều kiện tìm kiếm nếu có
         $params = [];
         if (!empty($search)) {
-            $sql .= " AND (username LIKE :kw OR email LIKE :kw OR phone LIKE :kw OR is_ban LIKE :kw)";
+            $sql .= " AND (name LIKE :kw OR email LIKE :kw OR phone LIKE :kw OR is_ban LIKE :kw)";
             $params[':kw'] = '%' . $search . '%';
         }
     
@@ -207,17 +315,6 @@ class UserModel
         $this->log->logInfo("Query Result: " . print_r($result, true)); // Log kết quả trả về từ cơ sở dữ liệu
     
         return $result;
-    }
-    
-    private function generateUUID() {
-        return sprintf(
-            '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0x0fff) | 0x4000,
-            mt_rand(0, 0x3fff) | 0x8000,
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
-        );
     }
     
 }

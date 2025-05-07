@@ -1,0 +1,5 @@
+User-agent: *
+
+Disallow: /uploads/
+
+# Sitemap: https://promeet.vn/sitemap.xml

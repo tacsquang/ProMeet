@@ -105,7 +105,7 @@
                             </div>
 
                             <div class="mb-3 form-check form-switch d-flex align-items-center gap-2">
-                                <input type="checkbox" class="form-check-input" id="remember" role="switch" aria-label="Ghi nhớ đăng nhập">
+                                <input type="checkbox" class="form-check-input" id="remember" name="remember" role="switch" aria-label="Ghi nhớ đăng nhập">
                                 <label class="form-check-label text-muted mb-0" for="remember">Ghi nhớ đăng nhập</label>
                             </div>
 

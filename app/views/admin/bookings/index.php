@@ -141,11 +141,11 @@
                     <div class="form-group text-sm-center">
                         <select id="status-filter" class="form-select">
                             <option value="">Tất cả</option>
-                            <option value="pending">Chờ thanh toán</option>
-                            <option value="paid">Chờ xác nhận</option>
-                            <option value="confirmed">Đã xác nhận</option>
-                            <option value="completed">Hoàn tất</option>
-                            <option value="canceled">Đã hủy</option>
+                            <option value="0">Chờ thanh toán</option>
+                            <option value="1">Chờ xác nhận</option>
+                            <option value="2">Đã xác nhận</option>
+                            <option value="3">Hoàn tất</option>
+                            <option value="4">Đã hủy</option>
                         </select>
                     </div>
 
@@ -280,11 +280,11 @@
                     data: 'status',
                     render: function(data) {
                         const map = {
-                            pending:    { label: 'Chờ thanh toán',     class: 'bg-info text-dark' },
-                            paid:       { label: 'Chờ xác nhận', class: 'bg-warning text-dark' },
-                            confirmed:  { label: 'Đã xác nhận',   class: 'bg-primary' },
-                            completed:  { label: 'Đã hoàn thành',       class: 'bg-success' },
-                            canceled:   { label: 'Đã hủy',         class: 'bg-danger' }
+                            0:    { label: 'Chờ thanh toán',     class: 'bg-info text-dark' },
+                            1:       { label: 'Chờ xác nhận', class: 'bg-warning text-dark' },
+                            2:  { label: 'Đã xác nhận',   class: 'bg-primary' },
+                            3:  { label: 'Đã hoàn thành',       class: 'bg-success' },
+                            4:   { label: 'Đã hủy',         class: 'bg-danger' }
                         };
                         const status = map[data] || { label: data, class: 'bg-secondary' };
                         return `<span class="badge ${status.class}">${status.label}</span>`;
@@ -297,7 +297,7 @@
                         return `
                             <div class="d-flex gap-2">
                                 <button class="btn btn-primary btn-sm btn-view-booking" data-id="${data}">
-                                    <i class="bi bi-eye"></i>
+                                    <i class="bi bi-eye"></i> Xem
                                 </button>
                             </div>
                         `;

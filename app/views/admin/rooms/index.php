@@ -32,7 +32,7 @@
                 <span class="fw-semibold">Danh sách phòng</span>
             </h5>
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createRoomModal">
-                <i class="bi bi-plus-lg"></i> Thêm phòng mới
+                <i class="bi bi-plus-lg"></i> Thêm phòng
             </button>
         </div>
         <div class="card-body">
@@ -46,7 +46,7 @@
                         <th>Địa điểm</th>
                         <th>Trung bình</th>
                         <th>Trạng thái</th>
-                        <th>Thao tác</th>
+                        <th>Chi tiết</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -87,14 +87,16 @@
                             <label for="category" class="form-label fw-semibold">Phân loại</label>
                             <select class="form-select" id="category" name="category" required>
                                 <option value="">-- Chọn loại phòng --</option>
-                                <option value="Basic">Basic</option>
-                                <option value="Standard">Standard</option>
-                                <option value="Premium">Premium</option>
+                                <option value="0">Basic</option>
+                                <option value="1">Standard</option>
+                                <option value="2">Premium</option>
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label for="location_name" class="form-label fw-semibold">Địa điểm</label>
-                            <input type="text" class="form-control" id="location_name" name="location_name" required placeholder="Tên địa điểm hiển thị">
+                            <label for="district" class="form-label fw-semibold">Địa điểm (Quận/Huyện)</label>
+                            <select class="form-select" id="location_name" name="location_name" required>
+                                <option value="">-- Chọn địa điểm --</option>
+                            </select>
                         </div>
                         <div class="col-md-3">
                             <label for="latitude" class="form-label fw-semibold">Vĩ độ (Latitude)</label>
@@ -115,24 +117,6 @@
             </div>
         </form>
     </div>
-</div>
-
-<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content" data-bs-theme="light">
-      <div class="modal-header bg-danger text-white">
-        <h5 class="modal-title" id="confirmDeleteModalLabel">Xác nhận xoá phòng</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
-      </div>
-      <div class="modal-body text-dark">
-        Bạn có chắc chắn muốn xoá phòng này không?
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Huỷ</button>
-        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Xoá</button>
-      </div>
-    </div>
-  </div>
 </div>
 
 
@@ -201,13 +185,27 @@
         });
     }
 
+    let districtOptionsLoaded = false;
+    $('#createRoomModal').on('shown.bs.modal', function () {
+        if (!districtOptionsLoaded) {
+            $.getJSON(BASE_URL + '/assets/data/locations.json', function (data) {
+                let options = '<option value="">-- Chọn địa điểm --</option>';
+                data.forEach(function (location) {
+                    options += `<option value="${location.value}">${location.label}</option>`;
+                });
+                $('#location_name').html(options);
+                districtOptionsLoaded = true;
+            });
+        }
+    });
+
     document.getElementById('addRoomForm').addEventListener('submit', function (e) {
         e.preventDefault();
 
         const form = e.target;
         const formData = new FormData(form);
 
-        fetch('<?php echo BASE_URL; ?>/room/store', {
+        fetch('<?php echo BASE_URL; ?>/room/create_init_room', {
             method: 'POST',
             body: formData
         })
@@ -240,157 +238,93 @@
         window.location.href = `${BASE_URL}/room/detail/${roomId}`;
     }
 
-    // Xử lý nút Xóa phòng
-    function deleteRoom(roomId) {
-        Swal.fire({
-            title: "Bạn có chắc muốn xoá phòng này không?",
-            text: "Phòng sẽ bị xoá vĩnh viễn, không thể khôi phục!",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#d33",
-            cancelButtonColor: "#3085d6",
-            confirmButtonText: "Xoá phòng",
-            cancelButtonText: "Hủy"
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Gửi request AJAX hoặc chuyển hướng đến URL xoá
-                $.ajax({
-                    url: `<?= BASE_URL ?>/room/delete/${roomId}`,
-                    type: 'DELETE',
-                    success: function(response) {
-                        // Thông báo xoá thành công
-                        Swal.fire({
-                            title: "Phòng đã được xoá!",
-                            icon: "success",
-                            confirmButtonText: "Đóng"
-                        }).then(() => {
-                            // Cập nhật lại danh sách phòng hoặc reload trang
-                            location.reload(); // Hoặc gọi lại DataTable reload
-                        });
-                    },
-                    error: function() {
-                        Swal.fire({
-                            title: "Lỗi!",
-                            text: "Không thể xoá phòng. Vui lòng thử lại sau.",
-                            icon: "error",
-                            confirmButtonText: "Đóng"
-                        });
-                    }
-                });
-            }
-        });
-    }
-
-
-
-    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
-        if (!roomToDelete) return;
-
-        fetch(`${BASE_URL}/room/delete/${roomToDelete}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ id: roomToDelete })
-        })
-        .then(response => response.json())
-        .then(data => {
-            deleteModal.hide();
-            roomToDelete = null;
-
-            if (data.success) {
-                showToast('Xoá thành công!', 'success');
-                $('#table1').DataTable().ajax.reload();  // Reload lại bảng
-            } else {
-                showToast('Xoá thất bại: ' + data.message, 'danger');
-            }
-        })
-        .catch(error => {
-            deleteModal.hide();
-            roomToDelete = null;
-            showToast('Đã có lỗi xảy ra khi xoá.', 'danger');
-            console.error('Error:', error);
-        });
-    });
 </script>
 
 <script>
-$(document).ready(function() {
-    $('#table1').DataTable({
-        processing: true,
-        serverSide: true,
-        ajax: {
-            url: '<?= BASE_URL ?>/room/getAll',
-            type: 'GET'
-        },
-        columns: [
-            { data: 'stt', orderable: false},
-            { data: 'name' },
-            { data: 'category' },
-            { 
-                data: 'price',
-                render: function(data) {
-                    return parseInt(data).toLocaleString() + 'đ';
-                }
+    $(document).ready(function() {
+        $('#table1').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: '<?= BASE_URL ?>/room/getAll',
+                type: 'GET'
             },
-            { data: 'location_name' },
-            { 
-                data: 'average_rating',
-                render: function(data) {
-                    return data + '/5';
+            columns: [
+                { data: 'stt', orderable: false},
+                { data: 'name' },
+                {
+                    data: 'category',
+                    render: function(data) {
+                        const map = {
+                            0: { label: 'Basic' },
+                            1: { label: 'Standard' },
+                            2: { label: 'Prenium' }
+                        };
+                        const category = map[data];
+                        return category ? category.label : 'Không xác định';
+                    }
+                },
+                { 
+                    data: 'price',
+                    render: function(data) {
+                        return parseInt(data).toLocaleString() + 'đ';
+                    }
+                },
+                { data: 'location_name' },
+                { 
+                    data: 'average_rating',
+                    render: function(data) {
+                        return data + '/5';
+                    }
+                },
+                { 
+                    data: 'is_active',
+                    render: function(data) {
+                        return data == 1
+                            ? '<span class="badge bg-success">Hoạt động</span>'
+                            : '<span class="badge bg-secondary">Không hoạt động</span>';
+                    }
+                },
+                { 
+                    data: 'id',
+                    orderable: false,
+                    render: function(data) {
+                        return `
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-primary btn-sm btn-view-room" data-id="${data}">
+                                    <i class="bi bi-eye"></i> Xem
+                                </button>
+                            </div>
+                        `;
+                    }
                 }
-            },
-            { 
-                data: 'is_active',
-                render: function(data) {
-                    return data == 1
-                        ? '<span class="badge bg-success">Hoạt động</span>'
-                        : '<span class="badge bg-secondary">Không hoạt động</span>';
-                }
-            },
-            { 
-                data: 'id',
-                orderable: false,
-                render: function(data) {
-                    return `
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-primary btn-sm btn-view-room" data-id="${data}">
-                                <i class="bi bi-eye"></i>
-                            </button>
-                            <button class="btn btn-danger btn-sm btn-delete-room" data-id="${data}">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </div>
-                    `;
-                }
+            ],
+            lengthMenu: [10, 25, 50],
+            pageLength: 10,
+            order: [[1, 'asc']],
+            scrollX: true,
+            language: {
+                search: "Tìm kiếm:",
+                lengthMenu: "Hiển thị _MENU_ dòng",
+                info: "Hiển thị _START_ đến _END_ của _TOTAL_ dòng",
+                paginate: {
+                    previous: "Trước",
+                    next: "Sau"
+                },
+                zeroRecords: "Không có dữ liệu phù hợp"
             }
-        ],
-        lengthMenu: [10, 25, 50],
-        pageLength: 10,
-        order: [[1, 'asc']],
-        scrollX: true,
-        language: {
-            search: "Tìm kiếm:",
-            lengthMenu: "Hiển thị _MENU_ dòng",
-            info: "Hiển thị _START_ đến _END_ của _TOTAL_ dòng",
-            paginate: {
-                previous: "Trước",
-                next: "Sau"
-            },
-            zeroRecords: "Không có dữ liệu phù hợp"
-        }
+        });
     });
-});
 
 
-$(document).on('click', '.btn-view-room', function() {
-    let id = $(this).data('id');
-    viewRoom(id);
-});
+    $(document).on('click', '.btn-view-room', function() {
+        let id = $(this).data('id');
+        viewRoom(id);
+    });
 
-$(document).on('click', '.btn-delete-room', function() {
-    let id = $(this).data('id');
-    deleteRoom(id);
-});
+    $(document).on('click', '.btn-delete-room', function() {
+        let id = $(this).data('id');
+        deleteRoom(id);
+    });
 
 </script>

@@ -1,10 +1,20 @@
 <?php
 namespace App\Controllers\Admin;
-use App\Models\RoomModel;
-use App\Models\ImageModel;
-use App\Core\LogService;
+use App\Core\Container;
+use App\Core\Utils;
 
 class RoomController {
+    protected $log;
+    protected $roomModel;
+    protected $imageModel;
+
+    public function __construct(Container $container)
+    {
+        $this->log = $container->get('logger');
+        $this->roomModel = $container->get('RoomModel');
+        $this->imageModel = $container->get('ImageModel');
+    }
+
     public function index() {
         #echo "This is global RoomController.";
         $view = new \App\Core\View();
@@ -19,9 +29,7 @@ class RoomController {
 
     public function detail($id) {
 
-        $roomModel = new \App\Models\RoomModel();
-        $room = $roomModel->fetchRoomDetail($id); 
-
+        $room = $this->roomModel->fetchRoomDetail($id); 
         
         if (!$room) {
             // Nếu không tìm thấy phòng => chuyển sang trang 404
@@ -32,6 +40,15 @@ class RoomController {
             return;
         }
 
+        $room_stat = $this->roomModel->getRoomStatsByRoomId($id);
+        // Kiểm tra kết quả và ghi log tương ứng
+        if ($room_stat) {
+            $this->log->logInfo("Room stats fetched successfully for room ID: {$id}. View Count: {$room_stat->view_count}, Favorite Count: {$room_stat->favorite_count}, Booking Count: {$room_stat->booking_count}");
+        } else {
+            $this->log->logWarning("No stats found for room ID: {$id}");
+        }
+        $bookingStats = $this->roomModel->getBookingStatsForWeek($id);
+
         #echo "This is global RoomController.";
         $view = new \App\Core\View();
         $layout = '/admin/layouts/main.php';
@@ -41,16 +58,15 @@ class RoomController {
             'message' => 'Chào mừng bạn!',
             'currentPage' => 'Rooms',
             'currentSubPage' => 'AddRoom',
-            'room' => $room
+            'room' => $room,
+            'room_stat' => $room_stat,
+            'bookingStats' => $bookingStats
         ]);
     }
 
 
-
     public function getAll() {
-        $roomModel = new RoomModel();
-        $log = new LogService();
-    
+
         $draw = isset($_GET['draw']) ? intval($_GET['draw']) : 0;
         $start = isset($_GET['start']) ? intval($_GET['start']) : 0;
         $length = isset($_GET['length']) ? intval($_GET['length']) : 10;
@@ -75,20 +91,20 @@ class RoomController {
         $orderColumn = ($orderColumnIndex !== null && isset($columns[$orderColumnIndex])) ? $columns[$orderColumnIndex] : null;
     
     
-        $log->logInfo("Request received - draw: {$draw}, start: {$start}, length: {$length}, search: {$searchValue}, order by: {$orderColumn} {$orderDir}");
+        $this->log->logInfo("Request received - draw: {$draw}, start: {$start}, length: {$length}, search: {$searchValue}, order by: {$orderColumn} {$orderDir}");
     
         // Đếm tổng số bản ghi
-        $totalRecords = $roomModel->countAllRooms();
+        $totalRecords = $this->roomModel->countAllRooms();
         $totalFiltered = $totalRecords;
     
         if ($searchValue !== '') {
-            $totalFiltered = $roomModel->countFilteredRooms($searchValue);
+            $totalFiltered = $this->roomModel->countFilteredRooms($searchValue);
         }
     
         // Lấy danh sách phòng có sort và search
-        $rooms = $roomModel->fetchRoomsForAdmin($start, $length, $searchValue, $orderColumn, $orderDir);
+        $rooms = $this->roomModel->fetchRoomsForAdmin($start, $length, $searchValue, $orderColumn, $orderDir);
     
-        $log->logInfo("Rooms fetched: " . print_r($rooms, true));
+        $this->log->logInfo("Rooms fetched: " . print_r($rooms, true));
     
         // Thêm stt
         $roomsWithStt = array_map(function($room, $index) {
@@ -97,7 +113,7 @@ class RoomController {
             return $roomArray;
         }, $rooms, array_keys($rooms));
     
-        $log->logInfo("Rooms with stt added: " . print_r($roomsWithStt, true));
+        $this->log->logInfo("Rooms with stt added: " . print_r($roomsWithStt, true));
     
         $jsonData = [
             'draw' => $draw,
@@ -106,27 +122,26 @@ class RoomController {
             'data' => $roomsWithStt
         ];
     
-        $log->logInfo("Sending response: " . json_encode($jsonData));
+        $this->log->logInfo("Sending response: " . json_encode($jsonData));
     
         header('Content-Type: application/json');
         echo json_encode($jsonData);
     }
     
-    
-    public function store()
-    {
-        $log = new LogService();
-        $log->logInfo("=== [ROOM STORE] Start processing room creation ===");
+
+    public function create_init_room() {
+        
+        $this->log->logInfo("=== [ROOM CREATE] Start processing room creation ===");
     
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $log->logError("[ROOM STORE] Invalid request method: " . $_SERVER['REQUEST_METHOD']);
+            $this->log->logError("[ROOM STORE] Invalid request method: " . $_SERVER['REQUEST_METHOD']);
             http_response_code(405);
             echo json_encode(['error' => 'Phương thức không hợp lệ']);
             return;
         }
     
-        $uuid = $this->generateUUID();
-        $log->logInfo("[ROOM STORE] Generated UUID: {$uuid}");
+        $uuid = Utils::generateUUID();
+        $this->log->logInfo("[ROOM CREATE] Generated UUID: {$uuid}");
     
         $roomData = [
             'id' => $uuid,
@@ -140,35 +155,26 @@ class RoomController {
             'html_description' => $_POST['html_description'] ?? '',
         ];
     
-        $log->logInfo("[ROOM STORE] Received POST data: " . json_encode($_POST));
+        $this->log->logInfo("[ROOM CREATE] Received POST data: " . json_encode($_POST));
     
-        $roomModel = new \App\Models\RoomModel();
-    
-        if (!$roomModel->insertRoom($roomData)) {
-            $log->logError("[ROOM STORE] Failed to insert room. Data: " . json_encode($roomData));
+        if (!$this->roomModel->insertRoom($roomData)) {
+            $this->log->logError("[ROOM CREATE] Failed to insert room. Data: " . json_encode($roomData));
             http_response_code(500);
             echo json_encode(['error' => 'Không thể thêm phòng']);
             return;
         }
     
-        // Upload ảnh
-        $imagePaths = $this->handleRoomImageUpload($uuid, $_FILES['images'] ?? null, $_POST['primary_index'] ?? '', $log);
-    
-        if (!empty($imagePaths)) {
-            $roomModel->insertRoomImages($uuid, $imagePaths);
-        }
-    
-        $log->logInfo("=== [ROOM STORE] Room creation completed successfully ===");
+        $this->log->logInfo("=== [ROOM CREATE] Room creation completed successfully ===");
         echo json_encode(['success' => true, 'room_id' => $uuid]);
     }
 
     public function update_room_info()
     {
-        $log = new LogService();
-        $log->logInfo("=== [ROOM UPDATE] Start processing room update ===");
+        
+        $this->log->logInfo("=== [ROOM UPDATE] Start processing room update ===");
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $log->logError("[ROOM UPDATE] Invalid request method: " . $_SERVER['REQUEST_METHOD']);
+            $this->log->logError("[ROOM UPDATE] Invalid request method: " . $_SERVER['REQUEST_METHOD']);
             http_response_code(405);
             echo json_encode(['error' => 'Phương thức không hợp lệ']);
             return;
@@ -177,7 +183,7 @@ class RoomController {
         $roomId = $_POST['room_id'] ?? null;
 
         if (!$roomId) {
-            $log->logError("[ROOM UPDATE] Missing room_id in POST data.");
+            $this->log->logError("[ROOM UPDATE] Missing room_id in POST data.");
             http_response_code(400);
             echo json_encode(['error' => 'Thiếu mã phòng cần cập nhật']);
             return;
@@ -194,46 +200,43 @@ class RoomController {
             'longitude' => $_POST['longitude'] ?? '',
         ];
 
-        $log->logInfo("[ROOM UPDATE] Received POST data: " . json_encode($roomData));
+        $this->log->logInfo("[ROOM UPDATE] Received POST data: " . json_encode($roomData));
 
-        $roomModel = new \App\Models\RoomModel();
-
-        if (!$roomModel->updateRoom($roomData)) {
-            $log->logError("[ROOM UPDATE] Failed to update room. Data: " . json_encode($roomData));
+        if (!$this->roomModel->updateRoom($roomData)) {
+            $this->log->logError("[ROOM UPDATE] Failed to update room. Data: " . json_encode($roomData));
             http_response_code(500);
             echo json_encode(['error' => 'Không thể cập nhật phòng']);
             return;
         }
 
-        $log->logInfo("=== [ROOM UPDATE] Room update completed successfully ===");
+        $this->log->logInfo("=== [ROOM UPDATE] Room update completed successfully ===");
         echo json_encode(['success' => true, 'room_id' => $roomId]);
     }
 
     public function getImages()
     {
-        $log = new LogService();
-        $log->logInfo("[ROOM GET IMAGES] Start fetching images for the room.");
+        
+        $this->log->logInfo("[ROOM GET IMAGES] Start fetching images for the room.");
     
         // Lấy roomId từ query string (GET parameter)
         $roomId = $_GET['roomId'] ?? null;
 
     
         if (!$roomId) {
-            $log->logWarning("[ROOM GET IMAGES] Missing or invalid room ID.");
+            $this->log->logWarning("[ROOM GET IMAGES] Missing or invalid room ID.");
             http_response_code(400); // Bad request
             echo json_encode(['success' => false, 'error' => 'Thiếu hoặc sai ID phòng']);
             return;
         }
 
-        $log->logInfo(sprintf("[ROOM GET IMAGES] Start fetching images for the room. %s", $roomId));
+        $this->log->logInfo(sprintf("[ROOM GET IMAGES] Start fetching images for the room. %s", $roomId));
 
     
         // Lấy danh sách ảnh từ cơ sở dữ liệu
-        $imageModel = new ImageModel();
-        $images = $imageModel->getImagesByRoomId($roomId);
+        $images = $this->imageModel->getImagesByRoomId($roomId);
     
         if ($images === false) {
-            $log->logError("[ROOM GET IMAGES] Failed to fetch images for room ID $roomId.");
+            $this->log->logError("[ROOM GET IMAGES] Failed to fetch images for room ID $roomId.");
             http_response_code(500);
             echo json_encode(['success' => false, 'error' => 'Không thể lấy ảnh']);
             return;
@@ -244,8 +247,8 @@ class RoomController {
     }
     
     public function set_image_primary() {
-        $log = new LogService();
-        $log->logInfo("[ROOM SET IMAGE PRIMARY] Start setting primary image.");
+        
+        $this->log->logInfo("[ROOM SET IMAGE PRIMARY] Start setting primary image.");
     
         // Lấy ID ảnh từ body request
         $data = json_decode(file_get_contents('php://input'), true);
@@ -253,32 +256,31 @@ class RoomController {
     
         // Kiểm tra ID ảnh hợp lệ
         if (!$imageId) {
-            $log->logWarning("[ROOM SET IMAGE PRIMARY] Missing or invalid image ID.");
+            $this->log->logWarning("[ROOM SET IMAGE PRIMARY] Missing or invalid image ID.");
             http_response_code(400); // Bad request
             echo json_encode(['success' => false, 'error' => 'Thiếu hoặc sai ID ảnh']);
             return;
         }
     
-        $log->logInfo(sprintf("[ROOM SET IMAGE PRIMARY] Setting image ID %s as primary.", $imageId));
+        $this->log->logInfo(sprintf("[ROOM SET IMAGE PRIMARY] Setting image ID %s as primary.", $imageId));
     
         // Cập nhật ảnh chính: Set all others to non-primary, then set the selected image as primary
-        $imageModel = new ImageModel();
 
-        $image = $imageModel->getImageById($imageId);
+        $image = $this->imageModel->getImageById($imageId);
         
         // Set tất cả các ảnh trong phòng này là không phải ảnh chính
-        $result = $imageModel->setAllImagesNonPrimary($image->room_id);
+        $result = $this->imageModel->setAllImagesNonPrimary($image->room_id);
         if (!$result) {
-            $log->logError("[ROOM SET IMAGE PRIMARY] Failed to reset primary status for images.");
+            $this->log->logError("[ROOM SET IMAGE PRIMARY] Failed to reset primary status for images.");
             http_response_code(500);
             echo json_encode(['success' => false, 'error' => 'Không thể cập nhật trạng thái ảnh chính']);
             return;
         }
     
         // Set ảnh được chọn làm ảnh chính
-        $result = $imageModel->setImageAsPrimary($imageId);
+        $result = $this->imageModel->setImageAsPrimary($imageId);
         if (!$result) {
-            $log->logError("[ROOM SET IMAGE PRIMARY] Failed to set image $imageId as primary.");
+            $this->log->logError("[ROOM SET IMAGE PRIMARY] Failed to set image $imageId as primary.");
             http_response_code(500);
             echo json_encode(['success' => false, 'error' => 'Không thể đặt ảnh chính']);
             return;
@@ -287,81 +289,15 @@ class RoomController {
         // Trả về thành công
         echo json_encode(['success' => true]);
     }
-
-    public function uploadRoomImage()
-    {
-        $log = new LogService();
-        $log->logInfo("=== [UPLOAD ROOM IMAGE] Start uploading image ===");
-    
-        // Kiểm tra nếu là phương thức POST
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $log->logError("[UPLOAD ROOM IMAGE] Invalid request method: " . $_SERVER['REQUEST_METHOD']);
-            echo json_encode(['error' => 'Invalid request method']);
-            exit;
-        }
-    
-        // Kiểm tra xem có file ảnh được upload không
-        $image = $_FILES['file'] ?? null;
-        if ($image && $image['error'] === UPLOAD_ERR_OK) {
-            $log->logInfo("[UPLOAD ROOM IMAGE] File received: " . json_encode($image));
-    
-            // Lấy ID phòng từ POST hoặc URL nếu có
-            $roomId = $_POST['room_id'] ?? null;
-            if (!$roomId) {
-                $log->logError("[UPLOAD ROOM IMAGE] Missing room ID in POST data");
-                echo json_encode(['error' => 'Room ID is required']);
-                exit;
-            }
-            $log->logInfo("[UPLOAD ROOM IMAGE] Room ID: {$roomId}");
-    
-            // Tạo thư mục lưu trữ ảnh cho phòng nếu chưa tồn tại
-            $uploadDir = __DIR__ . '/../../../public/uploads/rooms/' . $roomId . '/slideshow/';
-            if (!is_dir($uploadDir)) {
-                if (mkdir($uploadDir, 0777, true)) {
-                    $log->logInfo("[UPLOAD ROOM IMAGE] Upload directory created: {$uploadDir}");
-                } else {
-                    $log->logError("[UPLOAD ROOM IMAGE] Failed to create upload directory: {$uploadDir}");
-                    echo json_encode(['error' => 'Failed to create upload directory']);
-                    exit;
-                }
-            }
-    
-            // Đặt tên file ảnh và xác định vị trí lưu trữ
-            $filename = time() . '_' . basename($image['name']);
-            $target = $uploadDir . $filename;
-            $log->logInfo("[UPLOAD ROOM IMAGE] Target file path: {$target}");
-    
-            // Di chuyển ảnh vào thư mục
-            if (move_uploaded_file($image['tmp_name'], $target)) {
-                $relativeUrl = '/uploads/rooms/' . $roomId . '/slideshow/' . $filename;
-                $log->logInfo("[UPLOAD ROOM IMAGE] Image uploaded successfully: {$relativeUrl}");
-    
-                // Trả về URL của ảnh
-                echo json_encode(['url' => $relativeUrl]);
-            } else {
-                $log->logError("[UPLOAD ROOM IMAGE] Failed to move uploaded file: {$image['tmp_name']} to {$target}");
-                echo json_encode(['error' => 'Failed to upload image']);
-            }
-        } else {
-            if (isset($image)) {
-                $log->logError("[UPLOAD ROOM IMAGE] Upload error: " . $image['error']);
-            } else {
-                $log->logError("[UPLOAD ROOM IMAGE] No file uploaded");
-            }
-            echo json_encode(['error' => 'No file uploaded or upload error']);
-        }
-    
-        $log->logInfo("=== [UPLOAD ROOM IMAGE] Image upload process completed ===");
-    }
     
     public function uploadRoomImageTiny()
     {
-        $log = new LogService();
-        $log->logInfo("=== [UPLOAD ROOM IMAGE] Start uploading image ===");
+        
+        $this->log->logInfo("=== [UPLOAD ROOM IMAGE] Start uploading image ===");
     
         // Kiểm tra nếu là phương thức POST
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $log->logError("[UPLOAD ROOM IMAGE] Invalid request method: " . $_SERVER['REQUEST_METHOD']);
+            $this->log->logError("[UPLOAD ROOM IMAGE] Invalid request method: " . $_SERVER['REQUEST_METHOD']);
             echo json_encode(['error' => 'Invalid request method']);
             exit;
         }
@@ -369,24 +305,24 @@ class RoomController {
         // Kiểm tra xem có file ảnh được upload không
         $image = $_FILES['file'] ?? null;
         if ($image && $image['error'] === UPLOAD_ERR_OK) {
-            $log->logInfo("[UPLOAD ROOM IMAGE] File received: " . json_encode($image));
+            $this->log->logInfo("[UPLOAD ROOM IMAGE] File received: " . json_encode($image));
     
             // Lấy ID phòng từ POST hoặc URL nếu có
             $roomId = $_POST['room_id'] ?? null;
             if (!$roomId) {
-                $log->logError("[UPLOAD ROOM IMAGE] Missing room ID in POST data");
+                $this->log->logError("[UPLOAD ROOM IMAGE] Missing room ID in POST data");
                 echo json_encode(['error' => 'Room ID is required']);
                 exit;
             }
-            $log->logInfo("[UPLOAD ROOM IMAGE] Room ID: {$roomId}");
+            $this->log->logInfo("[UPLOAD ROOM IMAGE] Room ID: {$roomId}");
     
             // Tạo thư mục lưu trữ ảnh cho phòng nếu chưa tồn tại
             $uploadDir = __DIR__ . '/../../../public/uploads/rooms/' . $roomId . '/description/';
             if (!is_dir($uploadDir)) {
                 if (mkdir($uploadDir, 0777, true)) {
-                    $log->logInfo("[UPLOAD ROOM IMAGE] Upload directory created: {$uploadDir}");
+                    $this->log->logInfo("[UPLOAD ROOM IMAGE] Upload directory created: {$uploadDir}");
                 } else {
-                    $log->logError("[UPLOAD ROOM IMAGE] Failed to create upload directory: {$uploadDir}");
+                    $this->log->logError("[UPLOAD ROOM IMAGE] Failed to create upload directory: {$uploadDir}");
                     echo json_encode(['error' => 'Failed to create upload directory']);
                     exit;
                 }
@@ -395,7 +331,7 @@ class RoomController {
             // Đặt tên file ảnh và xác định vị trí lưu trữ
             $filename = time() . '_' . basename($image['name']);
             $target = $uploadDir . $filename;
-            $log->logInfo("[UPLOAD ROOM IMAGE tiny] Target file path: {$target}");
+            $this->log->logInfo("[UPLOAD ROOM IMAGE tiny] Target file path: {$target}");
     
             // Di chuyển ảnh vào thư mục
             if (move_uploaded_file($image['tmp_name'], $target)) {
@@ -403,24 +339,24 @@ class RoomController {
                 $relativeUrl = '/uploads/rooms/' . $roomId . '/description/' . $filename;
                 $fullUrl = $baseUrl . $relativeUrl;
 
-                $log->logInfo("[UPLOAD ROOM IMAGE TINY] Image uploaded successfully: {$fullUrl}");
+                $this->log->logInfo("[UPLOAD ROOM IMAGE TINY] Image uploaded successfully: {$fullUrl}");
     
                 // Trả về URL của ảnh
                 echo json_encode(['url' => $fullUrl]);
             } else {
-                $log->logError("[UPLOAD ROOM IMAGE] Failed to move uploaded file: {$image['tmp_name']} to {$target}");
+                $this->log->logError("[UPLOAD ROOM IMAGE] Failed to move uploaded file: {$image['tmp_name']} to {$target}");
                 echo json_encode(['error' => 'Failed to upload image']);
             }
         } else {
             if (isset($image)) {
-                $log->logError("[UPLOAD ROOM IMAGE] Upload error: " . $image['error']);
+                $this->log->logError("[UPLOAD ROOM IMAGE] Upload error: " . $image['error']);
             } else {
-                $log->logError("[UPLOAD ROOM IMAGE] No file uploaded");
+                $this->log->logError("[UPLOAD ROOM IMAGE] No file uploaded");
             }
             echo json_encode(['error' => 'No file uploaded or upload error']);
         }
     
-        $log->logInfo("=== [UPLOAD ROOM IMAGE] Image upload process completed ===");
+        $this->log->logInfo("=== [UPLOAD ROOM IMAGE] Image upload process completed ===");
     }
 
     public function updateDescription() {
@@ -433,8 +369,7 @@ class RoomController {
             return;
         }
 
-        $model = new RoomModel();
-        $result = $model->updateDescription($roomId, $description);
+        $result = $this->roomModel->updateDescription($roomId, $description);
 
         echo json_encode(['success' => $result]);
     }
@@ -451,11 +386,10 @@ class RoomController {
         }
 
         $statusValue = $status === 'active' ? 1 : 0;
-        $roomModel = new RoomModel();
 
-        $result = $roomModel->updateStatus($id, $statusValue);
-        $logService = new LogService();
-        $logService->logInfo("Cập nhật trạng thái phòng ID $id => $status ($statusValue)");
+        $result = $this->roomModel->updateStatus($id, $statusValue);
+
+        $this->log->logInfo("Cập nhật trạng thái phòng ID $id => $status ($statusValue)");
     
         if ($result) {
             echo json_encode(['success' => true]);
@@ -464,15 +398,13 @@ class RoomController {
         }
     }
     
-    
-
     public function uploadSlide() {
-        $log = new LogService();
+        
         header('Content-Type: application/json');
     
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['images'])) {
             $roomId = $_POST['room_id'];
-            $log->logInfo("Starting upload process for roomId: {$roomId}");
+            $this->log->logInfo("Starting upload process for roomId: {$roomId}");
     
             $images = $_FILES['images'];
             $uploadedImages = [];
@@ -480,7 +412,7 @@ class RoomController {
             $uploadDir = __DIR__ . "/../../../public/uploads/rooms/{$roomId}/slideshow/";
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0777, true);
-                $log->logInfo("Created upload directory: {$uploadDir}");
+                $this->log->logInfo("Created upload directory: {$uploadDir}");
             }
     
             foreach ($images['tmp_name'] as $key => $tmpName) {
@@ -488,36 +420,35 @@ class RoomController {
                 $uploadFile = $uploadDir . $fileName;
     
                 if (move_uploaded_file($tmpName, $uploadFile)) {
-                    $log->logInfo("Uploaded file: {$fileName} to {$uploadFile}");
+                    $this->log->logInfo("Uploaded file: {$fileName} to {$uploadFile}");
                     $uploadedImages[] = "/uploads/rooms/{$roomId}/slideshow/{$fileName}";
                 } else {
-                    $log->logError("Failed to upload file: {$fileName}");
+                    $this->log->logError("Failed to upload file: {$fileName}");
                     echo json_encode(['success' => false, 'message' => 'Tải ảnh thất bại.']);
                     return;
                 }
             }
     
-            $imageModel = new ImageModel();
-            $imagesSaved = $imageModel->addImagesToRoom($roomId, $uploadedImages);
+            $imagesSaved = $this->imageModel->addImagesToRoom($roomId, $uploadedImages);
     
             if ($imagesSaved) {
-                $log->logInfo("Successfully saved images to database for roomId: {$roomId}");
+                $this->log->logInfo("Successfully saved images to database for roomId: {$roomId}");
                 echo json_encode(['success' => true, 'images' => $imagesSaved ]);
                 return;
             } else {
-                $log->logError("Failed to save images to database for roomId: {$roomId}");
+                $this->log->logError("Failed to save images to database for roomId: {$roomId}");
                 echo json_encode(['success' => false, 'message' => 'Không thể lưu ảnh vào cơ sở dữ liệu.']);
                 return;
             }
         }
     
-        $log->logWarning('No images uploaded for roomId: ' . ($_POST['room_id'] ?? 'unknown'));
+        $this->log->logWarning('No images uploaded for roomId: ' . ($_POST['room_id'] ?? 'unknown'));
 
         echo json_encode(['success' => false, 'message' => 'Không có ảnh nào được tải lên.']);
     }
     
     public function deleteSlide() {
-        $log = new LogService();
+        
         header('Content-Type: application/json');
     
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -525,52 +456,51 @@ class RoomController {
             $imageId = $input['id'] ?? null;
     
             if (!$imageId) {
-                $log->logWarning("Missing image ID in deleteSlide request.");
+                $this->log->logWarning("Missing image ID in deleteSlide request.");
                 echo json_encode(['success' => false, 'message' => 'Thiếu ID ảnh.']);
                 return;
             }
     
-            $imageModel = new ImageModel();
-            $image = $imageModel->getImageById($imageId);
+            $image = $this->imageModel->getImageById($imageId);
     
             if (!$image) {
-                $log->logWarning("Image with ID {$imageId} not found.");
+                $this->log->logWarning("Image with ID {$imageId} not found.");
                 echo json_encode(['success' => false, 'message' => 'Ảnh không tồn tại.']);
                 return;
             }
 
             // Xoá file vật lý
             $filePath = __DIR__ . "/../../../public" . $image->image_url;;
-            $log->logInfo("Full file path to delete: {$filePath}");
+            $this->log->logInfo("Full file path to delete: {$filePath}");
             
             if (file_exists($filePath)) {
-                $log->logInfo("File exists, attempting to delete...");
+                $this->log->logInfo("File exists, attempting to delete...");
                 if (unlink($filePath)) {
-                    $log->logInfo("Deleted file: {$filePath}");
+                    $this->log->logInfo("Deleted file: {$filePath}");
                 } else {
-                    $log->logError("Failed to delete file: {$filePath}");
+                    $this->log->logError("Failed to delete file: {$filePath}");
                     echo json_encode(['success' => false, 'message' => 'Không thể xoá file trên máy chủ.']);
                     return;
                 }
             } else {
-                $log->logWarning("File not found on server: {$filePath}");
+                $this->log->logWarning("File not found on server: {$filePath}");
             }
             
     
             // Xoá bản ghi trong database
-            $deleted = $imageModel->deleteImageById($imageId);
+            $deleted = $this->imageModel->deleteImageById($imageId);
     
             if ($deleted) {
-                $log->logInfo("Deleted image record from database, ID: {$imageId}");
+                $this->log->logInfo("Deleted image record from database, ID: {$imageId}");
                 echo json_encode(['success' => true]);
             } else {
-                $log->logError("Failed to delete image record from database, ID: {$imageId}");
+                $this->log->logError("Failed to delete image record from database, ID: {$imageId}");
                 echo json_encode(['success' => false, 'message' => 'Không thể xoá ảnh trong cơ sở dữ liệu.']);
             }
             return;
         }
     
-        $log->logWarning('Invalid request method for deleteSlide.');
+        $this->log->logWarning('Invalid request method for deleteSlide.');
         echo json_encode(['success' => false, 'message' => 'Yêu cầu không hợp lệ.']);
     }
        
@@ -587,7 +517,7 @@ class RoomController {
     
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0777, true);
-                $log->logInfo("[ROOM STORE] Upload directory created: {$uploadDir}");
+                $this->log->logInfo("[ROOM STORE] Upload directory created: {$uploadDir}");
             }
     
             foreach ($images['tmp_name'] as $key => $tmp) {
@@ -604,33 +534,17 @@ class RoomController {
                             'is_primary' => $isPrimary
                         ];
     
-                        $log->logInfo("[ROOM STORE] Uploaded image: {$relativeUrl} | Is Primary: {$isPrimary}");
+                        $this->log->logInfo("[ROOM STORE] Uploaded image: {$relativeUrl} | Is Primary: {$isPrimary}");
                     } else {
-                        $log->logError("[ROOM STORE] Failed to move uploaded file: {$tmp} to {$target}");
+                        $this->log->logError("[ROOM STORE] Failed to move uploaded file: {$tmp} to {$target}");
                     }
                 }
             }
         } else {
-            $log->logInfo("[ROOM STORE] No images uploaded or invalid format.");
+            $this->log->logInfo("[ROOM STORE] No images uploaded or invalid format.");
         }
     
         return $imagePaths;
     }
-    
-    private function generateUUID()
-    {
-        return sprintf(
-            '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0x0fff) | 0x4000,
-            mt_rand(0, 0x3fff) | 0x8000,
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
-        );
-    }
-    
-
-    
-    
 }
 

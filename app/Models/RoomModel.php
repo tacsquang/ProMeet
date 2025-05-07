@@ -1,45 +1,51 @@
 <?php
 namespace App\Models;
-
+use App\Core\Utils;
 use App\Core\Database;
 use App\Core\LogService;
 
 class RoomModel 
 {
     private $db;
+    private $log;
 
-    public function __construct() {
-        $this->db = new Database();
+    public function __construct(Database $db, LogService $log)
+    {
+        $this->db = $db;
+        $this->log = $log;
     }
 
     public function insertRoom($data)
     {
         $sql = "
-            INSERT INTO rooms (id, name, price, capacity, category, location_name, latitude, longitude, html_description, created_at, updated_at) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+            INSERT INTO rooms 
+            (id, name, price, capacity, category, location_name, latitude, longitude, html_description, created_at, updated_at) 
+            VALUES 
+            (:id, :name, :price, :capacity, :category, :location_name, :latitude, :longitude, :html_description, NOW(), NOW())
         ";
-
+    
         $params = [
-            $data['id'],
-            $data['name'],
-            $data['price'],
-            $data['capacity'],
-            $data['category'],
-            $data['location_name'],
-            $data['latitude'],
-            $data['longitude'],
-            $data['html_description'],
+            ':id'              => $data['id'],
+            ':name'            => $data['name'],
+            ':price'           => $data['price'],
+            ':capacity'        => $data['capacity'],
+            ':category'        => $data['category'],
+            ':location_name'   => $data['location_name'],
+            ':latitude'        => $data['latitude'],
+            ':longitude'       => $data['longitude'],
+            ':html_description'=> $data['html_description'],
         ];
-
+    
         return $this->db->execute($sql, $params);
     }
+    
 
     public function insertRoomImages($roomId, $images = [])
     {
         $sql = "INSERT INTO images (id, room_id, image_url, is_primary, created_at) VALUES (?, ?, ?, ?, NOW())";
 
         foreach ($images as $image) {
-            $id = $this->generateUUID();
+            $id = Utils::generateUUID();
             $params = [$id, $roomId, $image['url'], $image['is_primary']];
             $this->db->execute($sql, $params);
         }
@@ -49,57 +55,60 @@ class RoomModel
     {
         $sql = "
             UPDATE rooms
-            SET name = ?, price = ?, capacity = ?, category = ?, location_name = ?, latitude = ?, longitude = ?, updated_at = NOW()
-            WHERE id = ?
+            SET 
+                name = :name,
+                price = :price,
+                capacity = :capacity,
+                category = :category,
+                location_name = :location_name,
+                latitude = :latitude,
+                longitude = :longitude,
+                updated_at = NOW()
+            WHERE id = :id
         ";
-
+    
         $params = [
-            $data['name'],
-            $data['price'],
-            $data['capacity'],
-            $data['category'],
-            $data['location_name'],
-            $data['latitude'],
-            $data['longitude'],
-            $data['id'],
+            ':name' => $data['name'],
+            ':price' => $data['price'],
+            ':capacity' => $data['capacity'],
+            ':category' => $data['category'],
+            ':location_name' => $data['location_name'],
+            ':latitude' => $data['latitude'],
+            ':longitude' => $data['longitude'],
+            ':id' => $data['id'],
         ];
-
+    
         return $this->db->execute($sql, $params);
     }
+    
 
     public function updateStatus($roomId, $status)
     {
-        $sql = "UPDATE rooms SET is_active = ? WHERE id = ?";
-        return $this->db->execute($sql, [$status, $roomId]);
+        $sql = "UPDATE rooms SET is_active = :is_active WHERE id = :id";
+        $params = [
+            ':is_active' => $status,
+            ':id' => $roomId
+        ];
+        return $this->db->execute($sql, $params);
     }
 
     public function updateDescription($roomId, $description)
     {
-        $sql = "UPDATE rooms SET html_description = ? WHERE id = ?";
-        return $this->db->execute($sql, [$description, $roomId]);
+        $sql = "UPDATE rooms SET html_description = :html_description WHERE id = :id";
+        $params = [
+            ':html_description' => $description,
+            ':id' => $roomId
+        ];
+        return $this->db->execute($sql, $params);
     }
 
-
-
-    private function generateUUID()
-    {
-        return sprintf(
-            '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0x0fff) | 0x4000,
-            mt_rand(0, 0x3fff) | 0x8000,
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
-        );
-    }
 
     public function fetchRooms($offset = 0, $limit = 8, $filters = []) {
-        $log = new LogService();
     
         $offset = intval($offset);
         $limit = intval($limit);
     
-        $log->logInfo("Preparing room list | Offset: {$offset}, Limit: {$limit}, Filters: " . json_encode($filters, JSON_UNESCAPED_UNICODE));
+        $this->log->logInfo("Preparing room list | Offset: {$offset}, Limit: {$limit}, Filters: " . json_encode($filters, JSON_UNESCAPED_UNICODE));
     
         $where = "WHERE is_active = 1";
         $params = [];
@@ -147,12 +156,12 @@ class RoomModel
             LIMIT {$offset}, {$limit}
         ";
     
-        $log->logInfo("SQL Query: {$sql} | Params: " . json_encode($params, JSON_UNESCAPED_UNICODE));
+        $this->log->logInfo("SQL Query: {$sql} | Params: " . json_encode($params, JSON_UNESCAPED_UNICODE));
     
         $rooms = $this->db->fetchAll($sql, $params);
     
         if ($rooms === false) {
-            $log->logError("Room query failed.");
+            $this->log->logError("Room query failed.");
             return [
                 'rooms' => [],
                 'totalPages' => 1
@@ -164,14 +173,13 @@ class RoomModel
         $countData = $this->db->fetchOne($countSql, $params);
         $totalPages = $countData ? ceil($countData->total / $limit) : 1;
     
-        $log->logInfo("Total rooms matched: " . ($countData->total ?? 0) . " | Total Pages: {$totalPages}");
+        $this->log->logInfo("Total rooms matched: " . ($countData->total ?? 0) . " | Total Pages: {$totalPages}");
     
         // Map màu cho badge loại phòng
         $colorMap = [
-            'Basic' => 'primary',
-            'Standard' => 'success',
-            'Premium' => 'warning',
-            'Luxury' => 'danger' // Thêm trường hợp 'Luxury'
+            '0' => 'primary',
+            '1' => 'success',
+            '2' => 'warning',
         ];
     
         $formattedRooms = [];
@@ -185,7 +193,7 @@ class RoomModel
             $formattedRooms[] = [
                 'id' => $room->id,
                 'name' => $room->name,
-                'type' => $room->category,
+                'type' => Utils::mapRoomLabel($room->category),
                 'badgeColor' => $badgeColor,
                 'image' => $imageData ? $imageData->image_url : BASE_URL . '/assets/images/placeholder.jpeg',
                 'location' => $room->location_name,
@@ -203,13 +211,11 @@ class RoomModel
     
     
     public function fetchRoomDetail($id) {
-        $log = new LogService();
-    
         $sql = "SELECT * FROM rooms WHERE id = :id LIMIT 1";
         $room = $this->db->fetchOne($sql, [':id' => $id]);
     
         if (!$room) {
-            $log->logError("Room not found: ID {$id}");
+            $this->log->logError("Room not found: ID {$id}");
             return null;
         }
     
@@ -226,9 +232,9 @@ class RoomModel
     
         // Map màu cho badge
         $colorMap = [
-            'Basic' => 'primary',
-            'Standard' => 'success',
-            'Premium' => 'warning'
+            '0' => 'primary',
+            '1' => 'success',
+            '2' => 'warning'
         ];
         $badgeColor = $colorMap[$room->category] ?? 'primary';
     
@@ -242,7 +248,7 @@ class RoomModel
             'review_count' => $room->review_count,
             'lat' => $room->latitude,
             'lng' => $room->longitude,
-            'label' => $room->category,
+            'label' => Utils::mapRoomLabel($room->category),
             'label_color' => 'bg-' . $badgeColor,
             'html_description' => $room->html_description,
             'images' => $imageList,
@@ -252,8 +258,8 @@ class RoomModel
 
 
     public function fetchSmartSuggestedRooms($roomId, $roomType, $location) {
-        $log = new LogService();
-        $log->logInfo("Fetching smart suggestions | Exclude ID: $roomId | Type: $roomType | Location: $location");
+        
+        $this->log->logInfo("Fetching smart suggestions | Exclude ID: $roomId | Type: $roomType | Location: $location");
     
         $params = [':roomId' => $roomId];
         $conditions = [];
@@ -261,8 +267,8 @@ class RoomModel
     
         // Ưu tiên location trước
         if (!empty($location)) {
-            $conditions[] = "location_name LIKE :location";
-            $params[':location'] = '%' . $location . '%';
+            $conditions[] = "location_name = :location";
+            $params[':location'] = $location;
         }
     
         if (!empty($roomType)) {
@@ -281,11 +287,11 @@ class RoomModel
             SELECT id, name, category, price, capacity, location_name, average_rating
             FROM rooms
             {$where}
-            ORDER BY location_name DESC, id DESC
+            ORDER BY location_name ASC, id DESC
             LIMIT 8
         ";
     
-        $log->logInfo("Smart Suggestion SQL: {$sql} | Params: " . json_encode($params, JSON_UNESCAPED_UNICODE));
+        $this->log->logInfo("Smart Suggestion SQL: {$sql} | Params: " . json_encode($params, JSON_UNESCAPED_UNICODE));
     
         $rooms = $this->db->fetchAll($sql, $params);
         $excludeIds = array_column($rooms, 'id');  // Lưu lại ID của các phòng đã lấy
@@ -322,22 +328,21 @@ class RoomModel
                 LIMIT {$remainingRooms}
             ";
     
-            $log->logInfo("Additional SQL: {$additionalSql} | Params: " . json_encode($params, JSON_UNESCAPED_UNICODE));
+            $this->log->logInfo("Additional SQL: {$additionalSql} | Params: " . json_encode($params, JSON_UNESCAPED_UNICODE));
             $additionalRooms = $this->db->fetchAll($additionalSql, $params);
     
             // Gộp kết quả ban đầu với kết quả bổ sung
             if ($additionalRooms !== false) {
                 $rooms = array_merge($rooms, $additionalRooms);
             } else {
-                $log->logError("No additional rooms found.");
+                $this->log->logError("No additional rooms found.");
             }
         }
     
         $colorMap = [
-            'Basic' => 'primary',
-            'Standard' => 'success',
-            'Premium' => 'warning',
-            'Luxury' => 'danger'
+            '0' => 'primary',
+            '1' => 'success',
+            '2' => 'warning'
         ];
     
         $formattedRooms = [];
@@ -351,7 +356,7 @@ class RoomModel
             $formattedRooms[] = [
                 'id' => $room->id,
                 'name' => $room->name,
-                'type' => $room->category,
+                'type' => Utils::mapRoomLabel($room->category),
                 'badgeColor' => $badgeColor,
                 'image' => $imageData ? $imageData->image_url : BASE_URL . '/assets/images/placeholder.jpeg',
                 'location' => $room->location_name,
@@ -365,7 +370,164 @@ class RoomModel
     }
     
     
+    public function incrementViewCount($roomId) {
+        $sql = "
+            INSERT INTO room_stats (room_id, view_count)
+            VALUES (:room_id, 1)
+            ON DUPLICATE KEY UPDATE view_count = view_count + 1
+        ";
     
+        $params = [':room_id' => $roomId];
+        return $this->db->execute($sql, $params);
+    }
+    
+    public function updateFavoriteCount($roomId, $change) {
+        // Cập nhật số lượng favorite_count trong bảng room_stats
+        $query = "UPDATE room_stats 
+                  SET favorite_count = GREATEST(0, favorite_count + :change) 
+                  WHERE room_id = :room_id";
+
+        $params = [
+            ':change' => $change,
+            ':room_id' => $roomId
+        ];
+
+        return $this->db->execute($query, $params);  // Gọi phương thức execute của DB để thực thi câu lệnh
+    }
+
+    public function getRoomStatsByRoomId($roomId) {
+        $query = "SELECT * FROM room_stats WHERE room_id = :room_id";
+        $params = [':room_id' => $roomId];
+
+        return $this->db->fetchOne($query, $params);  
+    }
+    
+    public function getBookingStatsForWeek($roomId) {
+        $query = "
+            SELECT 
+                bs.booking_date,
+                COUNT(*) * 0.5 AS total_hours
+            FROM bookings b
+            JOIN booking_slots bs ON b.id = bs.booking_id
+            WHERE b.room_id = :room_id
+                AND b.status = 3
+                AND WEEK(bs.booking_date, 1) = WEEK(CURDATE(), 1)
+                AND YEAR(bs.booking_date) = YEAR(CURDATE())
+            GROUP BY bs.booking_date
+            ORDER BY bs.booking_date;
+        ";
+    
+        $this->log->logInfo("Fetching last 7-day bookings ending today for room $roomId");
+        $raw = $this->db->fetchAll($query, [':room_id' => $roomId]);
+    
+        // Tạo danh sách 7 ngày kết thúc ở hôm nay
+        $dates = [];
+        $totals = [];
+        $today = new \DateTime(); // hôm nay
+    
+        for ($i = 6; $i >= 0; $i--) {
+            $date = clone $today;
+            $dateStr = $date->modify("-$i day")->format('Y-m-d');
+            $dates[$dateStr] = 0;
+        }
+    
+        // Gộp dữ liệu thực tế vào
+        foreach ($raw as $row) {
+            $date = $row->booking_date;
+            $count = $row->total_hours;
+            if (isset($dates[$date])) {
+                $dates[$date] = intval($count);
+            }
+        }
+    
+        return [
+            'labels' => array_keys($dates),
+            'totals' => array_values($dates),
+        ];
+    }
+
+    public function getTotalRooms()
+    {
+        $sql = "SELECT COUNT(*) AS total FROM rooms";
+        return $this->db->fetchOne($sql)->total ?? 0;
+    }
+
+    public function getTopRooms() {
+        // Truy vấn SQL tính toán hot_score cho từng phòng
+        $sql = "
+            WITH RoomScores AS (
+                SELECT 
+                    r.id,
+                    r.name,
+                    (
+                        rs.booking_count * 4 +
+                        rs.favorite_count * 2 +
+                        rs.view_count * 2 +
+                        r.average_rating * 6 +
+                        rs.total_hours * 8
+                    ) AS raw_score
+                FROM rooms r
+                JOIN room_stats rs ON r.id = rs.room_id
+                WHERE r.is_active = 1
+            )
+            SELECT 
+                rs.id,
+                rs.name,
+                LEAST(
+                    (rs.raw_score * 100.0 / max_score), 
+                    100
+                ) AS hot_score
+            FROM RoomScores rs
+            JOIN (SELECT MAX(raw_score) AS max_score FROM RoomScores) AS max_scores ON 1=1
+            ORDER BY hot_score DESC
+            LIMIT 5;
+        ";
+
+        $raw = $this->db->fetchAll($sql);
+
+        $topRooms = [];
+        foreach ($raw as $row) {
+            $topRooms[] = [
+                'id' => $row->id,
+                'name' => $row->name,
+                'hot_score' => (float) $row->hot_score,  
+            ];
+        }
+    
+        return $topRooms;
+    }
+    
+    public function getMonthlyHours() {
+        $sql = "
+            SELECT 
+                DATE_FORMAT(bs.booking_date, '%b') AS month,
+                ROUND(COUNT(*) * 0.5, 1) AS total_hours
+            FROM booking_slots bs
+            JOIN bookings b ON bs.booking_id = b.id
+            WHERE b.status IN (3) 
+            GROUP BY MONTH(bs.booking_date), DATE_FORMAT(bs.booking_date, '%b')
+            ORDER BY MONTH(bs.booking_date);
+        ";
+    
+        $raw = $this->db->fetchAll($sql);
+        
+        $monthlyHours = [
+            'Jan' => 0, 'Feb' => 0, 'Mar' => 0, 'Apr' => 0, 'May' => 0, 
+            'Jun' => 0, 'Jul' => 0, 'Aug' => 0, 'Sep' => 0, 'Oct' => 0, 
+            'Nov' => 0, 'Dec' => 0
+        ];
+
+        // Duyệt qua kết quả và gán tổng giờ cho từng tháng
+        foreach ($raw as $row) {
+            $month = $row->month;
+            $hours = $row->total_hours;
+
+            $monthlyHours[$month] = $hours;
+        }
+
+        return $monthlyHours;
+        
+    }
     
     
     
@@ -376,7 +538,7 @@ class RoomModel
     }
     
     public function fetchRoomsForAdmin($offset = 0, $limit = 10, $search = '', $orderColumn = 'id', $orderDir = 'DESC') {
-        $log = new LogService();
+        
         $offset = intval($offset);
         $limit = intval($limit);
         $search = trim($search);
@@ -388,7 +550,7 @@ class RoomModel
             $orderColumn = 'id';
         }
     
-        $log->logInfo("Admin fetching rooms | Offset: {$offset}, Limit: {$limit}, Search: '{$search}', Order: {$orderColumn} {$orderDir}");
+        $this->log->logInfo("Admin fetching rooms | Offset: {$offset}, Limit: {$limit}, Search: '{$search}', Order: {$orderColumn} {$orderDir}");
     
         $whereClause = '';
         if ($search !== '') {
@@ -407,7 +569,7 @@ class RoomModel
         $rooms = $this->db->fetchAll($sql);
     
         if ($rooms === false) {
-            $log->logError("Admin room query failed.");
+            $this->log->logError("Admin room query failed.");
             return [];
         }
     
@@ -416,19 +578,19 @@ class RoomModel
     
     
     public function countAllRooms() {
-        $log = new LogService();
-        $log->logInfo("[BEGIN] countAllRooms");
+        
+        $this->log->logInfo("[BEGIN] countAllRooms");
     
         $sql = "SELECT COUNT(*) as total FROM rooms";
         $result = $this->db->fetchOne($sql);
     
         if ($result === false) {
-            $log->logError("[ERROR] countAllRooms query failed");
+            $this->log->logError("[ERROR] countAllRooms query failed");
         } else {
-            $log->logInfo("[INFO] countAllRooms result: " . print_r($result, true)); // In ra kết quả
+            $this->log->logInfo("[INFO] countAllRooms result: " . print_r($result, true)); // In ra kết quả
         }
     
-        $log->logInfo("[END] countAllRooms");
+        $this->log->logInfo("[END] countAllRooms");
     
         return $result ? intval($result->total) : 0; // Sửa lại từ $result['total'] thành $result->total
     }

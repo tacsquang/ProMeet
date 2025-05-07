@@ -7,6 +7,8 @@
 
     <title><?= $pageTitle ?? 'ProMeet'; ?></title>
 
+    <meta name="robots" content="noindex, nofollow">
+
     <link rel="shortcut icon" href="<?= BASE_URL ?>/assets/images/favicon.ico" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600&display=swap" rel="stylesheet">
     

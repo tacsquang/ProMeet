@@ -5,19 +5,19 @@ $order = [
     'timeslots' => $timeslots,
 ];
 
-if ($status === 'completed') {
+if ($status === 3) {
   $order['status'] = 'Đã hoàn thành';
   $order['status_class'] = 'success';
-} else if ($status === 'confirmed') {
+} else if ($status === 2) {
   $order['status'] = 'Đã xác nhận';
   $order['status_class'] = 'primary';
-} else if ($status === 'paid') {
+} else if ($status === 1) {
   $order['status'] = 'Chờ xác nhận';
   $order['status_class'] = 'warning text-dark';
-} else if ($status === 'canceled') {
+} else if ($status === 4) {
   $order['status'] = 'Đã hủy';
   $order['status_class'] = 'danger';
-} else if ($status === 'pending') {
+} else if ($status === 0) {
   $order['status'] = 'Chờ thanh toán';
   $order['status_class'] = 'info text-dark';
 } else {
@@ -118,9 +118,9 @@ $timeline = $timeline;
             <div class="col-5 text-muted">Thanh toán:</div>
             <div class="col-7">            
               <?php 
-                if ($payment_method === 'bank') {
+                if ($payment_method === 0) {
                     echo 'Ngân hàng';
-                } else if ($payment_method === 'momo') {
+                } else if ($payment_method === 1) {
                     echo 'Ví Momo';
                 }
             ?>
@@ -280,7 +280,7 @@ $timeline = $timeline;
           },
           body: JSON.stringify({
             booking_id: bookingId,
-            new_status: "confirmed",
+            new_status: 2,
             note: "Lịch đặt phòng đã được xác nhận bởi quản trị viên. Cảm ơn quý khách đã tin tưởng ProMeet! Quý khách vui lòng có mặt đúng giờ để sử dụng dịch vụ.",
             label: "Đã xác nhận lịch",
           }),
@@ -318,7 +318,7 @@ $timeline = $timeline;
             },
             body: JSON.stringify({
             booking_id: bookingId,
-            new_status: "completed",
+            new_status: 3,
             note: "Lịch đặt phòng đã hoàn tất. ProMeet xin chân thành cảm ơn quý khách đã tin tưởng và sử dụng dịch vụ!",
             label: "Hoàn tất đặt phòng",
             }),
@@ -460,7 +460,7 @@ $timeline = $timeline;
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           booking_id: bookingId,
-          new_status: "canceled",
+          new_status: 4,
           note,
           label
         })
@@ -499,17 +499,17 @@ $timeline = $timeline;
 
   // Cập nhật trạng thái các nút dựa trên status
   switch (status) {
-    case 'paid':
+    case '1':
       completeBtn.disabled = true;
       cancelBtn.disabled = false;
       break;
-    case 'confirmed':
+    case '2':
       confirmBtn.disabled = true;
       completeBtn.disabled = false;
       cancelBtn.disabled = false;
       break;
-    case 'completed':
-    case 'canceled':
+    case '3':
+    case '4':
       confirmBtn.disabled = true;
       completeBtn.disabled = true;
       cancelBtn.disabled = true;

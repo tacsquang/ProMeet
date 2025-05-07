@@ -3,11 +3,22 @@ namespace App\Controllers\Public;
 
 use App\Core\View;
 use App\Core\LogService;
-use App\Models\BookingModel;
-use App\Models\RoomModel;
+use App\Core\Container;
+use App\Core\Utils;
 
 class RoomsController
 {
+    protected $log;
+    protected $roomModel;
+    protected $bookingModel;
+
+    public function __construct(Container $container)
+    {
+        $this->log = $container->get('logger');
+        $this->roomModel = $container->get('RoomModel');
+        $this->bookingModel = $container->get('BookingModel');
+    }
+
     public function index() {
         #var_dump($_SESSION);
         $view = new View();
@@ -21,8 +32,7 @@ class RoomsController
 
     public function detail($id) {
         //var_dump($_SESSION);
-        $roomModel = new \App\Models\RoomModel();
-        $room = $roomModel->fetchRoomDetail($id);  // gọi model lấy thông tin chi tiết
+        $room = $this->roomModel->fetchRoomDetail($id);  // gọi model lấy thông tin chi tiết
     
         if (!$room) {
             // Nếu không tìm thấy phòng => chuyển sang trang 404
@@ -38,7 +48,9 @@ class RoomsController
         if (!isset($_SESSION['csrf_token'])) {
             $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
         }
-    
+
+        $this->roomModel->incrementViewCount($room['id']);
+ 
         $view = new View();
         $view->render('public/rooms/roomDetail', [
             'pageTitle' => $room['name'] . ' | ProMeet',
@@ -47,25 +59,46 @@ class RoomsController
             'isLoggedIn' => isset($_SESSION['user']),
         ]);
     }
+
+    public function toggle_favorite() {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $roomId = $data['room_id'] ?? null;
+        $action = $data['action'] ?? null;
+
+        if (!$roomId || !in_array($action, ['add', 'remove'])) {
+            http_response_code(400); 
+            echo json_encode(['error' => 'Invalid input']);
+            return;
+        }
+
+        // 1 cho thêm tym, -1 cho bỏ tym
+        $change = ($action === 'add') ? 1 : -1;
+
+        $success = $this->roomModel->updateFavoriteCount($roomId, $change);
+
+        if ($success) {
+            echo json_encode(['success' => true]);
+        } else {
+            http_response_code(500); 
+            echo json_encode(['error' => 'Failed to update favorite count']);
+        }
+    }
     
 
     public function payment($id) {
+        $booking = $this->bookingModel->findById($id);
 
-        $bookingModel = new BookingModel();
-        $booking = $bookingModel->findById($id);
-
-        if ($booking->status !== 'pending') {  
+        if ($booking->status !== 0) {  
             header("Location: " . BASE_URL . "/home");
             exit;
         }
 
-        $roomModel = new RoomModel();
-        $room = $roomModel->getRoomById($booking->room_id);
+        $room = $this->roomModel->getRoomById($booking->room_id);
 
-        $timeslots = $bookingModel->getTimeSlotsv2($id);
-        $log = new LogService();
+        $timeslots = $this->bookingModel->getTimeSlotsv2($id);
+        
 
-        $log->logInfo("Timeslots: %s". json_encode($timeslots));
+        $this->log->logInfo("Timeslots: %s". json_encode($timeslots));
     
 
         $view = new View();
@@ -88,8 +121,8 @@ class RoomsController
         $data = json_decode(file_get_contents('php://input'), true);
         $bookingId = $data['booking_id'] ?? null;
 
-        $log = new LogService();
-        $log->logError("Delete Payment: $bookingId");
+        
+        $this->log->logError("Delete Payment: $bookingId");
     
         if (!$bookingId) {
             http_response_code(400);
@@ -97,14 +130,13 @@ class RoomsController
             return;
         }
 
-        $bookingModel = new BookingModel();
-        $success = $bookingModel->deleteBooking($bookingId);
+        $success = $this->bookingModel->deleteBooking($bookingId);
 
         echo json_encode(['success' => $success]);
     }
 
     public function getRoomsApi() {
-        $log = new LogService();
+        
     
         $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
         $limit = 12;
@@ -117,29 +149,29 @@ class RoomsController
             'sortBy' => isset($_GET['sortBy']) ? trim($_GET['sortBy']) : ''
         ];
     
-        $log->logInfo("Fetching rooms | Page: {$page}, Offset: {$offset}, Filters: " . json_encode($filters));
+        $this->log->logInfo("Fetching rooms | Page: {$page}, Offset: {$offset}, Filters: " . json_encode($filters));
     
         header('Content-Type: application/json');
     
-        $model = new \App\Models\RoomModel();
-        $roomsData = $model->fetchRooms($offset, $limit, $filters);
+        $roomsData = $this->roomModel->fetchRooms($offset, $limit, $filters);
     
         echo json_encode($roomsData);
     }
     
     public function getSmartSuggestedRoomsApi() {
-        $log = new LogService();
+        
     
         $roomId = isset($_GET['roomId']) ? trim($_GET['roomId']) : '';
         $roomType = isset($_GET['roomType']) ? trim($_GET['roomType']) : '';
         $location = isset($_GET['location']) ? trim($_GET['location']) : '';
+
+        $type = Utils::mapLabelRoom($roomType);
     
-        $log->logInfo("Fetching smart suggested rooms | Exclude Room ID: {$roomId}, Room Type: {$roomType}, Location: {$location}");
+        $this->log->logInfo("Fetching smart suggested rooms | Exclude Room ID: {$roomId}, Room Type: {$roomType}, Location: {$location}");
     
         header('Content-Type: application/json');
     
-        $model = new \App\Models\RoomModel();
-        $suggestedRooms = $model->fetchSmartSuggestedRooms($roomId, $roomType, $location);
+        $suggestedRooms = $this->roomModel->fetchSmartSuggestedRooms($roomId, $type, $location);
     
         echo json_encode(['rooms' => $suggestedRooms]);
     }

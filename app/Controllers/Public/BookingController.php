@@ -1,14 +1,25 @@
 <?php
 namespace App\Controllers\Public;
-
-use App\Models\BookingModel;
-use App\Models\RoomModel;
-use App\Core\LogService;
+use App\Core\Container;
 use \App\Core\View; 
 
 
 class BookingController
 {
+    protected $log;
+    protected $roomModel;
+    protected $bookingModel;
+    protected $reviewModel;
+
+    public function __construct(Container $container)
+    {
+        $this->log = $container->get('logger');
+        $this->roomModel = $container->get('RoomModel');
+        $this->bookingModel = $container->get('BookingModel');
+        $this->reviewModel = $container->get('ReviewModel');
+    }
+
+
     public function index() {
 
         #var_dump($_SESSION);
@@ -58,27 +69,26 @@ class BookingController
 
         $bookingId = $_GET['id'];
 
-        $bookingModel = new \App\Models\BookingModel();
-        $roomModel = new \App\Models\RoomModel();
-        $userModel = new \App\Models\UserModel();
-        $reviewModel = new \App\Models\ReviewModel();
+        $this->log->logInfo("Ahihi");
     
         // Lấy thông tin booking
-        $booking = $bookingModel->findById($bookingId);
+        $booking = $this->bookingModel->findById($bookingId);
         if (!$booking) {
             echo "Không tìm thấy thông tin đặt phòng.";
             return;
         }
+
+        $this->log->logInfo("Ahihi");
     
-        $room = $roomModel->getRoomById($booking->room_id);
+        $room = $this->roomModel->getRoomById($booking->room_id);
     
-        $timeSlots = $bookingModel->getTimeSlots($bookingId); // Trả về mảng thời gian
-        $timeline = $bookingModel->getBookingTimeline($bookingId);   // Trả về danh sách sự kiện
-        $canceled = $booking->status === 'canceled' ? $bookingModel->getCancelInfo($bookingId) : null;
-        $completedTimes = $booking->status === 'canceled' ? null : $bookingModel->getCompletedTimestamps($bookingId);
+        $timeSlots = $this->bookingModel->getTimeSlots($bookingId); // Trả về mảng thời gian
+        $timeline = $this->bookingModel->getBookingTimeline($bookingId);   // Trả về danh sách sự kiện
+        $canceled = $booking->status === 4 ? $this->bookingModel->getCancelInfo($bookingId) : null;
+        $completedTimes = $booking->status === 4 ? null : $this->bookingModel->getCompletedTimestamps($bookingId);
     
-        $userReview = $booking->status === 'completed' ? $reviewModel->getByBookingId($bookingId) : null;
-        $cancelable = $booking->status === 'canceled' || $booking->status === 'completed' ? false : $this->isCancelable($timeSlots);
+        $userReview = $booking->status === 3 ? $this->reviewModel->getByBookingId($bookingId) : null;
+        $cancelable = $booking->status === 4 || $booking->status === 3 ? false : $this->isCancelable($timeSlots);
 
         $view = new View();
         $view->render('public/booking/detail', 
@@ -123,13 +133,13 @@ class BookingController
         // Khai báo số lượng bookings mỗi trang
         $perPage = 10;
         $offset = ($page - 1) * $perPage;
-    
-        // Gọi model
-        $bookingModel = new BookingModel();
-    
+
+        $this->log->logInfo("Where");
+
         // Lấy dữ liệu bookings
-        $result = $bookingModel->getBookings($userId, $query, $perPage, $offset);
-        $totalBookings = $bookingModel->getTotalBookings($userId, $query);
+        $result = $this->bookingModel->getBookings($userId, $query, $perPage, $offset);
+        $this->log->logInfo("Where oke?");
+        $totalBookings = $this->bookingModel->getTotalBookings($userId, $query);
         $totalPages = ceil($totalBookings / $perPage);
     
         // Trả về JSON
@@ -154,19 +164,18 @@ class BookingController
 
     public function makeBooking()
     {
-        $log = new LogService();
         
-        $log->logInfo("Bắt đầu makeBooking");
+        $this->log->logInfo("Bắt đầu makeBooking");
     
         // Kiểm tra phương thức HTTP
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);  // 405 Method Not Allowed
-            $log->logError("Yêu cầu không hợp lệ: phương thức " . $_SERVER['REQUEST_METHOD']);
+            $this->log->logError("Yêu cầu không hợp lệ: phương thức " . $_SERVER['REQUEST_METHOD']);
             echo json_encode(['error' => 'Phương thức không hợp lệ.']);
             return;
         }
     
-        $log->logInfo("Kiểm tra login");
+        $this->log->logInfo("Kiểm tra login");
     
         //session_start();
         if (!isset($_SESSION['user'])) {
@@ -185,65 +194,62 @@ class BookingController
         // Validate CSRF
         if (!hash_equals($_SESSION['csrf_token'] ?? '', $csrfToken)) {
             http_response_code(403);  // 403 Forbidden
-            $log->logError("CSRF Token không hợp lệ.");
+            $this->log->logError("CSRF Token không hợp lệ.");
             echo json_encode(['error' => 'Yêu cầu không hợp lệ. Vui lòng tải lại trang.']);
             return;
         }
     
-        $log->logInfo("Tham số nhận vào user_id: " . ($userId ?: 'null') . " - room_id: " . ($roomId ?: 'null') . ", date: " . ($bookingDate ?: 'null') . ", slots: " . json_encode($slots));
+        $this->log->logInfo("Tham số nhận vào user_id: " . ($userId ?: 'null') . " - room_id: " . ($roomId ?: 'null') . ", date: " . ($bookingDate ?: 'null') . ", slots: " . json_encode($slots));
     
         // Kiểm tra dữ liệu
         if (!$roomId || !$bookingDate || empty($slots) || !$userId || !$totalPrice) {
             http_response_code(400);  // 400 Bad Request
-            $log->logError("Thiếu dữ liệu khi đặt phòng.");
+            $this->log->logError("Thiếu dữ liệu khi đặt phòng.");
             echo json_encode(['error' => 'Thiếu dữ liệu room_id, date, slots, total Price hoặc user chưa đăng nhập']);
             return;
         }
     
-        $roomModel = new RoomModel();
-        $room = $roomModel->getRoomById($roomId);
+        $room = $this->roomModel->getRoomById($roomId);
     
         if (!$room) {
             http_response_code(404);  // 404 Not Found
-            $log->logError("Phòng không tồn tại. room_id: {$roomId}");
+            $this->log->logError("Phòng không tồn tại. room_id: {$roomId}");
             echo json_encode(['error' => 'Phòng họp không tồn tại!']);
             return;
         }
-        $log->logInfo("Phòng tồn tại. room_id: {$roomId}");
-    
-        $model = new BookingModel();
+        $this->log->logInfo("Phòng tồn tại. room_id: {$roomId}");
     
         try {
             // Kiểm tra trùng slot
-            $conflicts = $model->checkSlotConflicts($roomId, $bookingDate, $slots);
+            $conflicts = $this->bookingModel->checkSlotConflicts($roomId, $bookingDate, $slots);
             if (!empty($conflicts)) {
                 http_response_code(409);  // 409 Conflict
-                $log->logError("Đã có slot bị trùng: " . json_encode($conflicts));
+                $this->log->logError("Đã có slot bị trùng: " . json_encode($conflicts));
                 echo json_encode(['error' => 'Một hoặc nhiều khung giờ đã bị người khác đặt! Vui lòng chọn lại.', 'conflicts' => $conflicts]);
                 return;
             }
-            $log->logInfo("checkSlotConflicts thành công");
+            $this->log->logInfo("checkSlotConflicts thành công");
 
     
             // Tạo booking
-            $bookingId = $model->createBooking($roomId, $userId, $totalPrice);
-            $log->logInfo("Tạo booking thành công, ID: {$bookingId}");
+            $bookingId = $this->bookingModel->createBooking($roomId, $userId, $totalPrice);
+            $this->log->logInfo("Tạo booking thành công, ID: {$bookingId}");
     
             // Thêm từng slot
-            $model->addBookingSlots($bookingId, $bookingDate, $slots);
-            $log->logInfo("Đã thêm slot cho ngày {$bookingDate}");
+            $this->bookingModel->addBookingSlots($bookingId, $bookingDate, $slots);
+            $this->log->logInfo("Đã thêm slot cho ngày {$bookingDate}");
 
             $note = "Yêu cầu đặt phòng đã được tạo thành công.";
             $label = "Đặt phòng thành công";
-            $result = $model->updateBookingStatus($bookingId, 'pending', $note, $label);
-            $log->logInfo("Đã lưu trạng thái ban đầu 'pending' cho booking {$bookingId}");
+            $result = $this->bookingModel->updateBookingStatus($bookingId, 0, $note, $label);
+            $this->log->logInfo("Đã lưu trạng thái ban đầu 'pending' cho booking {$bookingId}");
     
             // Trả về response thành công với mã 200
             http_response_code(200);  // 200 OK
             echo json_encode(['success' => true, 'booking_id' => $bookingId]);
     
         } catch (\Exception $e) {
-            $log->logError("Lỗi khi tạo booking: " . $e->getMessage());
+            $this->log->logError("Lỗi khi tạo booking: " . $e->getMessage());
             http_response_code(500);  // 500 Internal Server Error
             echo json_encode(['error' => 'Có lỗi xảy ra. Vui lòng thử lại sau.']);
         }
@@ -251,8 +257,8 @@ class BookingController
 
     public function cancelBooking()
     {
-        $log = new LogService();
-        $log->logInfo("Bắt đầu huỷ booking");
+        
+        $this->log->logInfo("Bắt đầu huỷ booking");
     
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
@@ -275,16 +281,14 @@ class BookingController
 
         if (!$bookingId || $reason === '') {
             http_response_code(400);
-            $log->logError("Thiếu booking_id hoặc lý do hủy.");
+            $this->log->logError("Thiếu booking_id hoặc lý do hủy.");
             echo json_encode(['error' => 'Thiếu thông tin huỷ đơn.']);
             return;
         }
     
-        $model = new BookingModel();
-    
         try {
             // Kiểm tra quyền hủy
-            $booking = $model->findById($bookingId);
+            $booking = $this->bookingModel->findById($bookingId);
             if (!$booking) {
                 http_response_code(404);
                 echo json_encode(['error' => 'Đơn đặt phòng không tồn tại.']);
@@ -299,15 +303,15 @@ class BookingController
     
             $note = "Người huỷ: Người dùng. Lý do: " . $reason;
             $label = "Đã huỷ lịch đặt phòng";
-            $result = $model->updateBookingStatus($bookingId, 'canceled', $note, $label);
+            $result = $this->bookingModel->updateBookingStatus($bookingId, 4, $note, $label);
 
-            $log->logInfo("Huỷ booking {$bookingId} thành công.");
+            $this->log->logInfo("Huỷ booking {$bookingId} thành công.");
     
             http_response_code(200);
             echo json_encode(['success' => true]);
     
         } catch (\Exception $e) {
-            $log->logError("Lỗi khi huỷ booking: " . $e->getMessage());
+            $this->log->logError("Lỗi khi huỷ booking: " . $e->getMessage());
             http_response_code(500);
             echo json_encode(['error' => 'Có lỗi xảy ra khi huỷ đơn.']);
         }
@@ -315,11 +319,11 @@ class BookingController
     
     
     public function updatePaymentInfo() {
-        $log = new LogService();
-        $log->logInfo("Bắt đầu updatePaymentInfo");
+        
+        $this->log->logInfo("Bắt đầu updatePaymentInfo");
     
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $log->logInfo("Xử lý POST updatePaymentStatus");
+            $this->log->logInfo("Xử lý POST updatePaymentStatus");
     
             $data = json_decode(file_get_contents('php://input'), true);
     
@@ -329,31 +333,39 @@ class BookingController
             $contactEmail = $data['email'] ?? null;
             $contactPhone = $data['phone'] ?? null;
             $paymentMethod = $data['paymentMethod'] ?? null;
-            $status = $data['status'] ?? '';  // mặc định là confirmed
+            $status = 1;  // mặc định là paid
             $note = $data['note'] ?? null;
     
             // Validate input
-            if (empty($bookingId) || empty($contactName) || empty($contactEmail) || empty($contactPhone) || empty($paymentMethod)) {
-                $log->logError("Thiếu thông tin: bookingId, name, email, phone, paymentMethod");
-                echo json_encode(['success' => false, 'message' => 'Thiếu thông tin bắt buộc']);
-                return;
-            }
+            // if (empty($bookingId) || empty($contactName) || empty($contactEmail) || empty($contactPhone) || empty($paymentMethod)) {
+            //     $this->log->logError("Thiếu thông tin: bookingId, name, email, phone, paymentMethod");
+            //     echo json_encode(['success' => false, 'message' => 'Thiếu thông tin bắt buộc']);
+            //     return;
+            // }
     
-            $log->logInfo("Dữ liệu nhận được: bookingId = $bookingId | name = $contactName | email = $contactEmail  | phone = $contactPhone | method = $paymentMethod | status = $status");
+            $this->log->logInfo("Dữ liệu nhận được: bookingId = $bookingId | name = $contactName | email = $contactEmail  | phone = $contactPhone | method = $paymentMethod | status = $status");
     
             try {
-                // Gọi model cập nhật
-                $bookingModel = new BookingModel();  // Đảm bảo bạn đã include/require đúng class
-                $result = $bookingModel->updatePaymentInfo($bookingId, $paymentMethod, $status, $contactName, $contactEmail, $contactPhone, $note);
+                $result = $this->bookingModel->updatePaymentInfo(
+                    $bookingId,
+                    $paymentMethod,
+                    $status,
+                    $contactName,
+                    $contactEmail,
+                    $contactPhone,
+                    $note
+                );
+                
+                if ($result) {
+                    $label1 = "Chờ xác nhận";
+                    $note1 = "Quản trị viên sẽ xác nhận đơn đặt phòng của bạn trong thời gian sớm nhất.";
+                    $result = $this->bookingModel->updateBookingStatus($bookingId, $status, $note1, $label1);
+                } 
 
-                $label1 =  "Chờ xác nhận";
-                $note1 = "Quản trị viên sẽ xác nhận đơn đặt phòng của bạn trong thời gian sớm nhất.";
-                $result = $bookingModel->updateBookingStatus($bookingId, 'paid', $note1, $label1);
-
-                $log->logInfo("Kết quả trả về từ updatePaymentInfo: " . var_export($result, true));
+                $this->log->logInfo("Kết quả trả về từ updatePaymentInfo: " . var_export($result, true));
 
                 if ($result) {
-                    $log->logInfo("Cập nhật thanh toán thành công cho booking ID: $bookingId");
+                    $this->log->logInfo("Cập nhật thanh toán thành công cho booking ID: $bookingId");
 
                     echo json_encode(['success' => true, 'message' => 'Cập nhật trạng thái thanh toán thành công']);
                 } else {
@@ -361,9 +373,9 @@ class BookingController
                 }
     
             } catch (Exception $e) {
-                $log->logError("Lỗi khi cập nhật thanh toán: " . $e->getMessage());
+                $this->log->logError("Lỗi khi cập nhật thanh toán: " . $e->getMessage());
                 echo json_encode(['success' => false, 'message' => 'Có lỗi xảy ra khi cập nhật trạng thái thanh toán']);
-                $log->logInfo("Đã gửi phản hồi JSON thành công cho booking ID: $bookingId");
+                $this->log->logInfo("Đã gửi phản hồi JSON thành công cho booking ID: $bookingId");
             }
     
         } else {
@@ -381,16 +393,13 @@ class BookingController
             return;
         }
 
-        $log = new LogService();
-        
-        $log->logInfo("Bắt đầu getUnavailableSlots");
+        $this->log->logInfo("Bắt đầu getUnavailableSlots");
     
         $roomId = $_GET['room_id'];
         $date = $_GET['date'];
     
-        $model = new BookingModel();
-        $slots = $model->getBookedSlots($roomId, $date);
-        $log->logInfo("[SUCCESS]  getUnavailableSlots");
+        $slots = $this->bookingModel->getBookedSlots($roomId, $date);
+        $this->log->logInfo("[SUCCESS]  getUnavailableSlots");
     
         echo json_encode(['slots' => $slots]);
     }

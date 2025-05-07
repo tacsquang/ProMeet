@@ -128,28 +128,34 @@ function loadRooms(page = 1) {
         
             // Sau khi render xong, thêm sự kiện cho các nút "tym"
             document.querySelectorAll('.wishlist-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
+                btn.addEventListener('click', function () {
                     const icon = this.querySelector('i');
                     const roomId = this.getAttribute('data-room-id');
-        
-                    // Lấy danh sách phòng đã tym từ localStorage
                     let likedRooms = JSON.parse(localStorage.getItem('likedRooms')) || [];
-        
+            
+                    let action;
                     if (icon.classList.contains('bi-heart')) {
-                        // Nếu chưa tym, thêm phòng vào danh sách yêu thích
                         likedRooms.push(roomId);
                         localStorage.setItem('likedRooms', JSON.stringify(likedRooms));
-                        icon.classList.remove('bi-heart');
-                        icon.classList.add('bi-heart-fill', 'text-danger');
+                        icon.classList.replace('bi-heart', 'bi-heart-fill');
+                        icon.classList.add('text-danger');
+                        action = 'add';
                     } else {
-                        // Nếu đã tym, xóa phòng khỏi danh sách yêu thích
                         likedRooms = likedRooms.filter(id => id !== roomId);
                         localStorage.setItem('likedRooms', JSON.stringify(likedRooms));
-                        icon.classList.remove('bi-heart-fill', 'text-danger');
-                        icon.classList.add('bi-heart');
+                        icon.classList.replace('bi-heart-fill', 'bi-heart');
+                        icon.classList.remove('text-danger');
+                        action = 'remove';
                     }
+            
+                    fetch((BASE_URL + '/rooms/toggle_favorite'), {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ room_id: roomId, action: action })
+                    });
                 });
             });
+            
         
             // Kiểm tra trạng thái yêu thích khi tải lại trang
             document.querySelectorAll('.wishlist-btn').forEach(btn => {
@@ -169,79 +175,6 @@ function loadRooms(page = 1) {
         }
     });
 }
-
-// function loadRooms(page = 1) {
-//     //console.log("[DEBUG] loadRooms called. Page:", page);
-
-//     showSkeleton();  // giữ chỗ loading
-
-//     //console.log("[DEBUG] Sending AJAX request to:", BASE_URL + '/rooms/getRoomsApi', "with data:", { page: page });
-
-//     $.ajax({
-//         url: BASE_URL + '/rooms/getRoomsApi',        // URL PHP trả JSON
-//         type: 'GET',
-//         data: { page: page },
-//         dataType: 'json',
-//         success: function(response) {
-//             //console.log("[DEBUG] AJAX Success. Response:", response);
-
-//             if (!response.rooms || response.rooms.length === 0) {
-//                 //console.warn("[DEBUG] Không có phòng nào trong response.");
-//                 $('#roomList').html('<div class="col-12 text-center text-warning">Không tìm thấy phòng!</div>');
-//                 renderPagination(1, 1);
-//                 return;
-//             }
-
-//             let html = '';
-//             response.rooms.forEach(function(room) {
-//                 //console.log(`[DEBUG] Rendering room: ${room.id} - ${room.name}`);
-//                 html += `
-//                 <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
-//                     <div class="card room-card position-relative">
-//                         <span class="badge rounded-pill bg-${room.badgeColor} position-absolute m-2">${room.type}</span>
-//                         <img src="${room.image}" class="card-img-top" alt="${room.name}" />
-//                         <div class="card-body">
-//                             <h5 class="card-title text-truncate" style="max-width: 100%;">${ room.name }</h5>
-//                             <div class="text-muted fst-italic small">${room.review}</div>
-//                             <p class="card-text text-truncate" style="max-width: 100%;">${ room.location }</p>
-//                             <p class="card-text fw-semibold d-flex justify-content-between align-items-center">
-//                                 <span class="text-primary d-flex align-items-center">
-//                                     <i class="bi bi-people-fill me-1"></i> ${room.capacity} người
-//                                 </span>
-//                                 <span class="text-success d-flex align-items-center">
-//                                     <i class="bi bi-cash-coin me-1"></i> ${room.price}đ/giờ
-//                                 </span>
-//                             </p>
-//                             <div class="d-flex align-items-center justify-content-between mt-3">
-//                                 <a href="./roomDetail.php?id=${room.id}" class="btn btn-primary flex-grow-1 me-2">Đặt ngay</a>
-//                                 <a href="./roomDetail.php?id=${room.id}" class="btn btn-outline-secondary d-flex align-items-center justify-content-center" style="width: 44px; height: 38px;">
-//                                     <i class="bi bi-eye-fill fs-5 m-0 p-0"></i>
-//                                 </a>
-//                                 <button class="btn btn-outline-secondary wishlist-btn d-flex align-items-center justify-content-center ms-2" style="width: 44px; height: 38px;">
-//                                     <i class="bi bi-heart fs-5 m-0 p-0"></i>
-//                                 </button>
-//                             </div>
-//                         </div>
-//                     </div>
-//                 </div>`;
-//             });
-
-//             $('#roomList').html(html);
-//             renderPagination(response.totalPages, page);
-
-//             // Cuộn lên đầu trang mượt mà
-//             window.scrollTo({ top: 0, behavior: 'smooth' });
-//         },
-//         error: function(xhr, status, error) {
-//             //console.error("[DEBUG] AJAX Error:", { status: status, error: error, xhr: xhr });
-//             $('#roomList').html('<div class="col-12 text-center text-danger">Không thể tải phòng, vui lòng thử lại sau!</div>');
-//         }
-//     });
-// }
-
-
-
-
 
 function renderPagination(totalPages, currentPage) {
     let pagination = '';

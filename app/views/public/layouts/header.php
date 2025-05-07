@@ -3,8 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?= $pageTitle ?? 'ProMeet'; ?></title>
 
+    <!-- Dynamic SEO tags -->
+    <title><?= isset($metaTitle) ? $metaTitle : 'ProMeet - Đặt phòng họp hiện đại' ?></title>
+    <meta name="description" content="<?= isset($metaDescription) ? $metaDescription : 'Nền tảng đặt phòng họp thông minh, nhanh chóng và dễ sử dụng' ?>">
+    <link rel="canonical" href="<?= isset($canonicalUrl) ? $canonicalUrl : BASE_URL ?>">
+    
+    <!-- Optional: Robots for non-SEO pages -->
+    <?php if (in_array($currentPage, ['profile', 'booking', 'admin', 'checkout'])): ?>
+        <meta name="robots" content="noindex, nofollow">
+    <?php endif; ?>
+
+    
     <link rel="shortcut icon" href="<?= BASE_URL ?>/assets/images/favicon.ico" type="image/x-icon">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -148,6 +158,9 @@
         }
 
     </style>
+
+
+
 
 </head>
 <body>
