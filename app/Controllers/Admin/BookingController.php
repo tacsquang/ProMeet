@@ -60,7 +60,7 @@ class BookingController {
             'room_id' => $room->id,
             'room_name' => $room->name,
             'user_id' => $user->id,
-            'user_name' => $user->username,
+            'user_name' => $user->name,
             'timeslots' => $timeslots,
             'timeline' =>$timeline,
         ]);

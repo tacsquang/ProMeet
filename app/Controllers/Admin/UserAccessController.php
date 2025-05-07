@@ -22,7 +22,7 @@ class UserAccessController {
         $view->render('admin/user_access/customers', [
             'pageTitle' => 'ProMeet | Room',
             'message' => 'Chào mừng bạn!',
-            'currentPage' => 'Rooms',
+            'currentPage' => 'Customers',
             'currentSubPage' => 'RoomList'
         ]);
     }

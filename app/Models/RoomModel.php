@@ -55,23 +55,32 @@ class RoomModel
     {
         $sql = "
             UPDATE rooms
-            SET name = ?, price = ?, capacity = ?, category = ?, location_name = ?, latitude = ?, longitude = ?, updated_at = NOW()
-            WHERE id = ?
+            SET 
+                name = :name,
+                price = :price,
+                capacity = :capacity,
+                category = :category,
+                location_name = :location_name,
+                latitude = :latitude,
+                longitude = :longitude,
+                updated_at = NOW()
+            WHERE id = :id
         ";
-
+    
         $params = [
-            $data['name'],
-            $data['price'],
-            $data['capacity'],
-            $data['category'],
-            $data['location_name'],
-            $data['latitude'],
-            $data['longitude'],
-            $data['id'],
+            ':name' => $data['name'],
+            ':price' => $data['price'],
+            ':capacity' => $data['capacity'],
+            ':category' => $data['category'],
+            ':location_name' => $data['location_name'],
+            ':latitude' => $data['latitude'],
+            ':longitude' => $data['longitude'],
+            ':id' => $data['id'],
         ];
-
+    
         return $this->db->execute($sql, $params);
     }
+    
 
     public function updateStatus($roomId, $status)
     {
@@ -168,10 +177,9 @@ class RoomModel
     
         // Map màu cho badge loại phòng
         $colorMap = [
-            'Basic' => 'primary',
-            'Standard' => 'success',
-            'Premium' => 'warning',
-            'Luxury' => 'danger' // Thêm trường hợp 'Luxury'
+            '0' => 'primary',
+            '1' => 'success',
+            '2' => 'warning',
         ];
     
         $formattedRooms = [];
@@ -185,7 +193,7 @@ class RoomModel
             $formattedRooms[] = [
                 'id' => $room->id,
                 'name' => $room->name,
-                'type' => $room->category,
+                'type' => Utils::mapRoomLabel($room->category),
                 'badgeColor' => $badgeColor,
                 'image' => $imageData ? $imageData->image_url : BASE_URL . '/assets/images/placeholder.jpeg',
                 'location' => $room->location_name,
@@ -224,9 +232,9 @@ class RoomModel
     
         // Map màu cho badge
         $colorMap = [
-            'Basic' => 'primary',
-            'Standard' => 'success',
-            'Premium' => 'warning'
+            '0' => 'primary',
+            '1' => 'success',
+            '2' => 'warning'
         ];
         $badgeColor = $colorMap[$room->category] ?? 'primary';
     
@@ -240,7 +248,7 @@ class RoomModel
             'review_count' => $room->review_count,
             'lat' => $room->latitude,
             'lng' => $room->longitude,
-            'label' => $room->category,
+            'label' => Utils::mapRoomLabel($room->category),
             'label_color' => 'bg-' . $badgeColor,
             'html_description' => $room->html_description,
             'images' => $imageList,
@@ -259,8 +267,8 @@ class RoomModel
     
         // Ưu tiên location trước
         if (!empty($location)) {
-            $conditions[] = "location_name LIKE :location";
-            $params[':location'] = '%' . $location . '%';
+            $conditions[] = "location_name = :location";
+            $params[':location'] = $location;
         }
     
         if (!empty($roomType)) {
@@ -279,7 +287,7 @@ class RoomModel
             SELECT id, name, category, price, capacity, location_name, average_rating
             FROM rooms
             {$where}
-            ORDER BY location_name DESC, id DESC
+            ORDER BY location_name ASC, id DESC
             LIMIT 8
         ";
     
@@ -332,10 +340,9 @@ class RoomModel
         }
     
         $colorMap = [
-            'Basic' => 'primary',
-            'Standard' => 'success',
-            'Premium' => 'warning',
-            'Luxury' => 'danger'
+            '0' => 'primary',
+            '1' => 'success',
+            '2' => 'warning'
         ];
     
         $formattedRooms = [];
@@ -349,7 +356,7 @@ class RoomModel
             $formattedRooms[] = [
                 'id' => $room->id,
                 'name' => $room->name,
-                'type' => $room->category,
+                'type' => Utils::mapRoomLabel($room->category),
                 'badgeColor' => $badgeColor,
                 'image' => $imageData ? $imageData->image_url : BASE_URL . '/assets/images/placeholder.jpeg',
                 'location' => $room->location_name,
@@ -363,7 +370,164 @@ class RoomModel
     }
     
     
+    public function incrementViewCount($roomId) {
+        $sql = "
+            INSERT INTO room_stats (room_id, view_count)
+            VALUES (:room_id, 1)
+            ON DUPLICATE KEY UPDATE view_count = view_count + 1
+        ";
     
+        $params = [':room_id' => $roomId];
+        return $this->db->execute($sql, $params);
+    }
+    
+    public function updateFavoriteCount($roomId, $change) {
+        // Cập nhật số lượng favorite_count trong bảng room_stats
+        $query = "UPDATE room_stats 
+                  SET favorite_count = GREATEST(0, favorite_count + :change) 
+                  WHERE room_id = :room_id";
+
+        $params = [
+            ':change' => $change,
+            ':room_id' => $roomId
+        ];
+
+        return $this->db->execute($query, $params);  // Gọi phương thức execute của DB để thực thi câu lệnh
+    }
+
+    public function getRoomStatsByRoomId($roomId) {
+        $query = "SELECT * FROM room_stats WHERE room_id = :room_id";
+        $params = [':room_id' => $roomId];
+
+        return $this->db->fetchOne($query, $params);  
+    }
+    
+    public function getBookingStatsForWeek($roomId) {
+        $query = "
+            SELECT 
+                bs.booking_date,
+                COUNT(*) * 0.5 AS total_hours
+            FROM bookings b
+            JOIN booking_slots bs ON b.id = bs.booking_id
+            WHERE b.room_id = :room_id
+                AND b.status = 3
+                AND WEEK(bs.booking_date, 1) = WEEK(CURDATE(), 1)
+                AND YEAR(bs.booking_date) = YEAR(CURDATE())
+            GROUP BY bs.booking_date
+            ORDER BY bs.booking_date;
+        ";
+    
+        $this->log->logInfo("Fetching last 7-day bookings ending today for room $roomId");
+        $raw = $this->db->fetchAll($query, [':room_id' => $roomId]);
+    
+        // Tạo danh sách 7 ngày kết thúc ở hôm nay
+        $dates = [];
+        $totals = [];
+        $today = new \DateTime(); // hôm nay
+    
+        for ($i = 6; $i >= 0; $i--) {
+            $date = clone $today;
+            $dateStr = $date->modify("-$i day")->format('Y-m-d');
+            $dates[$dateStr] = 0;
+        }
+    
+        // Gộp dữ liệu thực tế vào
+        foreach ($raw as $row) {
+            $date = $row->booking_date;
+            $count = $row->total_hours;
+            if (isset($dates[$date])) {
+                $dates[$date] = intval($count);
+            }
+        }
+    
+        return [
+            'labels' => array_keys($dates),
+            'totals' => array_values($dates),
+        ];
+    }
+
+    public function getTotalRooms()
+    {
+        $sql = "SELECT COUNT(*) AS total FROM rooms";
+        return $this->db->fetchOne($sql)->total ?? 0;
+    }
+
+    public function getTopRooms() {
+        // Truy vấn SQL tính toán hot_score cho từng phòng
+        $sql = "
+            WITH RoomScores AS (
+                SELECT 
+                    r.id,
+                    r.name,
+                    (
+                        rs.booking_count * 4 +
+                        rs.favorite_count * 2 +
+                        rs.view_count * 2 +
+                        r.average_rating * 6 +
+                        rs.total_hours * 8
+                    ) AS raw_score
+                FROM rooms r
+                JOIN room_stats rs ON r.id = rs.room_id
+                WHERE r.is_active = 1
+            )
+            SELECT 
+                rs.id,
+                rs.name,
+                LEAST(
+                    (rs.raw_score * 100.0 / max_score), 
+                    100
+                ) AS hot_score
+            FROM RoomScores rs
+            JOIN (SELECT MAX(raw_score) AS max_score FROM RoomScores) AS max_scores ON 1=1
+            ORDER BY hot_score DESC
+            LIMIT 5;
+        ";
+
+        $raw = $this->db->fetchAll($sql);
+
+        $topRooms = [];
+        foreach ($raw as $row) {
+            $topRooms[] = [
+                'id' => $row->id,
+                'name' => $row->name,
+                'hot_score' => (float) $row->hot_score,  
+            ];
+        }
+    
+        return $topRooms;
+    }
+    
+    public function getMonthlyHours() {
+        $sql = "
+            SELECT 
+                DATE_FORMAT(bs.booking_date, '%b') AS month,
+                ROUND(COUNT(*) * 0.5, 1) AS total_hours
+            FROM booking_slots bs
+            JOIN bookings b ON bs.booking_id = b.id
+            WHERE b.status IN (3) 
+            GROUP BY MONTH(bs.booking_date), DATE_FORMAT(bs.booking_date, '%b')
+            ORDER BY MONTH(bs.booking_date);
+        ";
+    
+        $raw = $this->db->fetchAll($sql);
+        
+        $monthlyHours = [
+            'Jan' => 0, 'Feb' => 0, 'Mar' => 0, 'Apr' => 0, 'May' => 0, 
+            'Jun' => 0, 'Jul' => 0, 'Aug' => 0, 'Sep' => 0, 'Oct' => 0, 
+            'Nov' => 0, 'Dec' => 0
+        ];
+
+        // Duyệt qua kết quả và gán tổng giờ cho từng tháng
+        foreach ($raw as $row) {
+            $month = $row->month;
+            $hours = $row->total_hours;
+
+            $monthlyHours[$month] = $hours;
+        }
+
+        return $monthlyHours;
+        
+    }
     
     
     

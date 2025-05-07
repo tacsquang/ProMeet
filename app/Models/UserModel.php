@@ -15,16 +15,16 @@ class UserModel
     }
 
     public function create($data) {
-        $sql = "INSERT INTO users (id, username, email, password_hash, role) VALUES (UUID(), :username, :email, :password_hash, :role)";
+        $sql = "INSERT INTO users (id, name, email, password_hash, role) VALUES (UUID(), :name, :email, :password_hash, :role)";
         $params = [
-            'username' => $data['username'],
+            'name' => $data['name'],
             'email' => $data['email'],
             'password_hash' => $data['password_hash'],
             'role' => $data['role']
         ];
 
         if ($this->db->execute($sql, $params)) {
-            $this->log->logInfo("User '{$data['username']}' (Email: {$data['email']}) registered successfully.");
+            $this->log->logInfo("User '{$data['name']}' (Email: {$data['email']}) registered successfully.");
             return true;
         }
 
@@ -40,6 +40,37 @@ class UserModel
         $this->log->logInfo("Fetching user by id: $id");
         return $this->db->fetchOne("SELECT * FROM users WHERE id = :id", ['id' => $id]);
     }
+
+    public function getTotalUsers()
+    {
+        $sql = "SELECT COUNT(*) AS total FROM users WHERE role = 0 AND is_ban = 0";
+        return $this->db->fetchOne($sql)->total ?? 0;
+    }
+
+    public function getVisitorGenders()
+    {
+        $sql = "
+            SELECT sex, COUNT(*) AS total
+            FROM users
+            WHERE role = 0 AND is_ban = 0
+            GROUP BY sex
+        ";
+        $rows = $this->db->fetchAll($sql);
+
+        $labels = ['Nam', 'Nữ'];
+        $series = [0, 0]; // index 0: Nam (sex = 1), index 1: Nữ (sex = 0)
+
+        foreach ($rows as $row) {
+            if ($row->sex == 1) $series[0] = (int) $row->total;
+            elseif ($row->sex == 0) $series[1] = (int) $row->total;
+        }
+
+        return [
+            'labels' => $labels,
+            'series' => $series
+        ];
+    }
+
 
     // Lưu token remember me vào database
     public function storeRememberToken($userId, $token, $expiryTime) {
@@ -116,11 +147,11 @@ class UserModel
         $this->log->logInfo("Updating profile for user with ID: $userId");
     
         // Câu lệnh SQL cập nhật sử dụng named placeholders
-        $query = "UPDATE users SET username = :username, phone = :phone, birth_date = :birth_date, sex = :sex WHERE id = :id";
+        $query = "UPDATE users SET name = :name, phone = :phone, birth_date = :birth_date, sex = :sex WHERE id = :id";
         
         // Dữ liệu để binding vào câu lệnh SQL
         $params = [
-            'username' => $name,
+            'name' => $name,
             'phone' => $phone,
             'birth_date' => $birthday,
             'sex' => $gender,
@@ -233,7 +264,7 @@ class UserModel
     public function countFilteredUsers($search) {
         $sql = "SELECT COUNT(*) as total FROM users 
                 WHERE role = 'user' AND (
-                    username LIKE :kw OR 
+                    name LIKE :kw OR 
                     email LIKE :kw OR 
                     phone LIKE :kw
                 )";
@@ -245,7 +276,7 @@ class UserModel
     public function fetchUsersForAdmin($start, $length, $search, $orderColumn, $orderDir) {
         // 1. Các cột được phép sắp xếp
         $allowedColumns = [
-            'username', 'email', 'phone', 'birth_date', 'sex', 'is_ban', 'created_at'
+            'name', 'email', 'phone', 'birth_date', 'sex', 'is_ban', 'created_at'
         ];
     
         // 2. Kiểm tra và xử lý cột sắp xếp hợp lệ
@@ -255,14 +286,14 @@ class UserModel
         $orderDir = strtolower($orderDir) === 'desc' ? 'DESC' : 'ASC';
     
         // 4. Chuẩn bị câu lệnh SQL
-        $sql = "SELECT id, username, email, phone, birth_date, sex, avatar_url, is_ban
+        $sql = "SELECT id, name, email, phone, birth_date, sex, avatar_url, is_ban
                 FROM users
                 WHERE role = 'user'";
     
         // 5. Thêm điều kiện tìm kiếm nếu có
         $params = [];
         if (!empty($search)) {
-            $sql .= " AND (username LIKE :kw OR email LIKE :kw OR phone LIKE :kw OR is_ban LIKE :kw)";
+            $sql .= " AND (name LIKE :kw OR email LIKE :kw OR phone LIKE :kw OR is_ban LIKE :kw)";
             $params[':kw'] = '%' . $search . '%';
         }
     

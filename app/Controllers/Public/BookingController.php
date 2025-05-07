@@ -84,11 +84,11 @@ class BookingController
     
         $timeSlots = $this->bookingModel->getTimeSlots($bookingId); // Trả về mảng thời gian
         $timeline = $this->bookingModel->getBookingTimeline($bookingId);   // Trả về danh sách sự kiện
-        $canceled = $booking->status === 'canceled' ? $this->bookingModel->getCancelInfo($bookingId) : null;
-        $completedTimes = $booking->status === 'canceled' ? null : $this->bookingModel->getCompletedTimestamps($bookingId);
+        $canceled = $booking->status === 4 ? $this->bookingModel->getCancelInfo($bookingId) : null;
+        $completedTimes = $booking->status === 4 ? null : $this->bookingModel->getCompletedTimestamps($bookingId);
     
-        $userReview = $booking->status === 'completed' ? $this->reviewModel->getByBookingId($bookingId) : null;
-        $cancelable = $booking->status === 'canceled' || $booking->status === 'completed' ? false : $this->isCancelable($timeSlots);
+        $userReview = $booking->status === 3 ? $this->reviewModel->getByBookingId($bookingId) : null;
+        $cancelable = $booking->status === 4 || $booking->status === 3 ? false : $this->isCancelable($timeSlots);
 
         $view = new View();
         $view->render('public/booking/detail', 
@@ -241,7 +241,7 @@ class BookingController
 
             $note = "Yêu cầu đặt phòng đã được tạo thành công.";
             $label = "Đặt phòng thành công";
-            $result = $this->bookingModel->updateBookingStatus($bookingId, 'pending', $note, $label);
+            $result = $this->bookingModel->updateBookingStatus($bookingId, 0, $note, $label);
             $this->log->logInfo("Đã lưu trạng thái ban đầu 'pending' cho booking {$bookingId}");
     
             // Trả về response thành công với mã 200
@@ -303,7 +303,7 @@ class BookingController
     
             $note = "Người huỷ: Người dùng. Lý do: " . $reason;
             $label = "Đã huỷ lịch đặt phòng";
-            $result = $this->bookingModel->updateBookingStatus($bookingId, 'canceled', $note, $label);
+            $result = $this->bookingModel->updateBookingStatus($bookingId, 4, $note, $label);
 
             $this->log->logInfo("Huỷ booking {$bookingId} thành công.");
     
@@ -333,24 +333,34 @@ class BookingController
             $contactEmail = $data['email'] ?? null;
             $contactPhone = $data['phone'] ?? null;
             $paymentMethod = $data['paymentMethod'] ?? null;
-            $status = $data['status'] ?? '';  // mặc định là confirmed
+            $status = 1;  // mặc định là paid
             $note = $data['note'] ?? null;
     
             // Validate input
-            if (empty($bookingId) || empty($contactName) || empty($contactEmail) || empty($contactPhone) || empty($paymentMethod)) {
-                $this->log->logError("Thiếu thông tin: bookingId, name, email, phone, paymentMethod");
-                echo json_encode(['success' => false, 'message' => 'Thiếu thông tin bắt buộc']);
-                return;
-            }
+            // if (empty($bookingId) || empty($contactName) || empty($contactEmail) || empty($contactPhone) || empty($paymentMethod)) {
+            //     $this->log->logError("Thiếu thông tin: bookingId, name, email, phone, paymentMethod");
+            //     echo json_encode(['success' => false, 'message' => 'Thiếu thông tin bắt buộc']);
+            //     return;
+            // }
     
             $this->log->logInfo("Dữ liệu nhận được: bookingId = $bookingId | name = $contactName | email = $contactEmail  | phone = $contactPhone | method = $paymentMethod | status = $status");
     
             try {
-                $result = $this->bookingModel->updatePaymentInfo($bookingId, $paymentMethod, $status, $contactName, $contactEmail, $contactPhone, $note);
-
-                $label1 =  "Chờ xác nhận";
-                $note1 = "Quản trị viên sẽ xác nhận đơn đặt phòng của bạn trong thời gian sớm nhất.";
-                $result = $this->bookingModel->updateBookingStatus($bookingId, 'paid', $note1, $label1);
+                $result = $this->bookingModel->updatePaymentInfo(
+                    $bookingId,
+                    $paymentMethod,
+                    $status,
+                    $contactName,
+                    $contactEmail,
+                    $contactPhone,
+                    $note
+                );
+                
+                if ($result) {
+                    $label1 = "Chờ xác nhận";
+                    $note1 = "Quản trị viên sẽ xác nhận đơn đặt phòng của bạn trong thời gian sớm nhất.";
+                    $result = $this->bookingModel->updateBookingStatus($bookingId, $status, $note1, $label1);
+                } 
 
                 $this->log->logInfo("Kết quả trả về từ updatePaymentInfo: " . var_export($result, true));
 

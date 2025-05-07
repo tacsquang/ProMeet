@@ -25,7 +25,7 @@ define('ROOT_PATH', dirname(__DIR__));
 require_once ROOT_PATH . '/autoload.php';
 require_once ROOT_PATH . '/app/bootstrap.php';
 
-define('BASE_URL', '/BTL_LTW/ProMeet/public');
+define('BASE_URL', '/ProMeet2/public');
 #echo "BASE_URL: " . BASE_URL . "<br>";
 
 

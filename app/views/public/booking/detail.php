@@ -382,7 +382,7 @@
 
 
 
-  <?php if ($status === 'completed'): ?>
+  <?php if ($status === 3): ?>
     <div class="mb-5">
       <div class="section-title fs-4 fw-bold mb-3">Đánh giá của bạn</div>
         <?php if ($userReview): ?>
@@ -610,7 +610,7 @@
       }
 
       switch (currentStatus) {
-        case 'canceled':
+        case '4':
           progressBar.style.width = '0%';
           for (let step of steps) {
             step.classList.add('step-cancelled');
@@ -627,7 +627,7 @@
           cancelAlert.classList.remove('d-none');
           break;
 
-        case 'completed':
+        case '3':
           progressBar.style.width = '100%';
           for (let step of steps) {
             step.classList.add('step-complete');
@@ -641,7 +641,7 @@
 
           break;
 
-        case 'confirmed':
+        case '2':
           progressBar.style.width = '75%';
           steps[0].classList.add('step-complete');
           steps[1].classList.add('step-complete');
@@ -657,7 +657,7 @@
 
           break;
 
-        case 'paid':
+        case '1':
           progressBar.style.width = '50%';
           steps[0].classList.add('step-complete');
           steps[1].classList.add('step-ongoing');

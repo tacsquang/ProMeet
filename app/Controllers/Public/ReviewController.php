@@ -1,15 +1,11 @@
 <?php
 namespace App\Controllers\Public;
-
-use App\Models\ReviewModel;
-use App\Models\BookingModel;
-use App\Core\LogService;
 use App\Core\Container;
 
 class ReviewController
 {
     protected $log;
-    protected $roomModel;
+    protected $reviewModel;
     protected $bookingModel;
 
     public function __construct(Container $container)

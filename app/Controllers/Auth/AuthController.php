@@ -1,6 +1,6 @@
 <?php
 namespace App\Controllers\Auth;
-
+use App\Core\Utils;
 use App\Core\View;
 use App\Models\UserModel;
 use App\Core\Container;
@@ -19,7 +19,7 @@ class AuthController
     public function login() {
         // Nếu đã đăng nhập, redirect về trang chính
         if (isset($_SESSION['user'])) {
-            header('Location: /BTL_LTW/ProMeet/public/home/index');
+            header('Location:'. BASE_URL . '/home/index');
             exit;
         }
     
@@ -35,7 +35,7 @@ class AuthController
                 $_SESSION['user'] = [
                     'id' => $user->id,
                     'username' => $user->username,
-                    'role' => $user->role
+                    'role' => Utils::mapUserRole($user->role)
                 ];
     
                 // Cập nhật lại thời gian hết hạn của token
@@ -45,9 +45,9 @@ class AuthController
                 $this->log->logInfo("User '{$user->username}' (ID: {$user->id}) logged in automatically via remember me.");
     
                 // Redirect về trang chính hoặc trang đã lưu trong session
-                $redirectUrl = '/BTL_LTW/ProMeet/public/home/index';  // URL mặc định
+                $redirectUrl = BASE_URL . '/home/index';  // URL mặc định
                 if ($user->role === 'admin') {
-                    $redirectUrl = '/BTL_LTW/ProMeet/public/admin/dashboard';  // Trang admin
+                    $redirectUrl = BASE_URL . '/admin/dashboard';  // Trang admin
                 } elseif (isset($_SESSION['redirect_url'])) {
                     $redirectUrl = $_SESSION['redirect_url'];
                     unset($_SESSION['redirect_url']);
@@ -75,8 +75,8 @@ class AuthController
                 // Lưu thông tin người dùng vào session
                 $_SESSION['user'] = [
                     'id' => $user->id,
-                    'username' => $user->username,
-                    'role' => $user->role
+                    'username' => $user->name,
+                    'role' => Utils::mapUserRole($user->role)
                 ];
     
                 // Nếu người dùng chọn "remember me", tạo token lưu vào cookie
@@ -94,9 +94,9 @@ class AuthController
                 $this->log->logInfo("User '{$user->username}' (ID: {$user->id}) logged in successfully.");
     
                 // Chuyển hướng tùy thuộc vào vai trò của người dùng
-                $redirectUrl = '/BTL_LTW/ProMeet/public/home/index';  // URL mặc định
+                $redirectUrl = BASE_URL . '/home/index';  // URL mặc định
                 if ($user->role === 'admin') {
-                    $redirectUrl = '/BTL_LTW/ProMeet/public/home/index';  // Trang admin
+                    $redirectUrl = BASE_URL . '/home/index';  // Trang admin
                 } elseif (isset($_SESSION['redirect_url'])) {
                     $redirectUrl = $_SESSION['redirect_url'];
                     unset($_SESSION['redirect_url']);
@@ -203,7 +203,7 @@ class AuthController
         session_unset();  
         session_destroy();  
 
-        header('Location: /BTL_LTW/ProMeet/public/home/index');
+        header('Location:'. BASE_URL . '/home/index');
         exit;
     }
     

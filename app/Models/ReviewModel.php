@@ -29,7 +29,7 @@ class ReviewModel
 
         // JOIN lấy tên người dùng luôn
         $sql = "
-            SELECT u.username, r.rating, r.comment, r.created_at
+            SELECT u.name, r.rating, r.comment, r.created_at
             FROM reviews r
             JOIN users u ON r.user_id = u.id
             WHERE r.room_id = :room_id
@@ -48,7 +48,7 @@ class ReviewModel
         $formatted = [];
         foreach ($result as $review) {
             $formatted[] = [
-                'username' => $review->username,
+                'username' => $review->name,
                 'date' => date('d/m/Y', strtotime($review->created_at)),
                 'rating' => intval($review->rating),
                 'comment' => $review->comment
@@ -57,6 +57,12 @@ class ReviewModel
         $this->log->logInfo("Formatted review data: " . json_encode($formatted, JSON_UNESCAPED_UNICODE));
 
         return $formatted;
+    }
+
+    public function getTotalReviews()
+    {
+        $sql = "SELECT COUNT(*) AS total FROM reviews";
+        return $this->db->fetchOne($sql)->total ?? 0;
     }
 
     public function countReviews($roomId)

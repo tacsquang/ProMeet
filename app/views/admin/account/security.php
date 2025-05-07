@@ -13,14 +13,14 @@ $currentEmail = $email;
     <div class="page-title">
         <div class="row">
             <div class="col-12 col-md-6 order-md-1 order-last">
-                <h3>Account Security</h3>
+                <h3>Bảo mật tài khoản</h3>
                 <p class="text-subtitle text-muted">Trang quản lý các tùy chọn bảo mật tài khoản</p>
             </div>
             <div class="col-12 col-md-6 order-md-2 order-first">
                 <nav aria-label="breadcrumb" class="breadcrumb-header float-start float-lg-end">
                     <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="<?= BASE_URL?>/account">Account</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">Security</li>
+                        <li class="breadcrumb-item"><a href="<?= BASE_URL?>/account">Tài khoản</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Bảo mật</li>
                     </ol>
                 </nav>
             </div>
@@ -32,28 +32,28 @@ $currentEmail = $email;
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="card-title">Change Password</h5>
+                        <h5 class="card-title">Đổi mật khẩu</h5>
                     </div>
                     <div class="card-body">
                     <form action="#" method="post" id="changePasswordForm">
                             <div class="form-group my-2">
-                                <label for="current_password" class="form-label">Current Password</label>
+                                <label for="current_password" class="form-label">Mật khẩu hiện tại</label>
                                 <input type="password" name="current_password" id="current_password"
-                                    class="form-control" placeholder="Enter your current password"
+                                    class="form-control" placeholder="Nhập mật khẩu hiện tại của bạn"
                                     value="">
                             </div>
                             <div class="form-group my-2">
-                                <label for="password" class="form-label">New Password</label>
+                                <label for="password" class="form-label">Mật khẩu mới</label>
                                 <input type="password" name="password" id="password" class="form-control"
-                                    placeholder="Enter new password" value="">
+                                    placeholder="Nhập mật khẩu mới của bạn" value="">
                             </div>
                             <div class="form-group my-2">
-                                <label for="confirm_password" class="form-label">Confirm Password</label>
+                                <label for="confirm_password" class="form-label">Xác nhận mật khẩu</label>
                                 <input type="password" name="confirm_password" id="confirm_password"
-                                    class="form-control" placeholder="Enter confirm password" value="">
+                                    class="form-control" placeholder="Nhập mật khẩu xác nhận" value="">
                             </div>
                             <div class="form-group my-2 d-flex justify-content-end">
-                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                                <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
                             </div>
                         </form>
                     </div>
@@ -64,17 +64,17 @@ $currentEmail = $email;
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="card-title">Two Factor Authentication</h5>
+                        <h5 class="card-title">Xác thực hai bước</h5>
                     </div>
                     <div class="card-body">
                         <form id="emailUpdateForm" method="post">
                             <div class="form-group my-2">
-                                <label for="email" class="form-label">Current Email</label>
+                                <label for="email" class="form-label">Email hiện tại</label>
                                 <input type="email" name="email" id="email" class="form-control"
-                                    placeholder="Enter your current email" value="<?= htmlspecialchars($currentEmail) ?>">
+                                    placeholder="Nhập email hiện tại của bạn" value="<?= htmlspecialchars($currentEmail) ?>">
                             </div>
                             <div class="form-group my-2 d-flex justify-content-end">
-                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                                <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
                             </div>
                         </form>
                     </div>

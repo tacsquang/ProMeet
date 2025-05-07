@@ -5,9 +5,11 @@ $userData = [
     'email' => $email,
     'phone' => $phone,
     'birthday' => $birth_date,
-    'gender' => $sex,
-    'avatar' => $avatar_url ?: '/assets/images/placeholder.jpeg'
+    'gender' => $sex == 0 ? 'male' : 'female',
+    'avatar' => $avatar_url ?: '/assets/images/avatar-default.png'
 ];
+
+
 ?>
 
 <div id="main">
@@ -27,8 +29,8 @@ $userData = [
             <div class="col-12 col-md-6 order-md-2 order-first">
                 <nav aria-label="breadcrumb" class="breadcrumb-header float-start float-lg-end">
                     <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="#">Account</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">Profile</li>
+                        <li class="breadcrumb-item"><a href="#">Tài khoản</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Hồ sơ</li>
                     </ol>
                 </nav>
             </div>
@@ -71,7 +73,7 @@ $userData = [
                     <div class="card-body">
                         <form id="profileForm" enctype="multipart/form-data">
                             <div class="form-group">
-                                <label for="name" class="form-label">Name</label>
+                                <label for="name" class="form-label">Họ và tên</label>
                                 <input type="text" name="name" id="name" class="form-control" placeholder="Your Name" value="<?= htmlspecialchars($userData['name']) ?>">
                             </div>
                             <div class="form-group">
@@ -79,23 +81,23 @@ $userData = [
                                 <input type="text" name="email" id="email" class="form-control" placeholder="Your Email" value="<?= htmlspecialchars($userData['email']) ?>" disabled>
                             </div>
                             <div class="form-group">
-                                <label for="phone" class="form-label">Phone</label>
+                                <label for="phone" class="form-label">Số điện thoại</label>
                                 <input type="text" name="phone" id="phone" class="form-control" placeholder="Your Phone" value="<?= htmlspecialchars($userData['phone']) ?>">
                             </div>
                             <div class="form-group">
-                                <label for="birthday" class="form-label">Birthday</label>
+                                <label for="birthday" class="form-label">Ngày sinh</label>
                                 <input type="date" name="birthday" id="birthday" class="form-control" value="<?= htmlspecialchars($userData['birthday']) ?>">
                             </div>
                             <div class="form-group">
-                                <label for="gender" class="form-label">Gender</label>
+                                <label for="gender" class="form-label">Giới tính</label>
                                 <select name="gender" id="gender" class="form-control">
-                                    <option value="male" <?= $userData['gender'] == 'male' ? 'selected' : '' ?>>Male</option>
-                                    <option value="female" <?= $userData['gender'] == 'female' ? 'selected' : '' ?>>Female</option>
+                                    <option value="0" <?= $userData['gender'] == 'male' ? 'selected' : '' ?>>Nam</option>
+                                    <option value="1" <?= $userData['gender'] == 'female' ? 'selected' : '' ?>>Nữ</option>
                                 </select>
                             </div>
                             
                             <div class="form-group mt-3">
-                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                                <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
                             </div>
                         </form>
                     </div>

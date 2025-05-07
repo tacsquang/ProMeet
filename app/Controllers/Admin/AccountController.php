@@ -35,7 +35,7 @@ class AccountController {
             'message' => 'Chào mừng bạn!',
             'currentPage' => 'Profile',
             'user_id' => $user->id,
-            'username' => $user->username,
+            'username' => $user->name,
             'email' => $user->email,
             'phone' => $user->phone,
             'birth_date' => $user->birth_date,

@@ -30,7 +30,6 @@ class RoomController {
     public function detail($id) {
 
         $room = $this->roomModel->fetchRoomDetail($id); 
-
         
         if (!$room) {
             // Nếu không tìm thấy phòng => chuyển sang trang 404
@@ -41,6 +40,15 @@ class RoomController {
             return;
         }
 
+        $room_stat = $this->roomModel->getRoomStatsByRoomId($id);
+        // Kiểm tra kết quả và ghi log tương ứng
+        if ($room_stat) {
+            $this->log->logInfo("Room stats fetched successfully for room ID: {$id}. View Count: {$room_stat->view_count}, Favorite Count: {$room_stat->favorite_count}, Booking Count: {$room_stat->booking_count}");
+        } else {
+            $this->log->logWarning("No stats found for room ID: {$id}");
+        }
+        $bookingStats = $this->roomModel->getBookingStatsForWeek($id);
+
         #echo "This is global RoomController.";
         $view = new \App\Core\View();
         $layout = '/admin/layouts/main.php';
@@ -50,7 +58,9 @@ class RoomController {
             'message' => 'Chào mừng bạn!',
             'currentPage' => 'Rooms',
             'currentSubPage' => 'AddRoom',
-            'room' => $room
+            'room' => $room,
+            'room_stat' => $room_stat,
+            'bookingStats' => $bookingStats
         ]);
     }
 
@@ -192,9 +202,7 @@ class RoomController {
 
         $this->log->logInfo("[ROOM UPDATE] Received POST data: " . json_encode($roomData));
 
-        $roomModel = new \App\Models\RoomModel();
-
-        if (!$roomModel->updateRoom($roomData)) {
+        if (!$this->roomModel->updateRoom($roomData)) {
             $this->log->logError("[ROOM UPDATE] Failed to update room. Data: " . json_encode($roomData));
             http_response_code(500);
             echo json_encode(['error' => 'Không thể cập nhật phòng']);

@@ -28,7 +28,7 @@ class BookingModel
             FROM bookings b
             JOIN rooms r ON b.room_id = r.id
             WHERE b.user_id = :userId
-                  AND b.status != 'pending'
+                  AND b.status != 0
               AND (
                   b.booking_code LIKE :search OR 
                   r.name LIKE :search OR
@@ -123,6 +123,45 @@ class BookingModel
         $result = $this->db->fetchOne($sql, $params);
         return $result ? (int)$result->total : 0;
     }
+
+    public function getTotalBookingsByAdmin()
+    {
+        $sql = "SELECT SUM(booking_count) AS total FROM room_stats";
+        return $this->db->fetchOne($sql)->total ?? 0;
+    }
+    
+    public function getPendingBookings() {
+        // 1. Truy vấn danh sách bookings có trạng thái 'pending' và lấy các thời gian gần tới từ booking_slots
+        $sql = "
+            SELECT 
+                b.id AS booking_id,
+                b.booking_code,
+                MIN(bs.booking_date) AS booking_date,  
+                MIN(bs.time_slot) AS time_slot       
+            FROM bookings b
+            JOIN booking_slots bs ON b.id = bs.booking_id
+            WHERE b.status = 1
+                AND CONCAT(bs.booking_date, ' ', bs.time_slot) >= NOW()
+            GROUP BY b.id, b.booking_code
+            ORDER BY booking_date ASC, time_slot ASC
+            LIMIT 10;
+        ";
+    
+    
+        $bookings = $this->db->fetchAll($sql);
+    
+        if (empty($bookings)) return [];
+    
+        // Chỉ lấy các trường id và booking_code
+        $pendingBookings = array_map(fn($b) => [
+            'id' => $b->booking_id,
+            'code' => $b->booking_code
+        ], $bookings);
+    
+        return $pendingBookings;
+    }
+    
+    
     
 
     public function createBooking($roomId, $userId, $totalPrice) {
@@ -141,7 +180,7 @@ class BookingModel
     
         $sql = "
             INSERT INTO bookings (id, room_id, user_id, status, total_price, created_at, updated_at) 
-            VALUES (:id, :room_id, :user_id, 'pending', :total_price, NOW(), NOW())
+            VALUES (:id, :room_id, :user_id, 0, :total_price, NOW(), NOW())
         ";
     
         $params = [
@@ -230,7 +269,7 @@ class BookingModel
     {
         
         $this->log->logInfo("=== [START] updatePaymentInfo ===");
-        $note = $paymentMethod === 'momo'
+        $note = $paymentMethod === '1'    // momo
             ? "Thanh toán đặt phòng thành công qua ví MoMo."
             : "Thanh toán đặt phòng thành công qua chuyển khoản ngân hàng.";
         $label = "Đã thanh toán";
@@ -497,7 +536,7 @@ class BookingModel
             SELECT status, changed_at
             FROM booking_status_history
             WHERE booking_id = :booking_id
-              AND status IN ('pending', 'paid', 'confirmed', 'completed')
+              AND status IN (0, 1, 2, 3)
             ORDER BY changed_at ASC
         ";
     
@@ -505,10 +544,10 @@ class BookingModel
         $results = $this->db->fetchAll($sql, $params);
     
         $statusMap = [
-            'pending'   => 'bookedAt',
-            'paid'      => 'paidAt',
-            'confirmed' => 'confirmedAt',
-            'completed' => 'completedAt',
+            0   => 'bookedAt',
+            1      => 'paidAt',
+            2 => 'confirmedAt',
+            3 => 'completedAt',
         ];
     
         $completedTimes = [];
@@ -526,40 +565,11 @@ class BookingModel
         return $completedTimes;
     }
 
-    public function cancelBooking($bookingId, $userFullName, $reason) {
-        
-    
-        $note = "Đơn đặt phòng đã bị hủy. Người hủy: {$userFullName} | Lý do: {$reason}";
-    
-        $sql = "
-            INSERT INTO booking_status_history (id, booking_id, status, changed_at, note)
-            VALUES (:id, :booking_id, 'canceled', NOW(), :note)
-        ";
-    
-        $params = [
-            ':id' => $this->generateUUID(),
-            ':booking_id' => $bookingId,
-            ':note' => $note
-        ];
-    
-        $this->log->logInfo("Hủy booking $bookingId | " . json_encode($params));
-    
-        if (!$this->db->execute($sql, $params)) {
-            $this->log->logError("Lỗi khi hủy booking $bookingId");
-            throw new Exception("Không thể hủy booking.");
-        }
-    
-        // Nếu muốn, có thể cập nhật bảng bookings:
-        $this->db->execute(
-            "UPDATE bookings SET status = 'canceled' WHERE id = :id",
-            [':id' => $bookingId]
-        );
-    }
     
     public function getCancelInfo($bookingId) {
         $sql = "SELECT note, changed_at 
                 FROM booking_status_history 
-                WHERE booking_id = :bookingId AND status = 'canceled' 
+                WHERE booking_id = :bookingId AND status = 4 
                 ORDER BY changed_at DESC 
                 LIMIT 1";
     
@@ -613,7 +623,7 @@ class BookingModel
             ";
 
             $params = [
-                ':id' => $this->generateUUID(),
+                ':id' => Utils::generateUUID(),
                 ':booking_id' => $bookingId,
                 ':date' => $date,
                 ':time_slot' => $slot
@@ -721,36 +731,6 @@ class BookingModel
         }
     }
     
-    
-
-    // public function getBookedSlots($roomId, $date) {
-    //     
-    
-    //     // Ghi log khi bắt đầu thực hiện truy vấn
-    //     $this->log->logInfo("Lấy danh sách khung giờ đã đặt cho phòng {$roomId} vào ngày {$date}");
-    
-    //     // Truy vấn SQL để lấy các khung giờ đã đặt
-    //     $sql = "SELECT time_slot FROM booking_slots 
-    //             WHERE booking_date = '{$date}' AND booking_id IN 
-    //                 (SELECT id FROM bookings WHERE room_id = '{$roomId}' AND status != 'cancelled')";
-    
-    //     try {
-    //         // Ghi log câu SQL đã thực hiện
-    //         $this->log->logInfo("SQL Query: {$sql}");
-    
-    //         // Thực thi truy vấn và lấy kết quả
-    //         $bookedSlots = $this->db->fetchAll($sql); // sử dụng fetchAll để lấy tất cả kết quả
-    
-    //         // Ghi log kết quả trả về
-    //         $this->log->logInfo("Kết quả truy vấn: " . json_encode($bookedSlots));
-    
-    //         return $bookedSlots; // Trả về danh sách các khung giờ đã đặt
-    //     } catch (Exception $e) {
-    //         // Ghi log khi có lỗi xảy ra
-    //         $this->log->logError("Lỗi khi thực hiện truy vấn: " . $e->getMessage());
-    //         throw new Exception("Không thể lấy khung giờ đã đặt.");
-    //     }
-    // }
     
     public function getBookedSlots($roomId, $date) {
         
@@ -935,12 +915,12 @@ class BookingModel
     public function getStatisticsByTimeRange($timeRange) {
         $sql = "
             SELECT
-                SUM(CASE WHEN status != 'pending' THEN 1 ELSE 0 END) AS total,
-                SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END) AS paid,
-                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending,
-                SUM(CASE WHEN status = 'confirmed' THEN 1 ELSE 0 END) AS confirmed,
-                SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed,
-                SUM(CASE WHEN status = 'canceled' THEN 1 ELSE 0 END) AS canceled
+                SUM(CASE WHEN status != 0 THEN 1 ELSE 0 END) AS total,
+                SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) AS paid,
+                SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) AS pending,
+                SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) AS confirmed,
+                SUM(CASE WHEN status = 3 THEN 1 ELSE 0 END) AS completed,
+                SUM(CASE WHEN status = 4 THEN 1 ELSE 0 END) AS canceled
             FROM bookings
             WHERE 1
         ";
