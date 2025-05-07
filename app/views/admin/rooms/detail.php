@@ -303,7 +303,7 @@
 </script>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="<?= BASE_URL ?>/assets/tinymce/tinymce.min.js"></script>
+<script src="<?= BASE_URL ?>/mazer/assets/extensions/tinymce/tinymce.min.js"></script>
 <script src="<?= BASE_URL ?>/mazer/assets/extensions/chart.js/chart.umd.js"></script>
 <script src="<?= BASE_URL ?>/assets/js/room-chart.js"></script>
 
