@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers\Admin;
 use App\Core\Container;
+use App\Core\View;
 
 class BookingController {
     protected $log;
@@ -32,6 +33,15 @@ class BookingController {
     public function detail($bookingId) {
 
         $booking  = $this->bookingModel->findById($bookingId);
+        if (!$booking) {
+            $view = new View();
+            $view->setLayout(null);
+            $view->render('public/errors/404', [
+                'pageTitle' => 'Không tìm thấy đơn đặt lịch',
+            ]);
+            return;
+        }
+
 
         $room = $this->roomModel->getRoomById($booking->room_id);
 

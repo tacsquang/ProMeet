@@ -129,21 +129,25 @@ $User = [
                             <h4>Top 5 phòng nổi bật</h4>
                         </div>
                         <div class="card-body">
-                            <?php foreach ($topRooms as $i => $room): ?>
-                                <div class="row mb-3 border-bottom pb-2">
-                                    <div class="col-8">
-                                        <div class="d-flex align-items-center">
-                                            <svg class="bi text-<?= ['primary', 'success', 'warning', 'danger', 'info'][$i % 5] ?>" width="32" height="32" fill="currentColor" style="width:10px">
-                                                <use xlink:href="<?= BASE_URL ?>/mazer/assets/static/images/bootstrap-icons.svg#circle-fill" />
-                                            </svg>
-                                            <div class="ms-3">
-                                                <h5 class="mb-1"><?= htmlspecialchars($room['name']) ?></h5>
-                                                <small class="text-muted">Hot Score: <strong><?= number_format($room['hot_score'], 1) ?></strong></small>
+                            <?php if (!empty($topRooms)): ?>
+                                <?php foreach ($topRooms as $i => $room): ?>
+                                    <div class="row mb-3 border-bottom pb-2">
+                                        <div class="col-8">
+                                            <div class="d-flex align-items-center">
+                                                <svg class="bi text-<?= ['primary', 'success', 'warning', 'danger', 'info'][$i % 5] ?>" width="32" height="32" fill="currentColor" style="width:10px">
+                                                    <use xlink:href="<?= BASE_URL ?>/mazer/assets/static/images/bootstrap-icons.svg#circle-fill" />
+                                                </svg>
+                                                <div class="ms-3">
+                                                    <h5 class="mb-1"><?= htmlspecialchars($room['name']) ?></h5>
+                                                    <small class="text-muted">Hot Score: <strong><?= number_format($room['hot_score'], 1) ?></strong></small>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            <?php endforeach; ?>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <p class="text-muted fst-italic">Không có phòng họp nổi bật nào để hiển thị.</p>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -176,7 +180,7 @@ $User = [
                                     </table>
                                 </div>
                             <?php else: ?>
-                                <p class="text-muted">Không có lịch đặt nào cần xác nhận.</p>
+                                <p class="text-muted fst-italic">Không có lịch đặt nào cần xác nhận.</p>
                             <?php endif; ?>
                         </div>
                     </div>

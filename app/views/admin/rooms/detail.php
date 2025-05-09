@@ -34,7 +34,7 @@
                     <nav aria-label="breadcrumb" class="breadcrumb-header float-start float-lg-end">
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item"><a href='<?= BASE_URL?>/room'>Danh sách phòng</a></li>
-                            <li class="breadcrumb-item active" aria-current="page"><?= $room['name']?></li>
+                            <li class="breadcrumb-item active" aria-current="page"><?= htmlspecialchars($room['name'])?></li>
                         </ol>
                     </nav>
                 </div>
@@ -160,7 +160,8 @@
             <div class="card-body">
                     <form action="<?php echo BASE_URL; ?>/room/update_room_info" method="POST" id="roomForm" class="row g-3">
 
-                        <!-- Hidden field -->
+                        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+
                         <input type="hidden" name="room_id" value="<?= htmlspecialchars($room['id']) ?>">
 
                         <div class="col-md-6">
@@ -308,7 +309,6 @@
 <script src="<?= BASE_URL ?>/assets/js/room-chart.js"></script>
 
 
-
 <script>
     function showToastSuccess(message) {
         Swal.fire({
@@ -351,7 +351,9 @@
 
 
 <script>
-    const selectedValue = '<?= $room['address'] ?>'; // Ví dụ: "quan_1"
+    const selectedValue = '<?= json_encode($room['address']) ?>'; 
+    const csrfToken = "<?php echo $_SESSION['csrf_token']; ?>";
+
 
     $.getJSON(BASE_URL + '/assets/data/locations.json', function (data) {
         let options = '';
@@ -389,7 +391,8 @@
                         method: 'POST',
                         data: {
                             id: room_id,
-                            status: newStatus
+                            status: newStatus,
+                            csrf_token: '<?php echo $_SESSION['csrf_token']; ?>'
                         },
                         success: function (response) {
                             if (!response.success) {
@@ -479,7 +482,11 @@
                 fetch(BASE_URL + '/room/set_image_primary', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ id: imageId })
+                    body: JSON.stringify({ 
+                        id: imageId ,
+                        csrf_token: '<?php echo $_SESSION['csrf_token']; ?>'
+                    }),
+                    
                 })
                 .then(res => res.json())
                 .then(data => {
@@ -516,6 +523,7 @@
         for (let i = 0; i < files.length; i++) {
             formData.append('images[]', files[i]);
         }
+        formData.append('csrf_token', csrfToken);
 
         fetch(BASE_URL + '/room/uploadSlide', {
             method: 'POST',
@@ -540,28 +548,44 @@
         const deleteBtn = e.target.closest('.delete-image-btn');
         if (deleteBtn) {
             const imageId = deleteBtn.dataset.id;
-            if (!confirm('Xác nhận xoá ảnh này?')) return;
 
-            fetch(BASE_URL + '/room/deleteSlide', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ id: imageId })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    showToastSuccess("Đã xoá ảnh.");
-                    deleteBtn.closest('.col-6').remove();
-                } else {
-                    showToastError(data.message || "Xoá ảnh thất bại.");
-                }
-            })
-            .catch(err => {
-                console.error('Lỗi khi xoá:', err);
-                showToastError("Có lỗi khi xoá ảnh.");
+            Swal.fire({
+                title: 'Xoá ảnh?',
+                text: 'Bạn có chắc muốn xoá ảnh này?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Xoá',
+                cancelButtonText: 'Huỷ'
+            }).then((result) => {
+                if (!result.isConfirmed) return;
+
+                fetch(BASE_URL + '/room/deleteSlide', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: imageId,
+                        csrf_token: '<?php echo $_SESSION['csrf_token']; ?>'
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showToastSuccess("Đã xoá ảnh.");
+                        deleteBtn.closest('.col-6').remove();
+                    } else {
+                        showToastError(data.message || "Xoá ảnh thất bại.");
+                    }
+                })
+                .catch(err => {
+                    console.error('Lỗi khi xoá:', err);
+                    showToastError("Có lỗi khi xoá ảnh.");
+                });
             });
         }
     });
+
 
     // Xem ảnh lớn
     document.getElementById('slideshowContainer').addEventListener('click', function(event) {

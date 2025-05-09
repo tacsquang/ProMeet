@@ -79,6 +79,7 @@ class Database
         return $stmt->fetch(PDO::FETCH_OBJ);
     }
 
+    
     // Thực thi lệnh INSERT, UPDATE, DELETE
     public function execute($sql, $params = [])
     {

@@ -206,29 +206,11 @@
 
 
 
-    <!-- End Main Content -->
-    
+<!-- End Main Content -->
+
+<script src="<?= BASE_URL ?>/assets/js/toast.js"></script>
 
 <script>
-
-    function showNotification(message, type = 'primary') {
-        const toastEl = document.getElementById('notification-toast');
-        const toastMessage = document.getElementById('notification-message');
-
-        // Đổi màu theo loại thông báo (Bootstrap)
-        toastEl.className = `toast align-items-center text-white bg-${type} border-0`;
-
-        toastMessage.textContent = message;
-
-        const toast = new bootstrap.Toast(toastEl, {
-            animation: true,
-            autohide: true,
-            delay: 4000 // 4 giây
-        });
-
-        toast.show();
-    }
-
 
     let timeLeft = 10 * 60;
     let bookingID = '<?= $roomId ?>';
@@ -245,7 +227,7 @@
         if (timeLeft < 0) {
             clearInterval(interval);
             countdownEl.textContent = "00:00";
-            showNotification("Hết thời gian giữ phòng! Đang chuyển hướng...");
+            showToastWarning("Hết thời gian giữ phòng! Đang chuyển hướng...");
             setTimeout(() => {
                 window.location.href = BASE_URL + '/rooms/detail/' + room_id;
             }, 2000);
@@ -260,7 +242,7 @@
             const phone = document.getElementById("phone").value.trim();
 
             if (!name || !email || !phone) {
-                showNotification("Vui lòng nhập đầy đủ thông tin liên hệ", 'warning');
+                showToastWarning("Vui lòng nhập đầy đủ thông tin liên hệ");
                 return;
             }
         }
@@ -298,13 +280,6 @@
         const phone = document.getElementById("phone").value.trim();
         const method = document.querySelector('input[name="payment"]:checked').value;
 
-        if (!name || !email) {
-            showNotification("Đặt phòng thành công!", "success");
-            // showNotification("Vui lòng nhập đầy đủ thông tin liên hệ.", 'danger');
-            goToStep(2);
-            return;
-        }
-
         const paymentData = {
             bookingId: bookingID,
             name: name,
@@ -325,17 +300,17 @@
         .then(data => {
             if (data.success) {
                 isPaymentConfirmed = true;
-                showNotification(`Đặt phòng thành công!`, 'success');
+                showToastSuccess("Đặt phòng thành công!");
                 setTimeout(() => {
                     window.location.href = BASE_URL + "/booking";
                 }, 2000);
             } else {
-                showNotification("Cập nhật thanh toán không thành công. Vui lòng thử lại.", 'danger');
+                showToastError("Cập nhật thanh toán không thành công. Vui lòng thử lại.");
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            showNotification("Có lỗi xảy ra. Vui lòng thử lại.", 'danger');
+            showToastError("Có lỗi xảy ra. Vui lòng thử lại.");
         });
     }
 

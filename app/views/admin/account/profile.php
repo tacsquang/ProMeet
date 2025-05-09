@@ -23,7 +23,7 @@ $userData = [
     <div class="page-title">
         <div class="row">
             <div class="col-12 col-md-6 order-md-1 order-last">
-                <h3>Account Profile</h3>
+                <h3>Thông tin cá nhân</h3>
                 <p class="text-subtitle text-muted">Trang chỉnh sửa thông tin cá nhân</p>
             </div>
             <div class="col-12 col-md-6 order-md-2 order-first">
@@ -44,6 +44,8 @@ $userData = [
                     <div class="card-body">
                         <div class="d-flex justify-content-center align-items-center flex-column">
                             <form id="avatarForm" enctype="multipart/form-data">
+                                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                                
                                 <div class="avatar-wrapper position-relative mb-3" style="cursor: pointer;" onclick="document.getElementById('avatar').click()">
                                     <img id="avatarPreview" src="<?= BASE_URL ?><?= $userData['avatar'] ?>" alt="Avatar"
                                         class="rounded-circle" style="width: 120px; height: 120px; object-fit: cover; border: 2px solid #ccc;">
@@ -72,6 +74,8 @@ $userData = [
                 <div class="card">
                     <div class="card-body">
                         <form id="profileForm" enctype="multipart/form-data">
+                            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+
                             <div class="form-group">
                                 <label for="name" class="form-label">Họ và tên</label>
                                 <input type="text" name="name" id="name" class="form-control" placeholder="Your Name" value="<?= htmlspecialchars($userData['name']) ?>">

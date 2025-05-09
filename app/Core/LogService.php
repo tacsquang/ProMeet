@@ -3,16 +3,14 @@ namespace App\Core;
 
 class LogService
 {
-    private static $instance = null;  // Instance duy nhất
+    private static $instance = null;  
     private $logDirectory;
 
-    // Private constructor để tránh khởi tạo ngoài class
     private function __construct($logDirectory = '../logs')
     {
         $this->logDirectory = $logDirectory;
-        // Kiểm tra nếu thư mục log chưa tồn tại
         if (!file_exists($this->logDirectory)) {
-            mkdir($this->logDirectory, 0777, true); // Tạo thư mục logs nếu chưa tồn tại
+            mkdir($this->logDirectory, 0777, true); 
         }
     }
 

@@ -5,7 +5,7 @@
                     style="background: linear-gradient(to right, #06163f, #15436b)">
             <!-- Left -->
             <div class="me-5 mb-3 mb-md-0">
-                <span>Get connected with us on social networks:</span>
+                <span>Kết nối với chúng tôi trên các mạng xã hội:</span>
             </div>
 
             <!-- Right -->
@@ -55,30 +55,30 @@
                     <div class="col-6 col-sm-6 col-md-3 col-lg-2 col-xl-2 mx-auto mb-4">
                         <h6 class="text-uppercase fw-bold">Menu</h6>
                         <hr class="mb-4 mt-0 d-inline-block mx-auto" style="width: 60px; background-color: #7c4dff; height: 2px"/>
-                        <p><a href="#!" class="text-white">About</a></p>
-                        <p><a href="#!" class="text-white">Rooms</a></p>
-                        <p><a href="#!" class="text-white">Blog</a></p>
-                        <p><a href="#!" class="text-white">Contact</a></p>
+                        <p><a href="#!" class="text-white">Trang chủ</a></p>
+                        <p><a href="#!" class="text-white">Giới thiệu</a></p>
+                        <p><a href="#!" class="text-white">Phòng họp</a></p>
+                        <p><a href="#!" class="text-white">Liên hệ</a></p>
                     </div>
             
                     <!-- Useful Links -->
                     <div class="col-6 col-sm-6 col-md-3 col-lg-2 col-xl-2 mx-auto mb-4">
-                        <h6 class="text-uppercase fw-bold">Useful links</h6>
+                        <h6 class="text-uppercase fw-bold">Links hữu ích</h6>
                         <hr class="mb-4 mt-0 d-inline-block mx-auto" style="width: 60px; background-color: #7c4dff; height: 2px"/>
-                        <p><a href="#!" class="text-white">Your Account</a></p>
-                        <p><a href="#!" class="text-white">Become an Affiliate</a></p>
-                        <p><a href="#!" class="text-white">Shipping Rates</a></p>
-                        <p><a href="#!" class="text-white">Help</a></p>
+                        <p><a href="#!" class="text-white">Đăng nhập</a></p>
+                        <p><a href="#!" class="text-white">Đăng kí</a></p>
+                        <p><a href="#!" class="text-white">Chính sách</a></p>
+                        <p><a href="#!" class="text-white">Hỗ trợ</a></p>
                     </div>
             
                     <!-- Contact -->
                     <div class="col-12 col-sm-12 col-md-6 col-lg-4 col-xl-3 mx-auto mb-md-0 mb-4">
-                        <h6 class="text-uppercase fw-bold">Contact</h6>
+                        <h6 class="text-uppercase fw-bold">Liên hệ</h6>
                         <hr class="mb-4 mt-0 d-inline-block mx-auto" style="width: 60px; background-color: #7c4dff; height: 2px"/>
                         <p><i class="fas fa-home me-2"></i> Dĩ An, Bình Dương, Việt Nam</p>
-                        <p><i class="fas fa-envelope me-2"></i> info@example.com</p>
-                        <p><i class="fas fa-phone me-2"></i> + 01 234 567 88</p>
-                        <p><i class="fas fa-print me-2"></i> + 01 234 567 89</p>
+                        <p><i class="fas fa-envelope me-2"></i> contact@promeet.vn</p>
+                        <p><i class="fas fa-phone me-2"></i> + 84 123 456 78</p>
+                        <p><i class="fas fa-clock me-2"></i> Thứ 2 - Thứ 7, 8h-17h30 </p>
                     </div>
                 </div>
             </div>

@@ -17,8 +17,8 @@
                 <div class="col-12 col-md-6 order-md-2 order-first">
                     <nav aria-label="breadcrumb" class="breadcrumb-header float-start float-lg-end">
                         <ol class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="index.html">Products & Orders</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Rooms</li>
+                            <li class="breadcrumb-item"><a href="index.html">Phòng và Lịch đặt</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Phòng họp</li>
                         </ol>
                     </nav>
                 </div>
@@ -60,8 +60,10 @@
 
 <!-- Modal thêm phòng mới -->
 <div class="modal fade" id="createRoomModal" tabindex="-1" aria-labelledby="createRoomModalLabel" aria-hidden="true">
+
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <form action="" method="POST" enctype="multipart/form-data" id="addRoomForm">
+        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="createRoomModalLabel">
@@ -77,7 +79,7 @@
                         </div>
                         <div class="col-md-6">
                             <label for="price" class="form-label fw-semibold">Giá (VNĐ / giờ)</label>
-                            <input type="number" class="form-control" id="price" name="price" required step="1000" min="0" placeholder="Ví dụ: 300000">
+                            <input type="number" class="form-control" id="price" name="price" required step="1000" min="1000" placeholder="Ví dụ: 300000">
                         </div>
                         <div class="col-md-6">
                             <label for="capacity" class="form-label fw-semibold">Sức chứa</label>
@@ -209,22 +211,22 @@
             method: 'POST',
             body: formData
         })
-        .then(res => {
-            if (!res.ok) throw new Error('Có lỗi xảy ra khi gửi dữ liệu');
-            return res.json();
-        })
+        .then(res => res.json())
         .then(data => {
-            console.log('Success:', data);
-            const modal = bootstrap.Modal.getInstance(document.getElementById('createRoomModal'));
-            modal.hide();
-            form.reset();
-            showToastSuccess('Thêm phòng thành công! Đang chuyển hướng tới trang chi tiết ...');
-            setTimeout(function () {
-                window.location.href = "<?php echo BASE_URL; ?>/room/detail/" + data.room_id;
-            }, 3000);
+            if (data.success) {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('createRoomModal'));
+                modal.hide();
+                form.reset();
+                showToastSuccess('Thêm phòng thành công! Đang chuyển hướng tới trang chi tiết ...');
+                setTimeout(function () {
+                    window.location.href = "<?php echo BASE_URL; ?>/room/detail/" + data.room_id;
+                }, 2000);
+            } else {
+                showToastWarning(data.message || 'Có lỗi xảy ra');
+            }
         })
         .catch(err => {
-            showToastError('Không thể thêm phòng. Vui lòng kiểm tra lại dữ liệu.');
+            showToastError('Lỗi mạng hoặc máy chủ. Vui lòng thử lại sau.');
             console.error('Lỗi:', err);
         });
     });
@@ -258,7 +260,7 @@
                         const map = {
                             0: { label: 'Basic' },
                             1: { label: 'Standard' },
-                            2: { label: 'Prenium' }
+                            2: { label: 'Premium' }
                         };
                         const category = map[data];
                         return category ? category.label : 'Không xác định';

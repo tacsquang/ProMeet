@@ -20,7 +20,7 @@ class RoomsController
     }
 
     public function index() {
-        #var_dump($_SESSION);
+
         $view = new View();
         $view->render('public/rooms/rooms', 
         [
@@ -31,7 +31,7 @@ class RoomsController
     }
 
     public function detail($id) {
-        //var_dump($_SESSION);
+ 
         $room = $this->roomModel->fetchRoomDetail($id);  // gọi model lấy thông tin chi tiết
     
         if (!$room) {

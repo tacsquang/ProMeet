@@ -282,7 +282,7 @@ class RoomModel
         }
     
         // Truy vấn ban đầu
-        $where = "WHERE id != :roomId AND (" . implode(" OR ", $conditions) . ")";
+        $where = "WHERE id != :roomId AND is_active = 1 AND (" . implode(" OR ", $conditions) . ")";
         $sql = "
             SELECT id, name, category, price, capacity, location_name, average_rating
             FROM rooms
@@ -299,7 +299,7 @@ class RoomModel
         // Kiểm tra nếu có đủ 8 phòng hay không, nếu không bổ sung thêm điều kiện
         if (count($rooms) < 8) {
             $remainingRooms = 8 - count($rooms);
-            $additionalWhere = "WHERE id != :roomId";
+            $additionalWhere = "WHERE id != :roomId AND is_active = 1";
     
             // Loại bỏ các phòng đã có trong kết quả ban đầu
             if (!empty($excludeIds)) {
@@ -452,19 +452,65 @@ class RoomModel
         return $this->db->fetchOne($sql)->total ?? 0;
     }
 
+    // public function getTopRooms() {
+    //     // Truy vấn SQL tính toán hot_score cho từng phòng
+    //     $sql = "
+    //         WITH RoomScores AS (
+    //             SELECT 
+    //                 r.id,
+    //                 r.name,
+    //                 (
+    //                     rs.booking_count * 4 +
+    //                     rs.favorite_count * 2 +
+    //                     rs.view_count * 2 +
+    //                     r.average_rating * 6 +
+    //                     rs.total_hours * 8
+    //                 ) AS raw_score
+    //             FROM rooms r
+    //             JOIN room_stats rs ON r.id = rs.room_id
+    //             WHERE r.is_active = 1
+    //         )
+    //         SELECT 
+    //             rs.id,
+    //             rs.name,
+    //             LEAST(
+    //                 (rs.raw_score * 100.0 / max_score), 
+    //                 100
+    //             ) AS hot_score
+    //         FROM RoomScores rs
+    //         JOIN (SELECT MAX(raw_score) AS max_score FROM RoomScores) AS max_scores ON 1=1
+    //         ORDER BY hot_score DESC
+    //         LIMIT 5;
+    //     ";
+
+    //     $raw = $this->db->fetchAll($sql);
+
+    //     $topRooms = [];
+    //     foreach ($raw as $row) {
+    //         $topRooms[] = [
+    //             'id' => $row->id,
+    //             'name' => $row->name,
+    //             'hot_score' => (float) $row->hot_score,  
+    //         ];
+    //     }
+    
+    //     return $topRooms;
+    // }
+
     public function getTopRooms() {
-        // Truy vấn SQL tính toán hot_score cho từng phòng
+        // Truy vấn SQL tính toán hot_score cho từng phòng và lấy thêm location_name
         $sql = "
             WITH RoomScores AS (
                 SELECT 
                     r.id,
                     r.name,
+                    r.location_name,
                     (
                         rs.booking_count * 4 +
                         rs.favorite_count * 2 +
                         rs.view_count * 2 +
-                        r.average_rating * 6 +
-                        rs.total_hours * 8
+                        r.average_rating * 4 +
+                        rs.total_hours * 4
                     ) AS raw_score
                 FROM rooms r
                 JOIN room_stats rs ON r.id = rs.room_id
@@ -473,6 +519,7 @@ class RoomModel
             SELECT 
                 rs.id,
                 rs.name,
+                rs.location_name,
                 LEAST(
                     (rs.raw_score * 100.0 / max_score), 
                     100
@@ -482,20 +529,29 @@ class RoomModel
             ORDER BY hot_score DESC
             LIMIT 5;
         ";
-
+    
         $raw = $this->db->fetchAll($sql);
-
+    
         $topRooms = [];
-        foreach ($raw as $row) {
+        foreach ($raw as $room) {
+            // Lấy ảnh chính nếu có, không thì lấy ảnh đầu tiên
+            $imageData = $this->db->fetchOne(
+                "SELECT image_url FROM images WHERE room_id = :id ORDER BY is_primary DESC, id ASC LIMIT 1",
+                [':id' => $room->id]
+            );
+    
             $topRooms[] = [
-                'id' => $row->id,
-                'name' => $row->name,
-                'hot_score' => (float) $row->hot_score,  
+                'id' => $room->id,
+                'name' => $room->name,
+                'location' => $room->location_name,
+                'hot_score' => (float) $room->hot_score,
+                'image' => $imageData ? $imageData->image_url : BASE_URL . '/assets/images/placeholder.jpeg',
             ];
         }
     
         return $topRooms;
     }
+    
     
     public function getMonthlyHours() {
         $sql = "

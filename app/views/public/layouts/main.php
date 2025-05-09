@@ -14,4 +14,8 @@
     <?= $content ?>
 </div>
 
-<?php include __DIR__ . '/footer.php'; ?>
+<?php if ($isLoggedIn): ?>
+    <?php include  __DIR__ . '/footer_user.php'; ?>
+<?php else: ?>
+    <?php include  __DIR__ . '/footer_guest.php'; ?>
+<?php endif; ?>

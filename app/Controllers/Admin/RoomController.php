@@ -2,6 +2,7 @@
 namespace App\Controllers\Admin;
 use App\Core\Container;
 use App\Core\Utils;
+use App\Core\View;
 
 class RoomController {
     protected $log;
@@ -17,7 +18,7 @@ class RoomController {
 
     public function index() {
         #echo "This is global RoomController.";
-        $view = new \App\Core\View();
+        $view = new View();
         $layout = '/admin/layouts/main.php';
         $view->setLayout($layout);
         $view->render('admin/rooms/index', [
@@ -32,9 +33,9 @@ class RoomController {
         $room = $this->roomModel->fetchRoomDetail($id); 
         
         if (!$room) {
-            // Nếu không tìm thấy phòng => chuyển sang trang 404
             $view = new View();
-            $view->render('errors/404', [
+            $view->setLayout(null);
+            $view->render('public/errors/404', [
                 'pageTitle' => 'Không tìm thấy phòng họp',
             ]);
             return;
@@ -139,21 +140,43 @@ class RoomController {
             echo json_encode(['error' => 'Phương thức không hợp lệ']);
             return;
         }
+
+        // Kiểm tra CSRF token
+        if (empty($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+            $this->log->logError("[ROOM CREATE] Invalid CSRF token.");
+            http_response_code(403);
+            echo json_encode(['error' => 'Token CSRF không hợp lệ']);
+            return;
+        }
     
         $uuid = Utils::generateUUID();
         $this->log->logInfo("[ROOM CREATE] Generated UUID: {$uuid}");
+
+        $name = trim(strip_tags($_POST['name'] ?? ''));
+        if (strlen($name) < 3 || strlen($name) > 100) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Tên phòng phải từ 3 đến 100 ký tự']);
+            return;
+        }
+        $price = filter_var($_POST['price'] ?? 0, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]) ?: 0;
+        $capacity = filter_var($_POST['capacity'] ?? 1, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: 1;
+        $category = in_array($_POST['category'] ?? '', ['0', '1', '2']) ? $_POST['category'] : '0';
+        $location_name = trim(strip_tags($_POST['location_name'] ?? ''));
+        $latitude = filter_var($_POST['latitude'] ?? '', FILTER_VALIDATE_FLOAT);
+        $longitude = filter_var($_POST['longitude'] ?? '', FILTER_VALIDATE_FLOAT);
     
         $roomData = [
             'id' => $uuid,
-            'name' => $_POST['name'] ?? '',
-            'price' => $_POST['price'] ?? 0,
-            'capacity' => $_POST['capacity'] ?? 1,
-            'category' => $_POST['category'] ?? '',
-            'location_name' => $_POST['location_name'] ?? '',
-            'latitude' => $_POST['latitude'] ?? '',
-            'longitude' => $_POST['longitude'] ?? '',
+            'name' => $name,
+            'price' => $price,
+            'capacity' => $capacity,
+            'category' => $category,
+            'location_name' => $location_name,
+            'latitude' => $latitude,
+            'longitude' => $longitude,
             'html_description' => $_POST['html_description'] ?? '',
         ];
+
     
         $this->log->logInfo("[ROOM CREATE] Received POST data: " . json_encode($_POST));
     
@@ -177,6 +200,14 @@ class RoomController {
             $this->log->logError("[ROOM UPDATE] Invalid request method: " . $_SERVER['REQUEST_METHOD']);
             http_response_code(405);
             echo json_encode(['error' => 'Phương thức không hợp lệ']);
+            return;
+        }
+
+        // Kiểm tra CSRF token
+        if (empty($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+            $this->log->logError("[ROOM CREATE] Invalid CSRF token.");
+            http_response_code(403);
+            echo json_encode(['error' => 'Token CSRF không hợp lệ']);
             return;
         }
 
@@ -252,8 +283,17 @@ class RoomController {
     
         // Lấy ID ảnh từ body request
         $data = json_decode(file_get_contents('php://input'), true);
+        $csrfToken = $data['csrf_token'] ?? null;
+
+        // Kiểm tra token CSRF
+        if (!$csrfToken || $csrfToken !== $_SESSION['csrf_token']) {
+            $this->log->logWarning("[ROOM SET IMAGE PRIMARY] Invalid CSRF token.");
+            http_response_code(403); // Forbidden
+            echo json_encode(['success' => false, 'error' => 'Token CSRF không hợp lệ']);
+            return;
+        }
+
         $imageId = $data['id'] ?? null;
-    
         // Kiểm tra ID ảnh hợp lệ
         if (!$imageId) {
             $this->log->logWarning("[ROOM SET IMAGE PRIMARY] Missing or invalid image ID.");
@@ -376,6 +416,15 @@ class RoomController {
 
     public function update_status() {
         header('Content-Type: application/json');
+
+        if (
+            !isset($_POST['csrf_token']) ||
+            $_POST['csrf_token'] !== ($_SESSION['csrf_token'] ?? '')
+        ) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'CSRF token không hợp lệ']);
+            return;
+        }
     
         $id = $_POST['id'] ?? null;
         $status = $_POST['status'] ?? null;
@@ -399,26 +448,48 @@ class RoomController {
     }
     
     public function uploadSlide() {
-        
         header('Content-Type: application/json');
-    
+        
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['images'])) {
+            $csrfToken = $_POST['csrf_token'] ?? '';
+            if (empty($csrfToken) || $csrfToken !== $_SESSION['csrf_token']) {
+                echo json_encode(['success' => false, 'message' => 'CSRF token không hợp lệ']);
+                return;
+            }
+
             $roomId = $_POST['room_id'];
             $this->log->logInfo("Starting upload process for roomId: {$roomId}");
+            
+            // Kiểm tra roomId có hợp lệ không
+            if (empty($roomId)) {
+                echo json_encode(['success' => false, 'message' => 'Room ID không hợp lệ.']);
+                return;
+            }
     
             $images = $_FILES['images'];
             $uploadedImages = [];
-    
             $uploadDir = __DIR__ . "/../../../public/uploads/rooms/{$roomId}/slideshow/";
+            
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0777, true);
                 $this->log->logInfo("Created upload directory: {$uploadDir}");
             }
-    
+            
             foreach ($images['tmp_name'] as $key => $tmpName) {
                 $fileName = time() . '_' . basename($images['name'][$key]);
                 $uploadFile = $uploadDir . $fileName;
+                
+                // Kiểm tra loại file (chỉ cho phép hình ảnh)
+                $fileType = mime_content_type($tmpName);
+                $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
     
+                if (!in_array($fileType, $allowedTypes)) {
+                    $this->log->logError("Invalid file type: {$fileName} (type: {$fileType})");
+                    echo json_encode(['success' => false, 'message' => 'File không hợp lệ. Chỉ hỗ trợ ảnh.']);
+                    return;
+                }
+    
+                // Kiểm tra di chuyển file lên thư mục upload
                 if (move_uploaded_file($tmpName, $uploadFile)) {
                     $this->log->logInfo("Uploaded file: {$fileName} to {$uploadFile}");
                     $uploadedImages[] = "/uploads/rooms/{$roomId}/slideshow/{$fileName}";
@@ -429,11 +500,12 @@ class RoomController {
                 }
             }
     
+            // Lưu ảnh vào cơ sở dữ liệu
             $imagesSaved = $this->imageModel->addImagesToRoom($roomId, $uploadedImages);
-    
+            
             if ($imagesSaved) {
                 $this->log->logInfo("Successfully saved images to database for roomId: {$roomId}");
-                echo json_encode(['success' => true, 'images' => $imagesSaved ]);
+                echo json_encode(['success' => true, 'images' => $imagesSaved]);
                 return;
             } else {
                 $this->log->logError("Failed to save images to database for roomId: {$roomId}");
@@ -443,9 +515,9 @@ class RoomController {
         }
     
         $this->log->logWarning('No images uploaded for roomId: ' . ($_POST['room_id'] ?? 'unknown'));
-
         echo json_encode(['success' => false, 'message' => 'Không có ảnh nào được tải lên.']);
     }
+    
     
     public function deleteSlide() {
         
@@ -453,6 +525,15 @@ class RoomController {
     
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $input = json_decode(file_get_contents('php://input'), true);
+            $csrfToken = $input['csrf_token'] ?? '';
+
+            // Kiểm tra CSRF token
+            if (empty($csrfToken) || $csrfToken !== ($_SESSION['csrf_token'] ?? '')) {
+                $this->log->logWarning("CSRF token không hợp lệ khi xoá ảnh.");
+                echo json_encode(['success' => false, 'message' => 'CSRF token không hợp lệ.']);
+                return;
+            }
+
             $imageId = $input['id'] ?? null;
     
             if (!$imageId) {

@@ -3,6 +3,32 @@
   $metaTitle = "ProMeet - Đặt phòng họp chuyên nghiệp, nhanh chóng và linh hoạt";
   $metaDescription = "Tìm và đặt phòng họp hiện đại chỉ với vài cú click cùng ProMeet. Không gian linh hoạt, thiết kế chuyên nghiệp, giá cả minh bạch.";
   $canonicalUrl = BASE_URL . "/home";
+
+  $allTopRooms = $topRooms? : [];
+  $topRooms = array_slice($allTopRooms, 0, 3);
+  // [
+  //   [
+  //     'id' => 1,
+  //     'name' => 'Phòng họp Ánh Dương',
+  //     'location' => 'Thành phố Thủ Đức',
+  //     'image' => 'https://www.allorgroup.com/wp-content/uploads/2023/02/aria-image-3.jpg',
+  //   ],
+  //   [
+  //     'id' => 2,
+  //     'name' => 'Phòng họp Sáng Tạo',
+  //     'location' => 'Quận 1',
+  //     'image' => 'https://seated.com.au/wp-content/uploads/2024/02/our-projects.jpg',
+  //   ],
+  //   [
+  //     'id' => 3,
+  //     'name' => 'Phòng họp Kết Nối',
+  //     'location' => 'Quận 10',
+  //     'image' => 'https://translutioncapital.com/wp-content/uploads/2021/01/Koebenhavn.png',
+  //   ],
+  // ];
+
+  $defaultImage = "/assets/images/placeholder.jpeg";
+
 ?>
 
 
@@ -154,6 +180,7 @@
     <div class="carousel-inner">
 
       <!-- Slide 1 -->
+      <!-- Slide 1: tải ngay -->
       <div class="carousel-item active">
         <div class="hero-slide" style="background-image: url('<?= BASE_URL ?>/assets/images/home-slideshow1.webp');">
           <div class="overlay"></div>
@@ -165,9 +192,9 @@
         </div>
       </div>
 
-      <!-- Slide 2 -->
-      <div class="carousel-item">
-        <div class="hero-slide" style="background-image: url('<?= BASE_URL ?>/assets/images/home-slideshow.webp');">
+      <!-- Slide 2: lazy load -->
+      <div class="carousel-item lazy-bg" data-background="<?= BASE_URL ?>/assets/images/home-slideshow.webp">
+        <div class="hero-slide">
           <div class="overlay"></div>
           <div class="content text-center text-white">
             <h2 class="display-5 fw-bold">Không gian họp chuyên nghiệp</h2>
@@ -177,9 +204,9 @@
         </div>
       </div>
 
-      <!-- Slide 3 -->
-      <div class="carousel-item">
-        <div class="hero-slide" style="background-image: url('<?= BASE_URL ?>/assets/images/home-slideshow2.webp');">
+      <!-- Slide 3: lazy load -->
+      <div class="carousel-item lazy-bg" data-background="<?= BASE_URL ?>/assets/images/home-slideshow2.webp">
+        <div class="hero-slide">
           <div class="overlay"></div>
           <div class="content text-center text-white">
             <h2 class="display-5 fw-bold">Đặt phòng dễ dàng</h2>
@@ -188,6 +215,7 @@
           </div>
         </div>
       </div>
+
 
     </div>
   </div>
@@ -213,15 +241,15 @@
 
       <!-- Image -->
       <div class="col-md-6 text-center" data-aos="fade-left">
-        <img src="https://th.bing.com/th/id/OIP.u2AOsR-sfjYijkbhvQn4nQHaEx?w=550&h=354&rs=1&pid=ImgDetMain" 
-              alt="Hệ thống đặt phòng họp ProMeet" 
-              class="img-fluid rounded-4 shadow-sm" 
-              style="max-height: 350px; object-fit: cover;">
+      <img
+          data-src="<?= BASE_URL ?>/assets/images/about.jpg"
+          alt="Hệ thống đặt phòng họp ProMeet"
+          class="img-fluid rounded-4 shadow-sm lazy"
+          style="max-height: 350px; object-fit: cover;">
       </div>
     </div>
   </div>
 
-  
 </section> 
 
 <!-- Section: About - Vision & Values -->
@@ -271,7 +299,6 @@
   background-image: 
     linear-gradient(to right, rgba(245, 234, 234, 0.85), rgba(227, 242, 253, 0.85));
 ">
-
   <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h2 class="section-title mb-0" data-aos="fade-down">Phòng họp nổi bật</h2>
@@ -282,51 +309,21 @@
     </div>
 
     <div class="row g-4">
-      <!-- Room A -->
-      <div class="col-md-4" data-aos="zoom-in" data-aos-delay="100">
-        <div class="card h-100 border-0 shadow-sm room-card">
-          <img src="https://www.allorgroup.com/wp-content/uploads/2023/02/aria-image-3.jpg"
-               class="card-img-top rounded-top"
-               alt="Phòng A"
-               style="height: 220px; object-fit: cover;">
-          <div class="card-body">
-            <h5 class="card-title fw-semibold">Phòng A</h5>
-            <p class="card-text">Sức chứa 10 người, đầy đủ tiện nghi.</p>
-            <a href="room_detail.php?id=1" class="btn btn-primary">Xem chi tiết</a>
+      <?php foreach ($topRooms as $index => $room): ?>
+        <div class="col-md-4" data-aos="zoom-in" data-aos-delay="<?= 100 + $index * 100 ?>">
+          <div class="card h-100 border-0 shadow-sm room-card">
+            <img data-src="<?= BASE_URL . htmlspecialchars($room['image'] ?? $defaultImage) ?>"
+                class="card-img-top rounded-top lazy"
+                alt="<?= htmlspecialchars($room['name']) ?>"
+                style="height: 220px; object-fit: cover;">
+            <div class="card-body">
+              <h5 class="card-title fw-semibold"><?= htmlspecialchars($room['name']) ?></h5>
+              <p class="card-text"><?= htmlspecialchars($room['location']) ?></p>
+              <a href="<?= BASE_URL ?>/rooms/detail/<?= $room['id'] ?>" class="btn btn-primary">Xem chi tiết</a>
+            </div>
           </div>
         </div>
-      </div>
-
-      <!-- Room B -->
-      <div class="col-md-4" data-aos="zoom-in" data-aos-delay="200">
-        <div class="card h-100 border-0 shadow-sm room-card">
-          <img src="https://seated.com.au/wp-content/uploads/2024/02/our-projects.jpg"
-               class="card-img-top rounded-top"
-               alt="Phòng B"
-               style="height: 220px; object-fit: cover;">
-          <div class="card-body">
-            <h5 class="card-title fw-semibold">Phòng B</h5>
-            <p class="card-text">View đẹp, có máy chiếu và bảng viết.</p>
-            <a href="room_detail.php?id=2" class="btn btn-primary">Xem chi tiết</a>
-          </div>
-        </div>
-      </div>
-
-      <!-- Room C -->
-      <div class="col-md-4" data-aos="zoom-in" data-aos-delay="300">
-        <div class="card h-100 border-0 shadow-sm room-card">
-          <img src="https://translutioncapital.com/wp-content/uploads/2021/01/Koebenhavn.png"
-               class="card-img-top rounded-top"
-               alt="Phòng C"
-               style="height: 220px; object-fit: cover;">
-          <div class="card-body">
-            <h5 class="card-title fw-semibold">Phòng C</h5>
-            <p class="card-text">Thiết kế hiện đại, phù hợp hội thảo nhỏ.</p>
-            <a href="room_detail.php?id=3" class="btn btn-primary">Xem chi tiết</a>
-          </div>
-        </div>
-      </div>
-
+      <?php endforeach; ?>
     </div>
   </div>
 </section>
@@ -369,7 +366,10 @@
           <!-- Thông tin liên hệ -->
           <div class="rounded-4 gap-3 shadow-sm p-4 mb-4" style="background: linear-gradient(to right, #06163f, #15436b);">
             <div class="mb-3">
-              <img src="<?= BASE_URL ?>/assets/images/logoProMEET_US_light.svg" alt="ProMeet Logo" height="50">
+            <img data-src="<?= BASE_URL ?>/assets/images/logoProMEET_US_light.svg"
+              class="lazy"
+              alt="ProMeet Logo"
+              height="50">
             </div>
             <ul class="list-unstyled text-light mb-3 small">
               <li class="mb-2"><i class="bi bi-geo-alt-fill me-2 text-primary"></i><strong>Địa chỉ:</strong> Dĩ An, Bình Dương, Việt Nam</li>
@@ -398,10 +398,11 @@
 </section>
 
 <?php if (!$isLoggedIn): ?>
-<section class="py-5 text-white" id="cta-login"
+<section class="py-5 text-white lazy-bg"
+  data-bg="https://khoinguonsangtao.vn/wp-content/uploads/2022/08/hinh-nen-powerpoint-hoc-tap-chuyen-nghiep.jpg"
+  id="cta-login"
   style="
-    background: linear-gradient(to right, rgba(142, 147, 219, 0.85), rgba(130, 188, 230, 0.85)),
-                url('https://khoinguonsangtao.vn/wp-content/uploads/2022/08/hinh-nen-powerpoint-hoc-tap-chuyen-nghiep.jpg') center/cover no-repeat;
+    background: linear-gradient(to right, rgba(142, 147, 219, 0.85), rgba(130, 188, 230, 0.85));
     background-blend-mode: overlay;
   ">
   <div class="container text-center">
@@ -420,6 +421,46 @@
 </section>
 <?php endif; ?>
 
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  if (!("IntersectionObserver" in window)) return;
+
+  // Lazy load cho ảnh (img.lazy)
+  const lazyImages = document.querySelectorAll("img.lazy");
+  const imgObserver = new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const img = entry.target;
+        const dataSrc = img.getAttribute("data-src");
+        if (dataSrc) img.src = dataSrc;
+        img.classList.remove("lazy");
+        observer.unobserve(img);
+      }
+    });
+  });
+  lazyImages.forEach(img => imgObserver.observe(img));
+
+  // Lazy load cho background (div.lazy-bg)
+  const lazyBackgrounds = document.querySelectorAll(".lazy-bg");
+  const bgObserver = new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const el = entry.target;
+        const bgUrl = el.getAttribute("data-background") || el.dataset.bg;
+        const hero = el.querySelector(".hero-slide");
+        if (hero && bgUrl) {
+          hero.style.backgroundImage = `url('${bgUrl}')`;
+        } else if (bgUrl) {
+          el.style.backgroundImage = `url('${bgUrl}')`;
+        }
+        el.classList.remove("lazy-bg");
+        observer.unobserve(el);
+      }
+    });
+  });
+  lazyBackgrounds.forEach(bg => bgObserver.observe(bg));
+});
+</script>
 
 
 

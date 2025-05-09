@@ -35,22 +35,24 @@ $currentEmail = $email;
                         <h5 class="card-title">Đổi mật khẩu</h5>
                     </div>
                     <div class="card-body">
-                    <form action="#" method="post" id="changePasswordForm">
+                        <form action="#" method="post" id="changePasswordForm">
+                            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+
                             <div class="form-group my-2">
                                 <label for="current_password" class="form-label">Mật khẩu hiện tại</label>
                                 <input type="password" name="current_password" id="current_password"
                                     class="form-control" placeholder="Nhập mật khẩu hiện tại của bạn"
-                                    value="">
+                                    value="" required>
                             </div>
                             <div class="form-group my-2">
                                 <label for="password" class="form-label">Mật khẩu mới</label>
                                 <input type="password" name="password" id="password" class="form-control"
-                                    placeholder="Nhập mật khẩu mới của bạn" value="">
+                                    placeholder="Nhập mật khẩu mới của bạn" value="" required>
                             </div>
                             <div class="form-group my-2">
                                 <label for="confirm_password" class="form-label">Xác nhận mật khẩu</label>
                                 <input type="password" name="confirm_password" id="confirm_password"
-                                    class="form-control" placeholder="Nhập mật khẩu xác nhận" value="">
+                                    class="form-control" placeholder="Nhập mật khẩu xác nhận" value="" required>
                             </div>
                             <div class="form-group my-2 d-flex justify-content-end">
                                 <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
@@ -68,10 +70,11 @@ $currentEmail = $email;
                     </div>
                     <div class="card-body">
                         <form id="emailUpdateForm" method="post">
+                            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                             <div class="form-group my-2">
                                 <label for="email" class="form-label">Email hiện tại</label>
                                 <input type="email" name="email" id="email" class="form-control"
-                                    placeholder="Nhập email hiện tại của bạn" value="<?= htmlspecialchars($currentEmail) ?>">
+                                    placeholder="Nhập email hiện tại của bạn" value="<?= htmlspecialchars($currentEmail) ?>" required>
                             </div>
                             <div class="form-group my-2 d-flex justify-content-end">
                                 <button type="submit" class="btn btn-primary">Lưu thay đổi</button>

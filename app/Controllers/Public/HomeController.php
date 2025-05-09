@@ -4,10 +4,12 @@ use App\Core\Container;
 
 class HomeController {
     protected $log;
+    protected $roomModel;
 
     public function __construct(Container $container)
     {
         $this->log = $container->get('logger');
+        $this->roomModel = $container->get('RoomModel');
     }
 
     public function index() {
@@ -20,6 +22,7 @@ class HomeController {
             $this->home();
             exit;
         }
+        $topRooms = $this->roomModel->getTopRooms();
 
         // Nếu chưa đăng nhập → render trang chào mừng
         $view = new \App\Core\View(); 
@@ -27,12 +30,14 @@ class HomeController {
             'pageTitle' => 'ProMeet | Home',
             'message' => 'Chào mừng bạn!',
             'currentPage' => 'home',
-            'isLoggedIn' => false
+            'isLoggedIn' => false,
+            'topRooms' => $topRooms
         ]);
     }
 
     private function home() {
         #var_dump($_SESSION);
+        $topRooms = $this->roomModel->getTopRooms();
 
 
         $view = new \App\Core\View();
@@ -40,7 +45,8 @@ class HomeController {
             'pageTitle' => 'ProMeet | Trang chính',
             'username' => $_SESSION['user']['username'] ?? 'User',
             'currentPage' => 'home',
-            'isLoggedIn' => true
+            'isLoggedIn' => true,
+            'topRooms' => $topRooms
         ]);
     }
 }

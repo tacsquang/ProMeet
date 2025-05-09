@@ -233,16 +233,30 @@ class BookingController
     
             // Tạo booking
             $bookingId = $this->bookingModel->createBooking($roomId, $userId, $totalPrice);
+            if (!$bookingId) {
+                $this->log->logError("Không thể tạo booking.");
+                echo json_encode(['success' => false, 'message' => 'Không thể tạo booking.']);
+                return;
+            }
             $this->log->logInfo("Tạo booking thành công, ID: {$bookingId}");
-    
-            // Thêm từng slot
-            $this->bookingModel->addBookingSlots($bookingId, $bookingDate, $slots);
-            $this->log->logInfo("Đã thêm slot cho ngày {$bookingDate}");
 
+            // Cập nhật trạng thái ban đầu
             $note = "Yêu cầu đặt phòng đã được tạo thành công.";
             $label = "Đặt phòng thành công";
-            $result = $this->bookingModel->updateBookingStatus($bookingId, 0, $note, $label);
+            if (!$this->bookingModel->updateBookingStatus($bookingId, 0, $note, $label)) {
+                $this->log->logError("Không thể cập nhật trạng thái cho booking {$bookingId}");
+                echo json_encode(['success' => false, 'message' => 'Không thể cập nhật trạng thái booking.']);
+                return;
+            }
             $this->log->logInfo("Đã lưu trạng thái ban đầu 'pending' cho booking {$bookingId}");
+
+            // Thêm slot
+            if (!$this->bookingModel->addBookingSlots($bookingId, $bookingDate, $slots)) {
+                $this->log->logError("Lỗi khi thêm slot cho booking {$bookingId}");
+                echo json_encode(['success' => false, 'message' => 'Không thể thêm thời gian đặt.']);
+                return;
+            }
+            $this->log->logInfo("Đã thêm slot cho ngày {$bookingDate}");
     
             // Trả về response thành công với mã 200
             http_response_code(200);  // 200 OK
