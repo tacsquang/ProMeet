@@ -19,16 +19,16 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         document.getElementById("logoutBtn").addEventListener("click", function (e) {
-            e.preventDefault(); // Prevent immediate redirection
+            e.preventDefault(); // Ngăn chặn chuyển hướng ngay lập tức
             Swal.fire({
-                title: "Are you sure you want to log out?",
-                text: "You will need to log in again to continue using the system.",
+                title: "Bạn có chắc chắn muốn đăng xuất?",
+                text: "Bạn sẽ cần đăng nhập lại để tiếp tục sử dụng hệ thống.",
                 icon: "warning",
                 showCancelButton: true,
                 confirmButtonColor: "#d33",
                 cancelButtonColor: "#3085d6",
-                confirmButtonText: "Log Out",
-                cancelButtonText: "Cancel"
+                confirmButtonText: "Đăng xuất",
+                cancelButtonText: "Hủy"
             }).then((result) => {
                 if (result.isConfirmed) {
                     window.location.href = "<?= BASE_URL ?>/auth/logout";

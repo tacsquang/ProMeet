@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers\Admin;
 use App\Core\Container;
+use App\Core\Utils;
 
 class AccountController {
     protected $log;
@@ -25,7 +26,6 @@ class AccountController {
         $user = $this->userModel->findById($userId);
 
         if (!$user) {
-            // Nếu không tìm thấy người dùng, xử lý lỗi
             die('User not found.');
         }
 
@@ -72,11 +72,28 @@ class AccountController {
     }
 
     public function changePassword() {
+
+        // Kiểm tra nếu là phương thức POST
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->log->logError("Invalid request method: " . $_SERVER['REQUEST_METHOD']);
+            echo json_encode(['error' => 'Invalid request method']);
+            exit;
+        }
+
+        // Kiểm tra CSRF token
+        if (empty($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+            $this->log->logError(" Invalid CSRF token.");
+            http_response_code(403);
+            echo json_encode(['error' => 'Token CSRF không hợp lệ']);
+            return;
+        }       
+
+
         $current = $_POST['current_password'] ?? '';
         $new = $_POST['password'] ?? '';
         $confirm = $_POST['confirm_password'] ?? '';
     
-        // Giả sử có userId từ session
+
         $userId = $_SESSION['user']['id'] ?? null;
         if (!$userId) {
             echo json_encode(['success' => false, 'level' => 'warning', 'message' => 'Vui lòng đăng nhập lại.']);
@@ -93,9 +110,15 @@ class AccountController {
             return;
         }
     
-        // Kiểm tra mật khẩu hiện tại (giả sử bạn có UserModel::checkPassword và updatePassword)
         if (!$this->userModel->checkPassword($userId, $current)) {
             echo json_encode(['success' => false, 'level' => 'error', 'message' => 'Mật khẩu hiện tại không đúng.']);
+            return;
+        }
+
+        // Kiểm tra độ mạnh mật khẩu mới
+        $passwordStrength = Utils::checkPasswordStrength($new);
+        if ($passwordStrength !== true) {
+            echo json_encode(['success' => false, 'level' => 'warning', 'message' => $passwordStrength]);
             return;
         }
     
@@ -116,6 +139,21 @@ class AccountController {
     }
     
     public function updateEmail() {
+        // Kiểm tra nếu là phương thức POST
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->log->logError("[UPLOAD PROFILE] Invalid request method: " . $_SERVER['REQUEST_METHOD']);
+            echo json_encode(['error' => 'Invalid request method']);
+            exit;
+        }
+
+        // Kiểm tra CSRF token
+        if (empty($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+            $this->log->logError(" Invalid CSRF token.");
+            http_response_code(403);
+            echo json_encode(['error' => 'Token CSRF không hợp lệ']);
+            return;
+        }        
+
         $current = $_POST['current_password'] ?? '';
         $newEmail = $_POST['email'] ?? '';
     
@@ -131,12 +169,19 @@ class AccountController {
             echo json_encode(['success' => false, 'level' => 'warning', 'message' => 'Vui lòng nhập đầy đủ thông tin.']);
             return;
         }
+
+        // Kiểm tra tính hợp lệ của email
+        if (!$this->checkEmailValidity($newEmail)) {
+            echo json_encode(['success' => false, 'level' => 'warning', 'message' => 'Email không hợp lệ.']);
+            return;
+        }
     
         // Kiểm tra mật khẩu hiện tại
         if (!$this->userModel->checkPassword($userId, $current)) {
             echo json_encode(['success' => false, 'level' => 'error', 'message' => 'Mật khẩu hiện tại không đúng.']);
             return;
         }
+
 
         $existingUser = $this->userModel->findByEmail($newEmail);
         if ($existingUser) {
@@ -163,7 +208,6 @@ class AccountController {
     }
 
     public function uploadAvatar() {
-        
         $this->log->logInfo("=== [UPLOAD AVATAR] Start uploading avatar ===");
     
         // Kiểm tra nếu là phương thức POST
@@ -173,10 +217,34 @@ class AccountController {
             exit;
         }
     
+        // Kiểm tra CSRF token
+        if (empty($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+            $this->log->logError(" Invalid CSRF token.");
+            http_response_code(403);
+            echo json_encode(['error' => 'Token CSRF không hợp lệ']);
+            return;
+        }
+    
         // Kiểm tra xem có file ảnh được upload không
         $image = $_FILES['avatar'] ?? null;
         if ($image && $image['error'] === UPLOAD_ERR_OK) {
             $this->log->logInfo("[UPLOAD AVATAR] File received: " . json_encode($image));
+    
+            // Kiểm tra định dạng tệp (chỉ cho phép JPEG, PNG, GIF)
+            $allowedExtensions = ['image/jpeg', 'image/png', 'image/gif'];
+            if (!in_array($image['type'], $allowedExtensions)) {
+                $this->log->logError("[UPLOAD AVATAR] Invalid file type: " . $image['type']);
+                echo json_encode(['error' => 'File không hợp lệ. Chỉ hỗ trợ JPEG, PNG, GIF']);
+                return;
+            }
+    
+            // Kiểm tra kích thước tệp (giới hạn 2MB)
+            $maxFileSize = 2 * 1024 * 1024; // 2MB
+            if ($image['size'] > $maxFileSize) {
+                $this->log->logError("[UPLOAD AVATAR] File is too large: " . $image['size']);
+                echo json_encode(['error' => 'Kích thước tệp vượt quá giới hạn (2MB)']);
+                return;
+            }
     
             // Lấy ID người dùng từ session
             $userId = $_SESSION['user']['id'] ?? null;
@@ -238,8 +306,26 @@ class AccountController {
     
         $this->log->logInfo("=== [UPLOAD AVATAR] Avatar upload process completed ===");
     }
+    
      
     public function updateProfile() {
+
+        // Kiểm tra nếu là phương thức POST
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->log->logError("[UPLOAD PROFILE] Invalid request method: " . $_SERVER['REQUEST_METHOD']);
+            echo json_encode(['error' => 'Invalid request method']);
+            exit;
+        }
+
+        // Kiểm tra CSRF token
+        if (empty($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+            $this->log->logError(" Invalid CSRF token.");
+            http_response_code(403);
+            echo json_encode(['error' => 'Token CSRF không hợp lệ']);
+            return;
+        }        
+
+
         if (!isset($_SESSION['user'])) {
             echo json_encode(['success' => false, 'message' => 'Chưa đăng nhập']);
             return;

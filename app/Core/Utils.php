@@ -40,4 +40,43 @@ class Utils
         ];
         return $labels[$label] ?? 0;
     }
+
+    public static function checkPasswordStrength($password) {
+        // Độ dài tối thiểu là 8 ký tự
+        if (strlen($password) < 8) {
+            return 'Mật khẩu phải có ít nhất 8 ký tự.';
+        }
+    
+        // Kiểm tra có ít nhất một chữ cái in hoa
+        if (!preg_match('/[A-Z]/', $password)) {
+            return 'Mật khẩu phải có ít nhất một chữ cái in hoa.';
+        }
+    
+        // Kiểm tra có ít nhất một chữ cái thường
+        if (!preg_match('/[a-z]/', $password)) {
+            return 'Mật khẩu phải có ít nhất một chữ cái thường.';
+        }
+    
+        // Kiểm tra có ít nhất một con số
+        if (!preg_match('/[0-9]/', $password)) {
+            return 'Mật khẩu phải có ít nhất một chữ số.';
+        }
+    
+        // Kiểm tra có ít nhất một ký tự đặc biệt
+        if (!preg_match('/[\W_]/', $password)) {
+            return 'Mật khẩu phải có ít nhất một ký tự đặc biệt.';
+        }
+    
+        // Nếu tất cả các điều kiện đều thoả mãn
+        return true;
+    }
+
+    public static function checkEmailValidity($email) {
+        if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return true; // Email hợp lệ
+        } else {
+            return false; // Email không hợp lệ
+        }
+    }
+    
 }

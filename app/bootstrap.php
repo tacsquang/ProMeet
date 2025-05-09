@@ -12,7 +12,6 @@ use App\Models\ImageModel;
 $container = Container::getInstance();
 
 
-// Đăng ký các service singleton
 $container->set('db', function () {
     return Database::getInstance(); // Singleton
 });
@@ -22,7 +21,7 @@ $container->set('logger', function () {
 });
 
 
-// Đăng ký các model (có thể dùng lại db singleton)
+// Đăng ký các model 
 $container->set('UserModel', function ($c) {
     return new UserModel(
         $c->get('db'),

@@ -4,19 +4,11 @@
 session_set_cookie_params(0);
 session_start();
 
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32)); // Tạo token ngẫu nhiên 64 ký tự
+}
 
-// session_unset();  // Xóa hết session cũ
-// session_destroy();  // Kết thúc session
-// session_start();  // Bắt đầu lại session mới
 
-// $_SESSION['user'] = [
-//     'id' => 1,
-//     'username' => 'user',
-//     'role' => 'public'
-// ];
-//var_dump($_SESSION);
-
-// Định nghĩa hằng số cho đường dẫn gốc
 define('ROOT_PATH', dirname(__DIR__));
 
 #echo ROOT_PATH;
@@ -25,9 +17,7 @@ define('ROOT_PATH', dirname(__DIR__));
 require_once ROOT_PATH . '/autoload.php';
 require_once ROOT_PATH . '/app/bootstrap.php';
 
-define('BASE_URL', '/ProMeet2/public');
-#echo "BASE_URL: " . BASE_URL . "<br>";
-
+define('BASE_URL', dirname($_SERVER['SCRIPT_NAME']));
 
 // Chạy Router để điều hướng request tới Controller phù hợp
 use App\Core\Router;

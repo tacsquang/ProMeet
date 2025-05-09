@@ -101,6 +101,13 @@ class ImageModel
     // Set tất cả các ảnh trong phòng thành không phải ảnh chính
     public function setAllImagesNonPrimary($roomId)
     {
+        $query = "SELECT id FROM images WHERE room_id = :roomId AND is_primary = 1 LIMIT 1";
+        $primaryImage = $this->db->fetchOne($query, ['roomId' => $roomId]);
+    
+        if (!$primaryImage) {
+            return true;  
+        }
+
         $sql = "UPDATE images SET is_primary = 0 WHERE room_id = :room_id";
         $params = [':room_id' => $roomId];
         return $this->db->execute($sql, $params);

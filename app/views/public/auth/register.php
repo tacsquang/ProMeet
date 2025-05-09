@@ -88,6 +88,7 @@
                         <?php endif; ?>
 
                         <form action="<?= BASE_URL ?>/auth/register" method="post">
+                            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                             <div class="mb-3">
                                 <label for="username" class="form-label text-muted">Tên người dùng</label>
                                 <input type="text" id="username" name="username" class="form-control" required>

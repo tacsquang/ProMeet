@@ -61,8 +61,8 @@ class UserModel
         $series = [0, 0]; // index 0: Nam (sex = 1), index 1: Nữ (sex = 0)
 
         foreach ($rows as $row) {
-            if ($row->sex == 1) $series[0] = (int) $row->total;
-            elseif ($row->sex == 0) $series[1] = (int) $row->total;
+            if ($row->sex == 0) $series[0] = (int) $row->total;
+            elseif ($row->sex == 1) $series[1] = (int) $row->total;
         }
 
         return [
@@ -315,6 +315,21 @@ class UserModel
         $this->log->logInfo("Query Result: " . print_r($result, true)); // Log kết quả trả về từ cơ sở dữ liệu
     
         return $result;
+    }
+
+    public function checkAdminPassword($adminId, $adminPassword) {
+        $sql = "SELECT password_hash FROM users WHERE id = :id AND role = 1 LIMIT 1";
+        $result = $this->db->fetchOne($sql, ['id' => $adminId]);
+    
+        if (!$result) return false;
+    
+        return password_verify($adminPassword, $result->password_hash);
+    }
+
+    public function updateUserBanStatus($id, $newStatus)
+    {
+        $sql = "UPDATE users SET is_ban = :status WHERE id = :id";
+        return $this->db->execute($sql, ['status' => $newStatus, 'id' => $id]);
     }
     
 }

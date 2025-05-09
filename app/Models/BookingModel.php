@@ -498,7 +498,7 @@ class BookingModel
             SELECT status, changed_at, note, label
             FROM booking_status_history
             WHERE booking_id = :booking_id
-            ORDER BY changed_at ASC
+            ORDER BY changed_at ASC, label DESC
         ";
     
         $params = [
@@ -636,6 +636,7 @@ class BookingModel
                 throw new Exception("Lỗi khi thêm slot {$slot}");
             }
         }
+        return true;
     }
 
     public function addStatusHistory($bookingId, $status, $note = null) {
@@ -689,7 +690,7 @@ class BookingModel
             WHERE b.room_id = :roomId
             AND bs.booking_date = :bookingDate
             AND bs.time_slot IN ($placeholdersString)
-            AND b.status != 'cancelled'
+            AND b.status != 4
         ";
     
         $params = array_merge([
@@ -742,7 +743,7 @@ class BookingModel
                 AND booking_id IN (
                     SELECT id FROM bookings 
                     WHERE room_id = :room_id 
-                    AND status != 'cancelled'
+                    AND status != 4
                 )";
     
         $params = [':date' => $date, ':room_id' => $roomId];

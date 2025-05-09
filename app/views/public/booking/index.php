@@ -47,9 +47,9 @@
 
 
 <script>
-      const BASE_URL = "<?= BASE_URL ?>";
+    const BASE_URL = "<?= BASE_URL ?>";
 
-      document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function () {
     let currentPage = 1;
 
     // Function to load bookings based on the page
@@ -80,55 +80,60 @@
                                     <tbody>
                 `;
 
-                // Add bookings to table
-                data.bookings.forEach((booking, index) => {
-                    let firstSlot = booking.time_slots[0];
-                    let dateStr = new Date(firstSlot.booking_date).toISOString().slice(0, 10); // "2025-05-01"
-                    let firstDisplay = dateStr + ' – ' + firstSlot.time_slot;
-                    let collapseId = 'collapseBooking' + index;
-
+                if (data.bookings.length === 0) {
                     bookingsHtml += `
-                        <tr class="toggle-collapse" data-collapse-id="${collapseId}" style="cursor: pointer;">
-                            <td>${index + 1}</td>
-                            <td>${booking.booking_code}</td>
-                            <td>${booking.room_name}</td>
-                            <td>${firstDisplay}</td>
-                            <td>
-                                <span class="badge 
-                                    ${booking.status === 2 ? 'bg-primary' : 
-                                    booking.status === 0 ? 'bg-info text-dark' : 
-                                    booking.status === 4 ? 'bg-danger' : 
-                                    booking.status === 3 ? 'bg-success' : 
-                                    booking.status === 1 ? 'bg-warning text-dark' : ''}
-                                ">
-                                    ${booking.status === 2 ? 'Đã xác nhận' : 
-                                    booking.status === 0 ? 'Chờ thanh toán' : 
-                                    booking.status === 4 ? 'Đã hủy' : 
-                                    booking.status === 3 ? 'Đã hoàn thành' : 
-                                    booking.status === 1 ? 'Chờ xác nhận' : 'Không xác định'}
-                                </span>
-                            </td>                            
-                            <td>${new Intl.NumberFormat().format(booking.total_price)} đ</td>
-                            <td><a href="booking/detail?id=${booking.booking_id}" class="btn btn-sm btn-outline-primary mb-1 mb-md-0 detail-btn"><i class="bi bi-eye"></i> Chi tiết</a></td>
+                        <tr>
+                            <td colspan="7" class="text-center text-muted">Danh sách đặt phòng đang trống. Hãy bắt đầu với một đơn mới!</td>
                         </tr>
                     `;
+                } else {
+                    data.bookings.forEach((booking, index) => {
+                        let firstSlot = booking.time_slots[0];
+                        let dateStr = new Date(firstSlot.booking_date).toISOString().slice(0, 10);
+                        let firstDisplay = dateStr + ' – ' + firstSlot.time_slot;
+                        let collapseId = 'collapseBooking' + index;
 
-                    // Add expanded row for additional time slots
-                    bookingsHtml += `
-                        <tr class="collapse" id="${collapseId}">
-                            <td colspan="7" class="bg-light"><strong>Các khung giờ đã đặt:</strong>
-                            <ul class="mb-0">
-                            ${booking.time_slots
-                                .map(slot => {
-                                    let dateStr = new Date(slot.booking_date).toISOString().slice(0, 10); // YYYY-MM-DD
-                                    return `<li>${dateStr} – ${slot.time_slot}</li>`;
-                                })
-                                .join('')}
-                            </ul>
-                            </td>
-                        </tr>
-                    `;
-                });
+                        bookingsHtml += `
+                            <tr class="toggle-collapse" data-collapse-id="${collapseId}" style="cursor: pointer;">
+                                <td>${index + 1}</td>
+                                <td>${booking.booking_code}</td>
+                                <td>${booking.room_name}</td>
+                                <td>${firstDisplay}</td>
+                                <td>
+                                    <span class="badge 
+                                        ${booking.status === 2 ? 'bg-primary' : 
+                                        booking.status === 0 ? 'bg-info text-dark' : 
+                                        booking.status === 4 ? 'bg-danger' : 
+                                        booking.status === 3 ? 'bg-success' : 
+                                        booking.status === 1 ? 'bg-warning text-dark' : ''}">
+                                        ${booking.status === 2 ? 'Đã xác nhận' : 
+                                        booking.status === 0 ? 'Chờ thanh toán' : 
+                                        booking.status === 4 ? 'Đã hủy' : 
+                                        booking.status === 3 ? 'Đã hoàn thành' : 
+                                        booking.status === 1 ? 'Chờ xác nhận' : 'Không xác định'}
+                                    </span>
+                                </td>                            
+                                <td>${new Intl.NumberFormat().format(booking.total_price)} đ</td>
+                                <td><a href="booking/detail?id=${booking.booking_id}" class="btn btn-sm btn-outline-primary mb-1 mb-md-0 detail-btn"><i class="bi bi-eye"></i> Chi tiết</a></td>
+                            </tr>
+                        `;
+
+                        bookingsHtml += `
+                            <tr class="collapse" id="${collapseId}">
+                                <td colspan="7" class="bg-light"><strong>Các khung giờ đã đặt:</strong>
+                                <ul class="mb-0">
+                                ${booking.time_slots
+                                    .map(slot => {
+                                        let dateStr = new Date(slot.booking_date).toISOString().slice(0, 10);
+                                        return `<li>${dateStr} – ${slot.time_slot}</li>`;
+                                    })
+                                    .join('')}
+                                </ul>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
 
                 bookingsHtml += `</tbody></table></div></div></div>`;
 

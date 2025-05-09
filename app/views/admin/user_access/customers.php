@@ -140,117 +140,11 @@
         });
     }
 
-    document.getElementById('addRoomForm').addEventListener('submit', function (e) {
-        e.preventDefault();
-
-        const form = e.target;
-        const formData = new FormData(form);
-
-        fetch('<?php echo BASE_URL; ?>/room/store', {
-            method: 'POST',
-            body: formData
-        })
-        .then(res => {
-            if (!res.ok) throw new Error('Có lỗi xảy ra khi gửi dữ liệu');
-            return res.json();
-        })
-        .then(data => {
-            console.log('Success:', data);
-            const modal = bootstrap.Modal.getInstance(document.getElementById('createRoomModal'));
-            modal.hide();
-            form.reset();
-            showToastSuccess('Thêm phòng thành công! Đang chuyển hướng tới trang chi tiết ...');
-            setTimeout(function () {
-                window.location.href = "<?php echo BASE_URL; ?>/room/detail/" + data.room_id;
-            }, 3000);
-        })
-        .catch(err => {
-            showToastError('Không thể thêm phòng. Vui lòng kiểm tra lại dữ liệu.');
-            console.error('Lỗi:', err);
-        });
-    });
 </script>
 
 
 <script>
-
     const BASE_URL = "<?php echo BASE_URL; ?>";
-    function viewRoom(roomId) {
-        window.location.href = `${BASE_URL}/room/detail/${roomId}`;
-    }
-
-    // Xử lý nút Xóa phòng
-    function deleteRoom(roomId) {
-        Swal.fire({
-            title: "Bạn có chắc muốn xoá phòng này không?",
-            text: "Phòng sẽ bị xoá vĩnh viễn, không thể khôi phục!",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#d33",
-            cancelButtonColor: "#3085d6",
-            confirmButtonText: "Xoá phòng",
-            cancelButtonText: "Hủy"
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Gửi request AJAX hoặc chuyển hướng đến URL xoá
-                $.ajax({
-                    url: `<?= BASE_URL ?>/room/delete/${roomId}`,
-                    type: 'DELETE',
-                    success: function(response) {
-                        // Thông báo xoá thành công
-                        Swal.fire({
-                            title: "Phòng đã được xoá!",
-                            icon: "success",
-                            confirmButtonText: "Đóng"
-                        }).then(() => {
-                            // Cập nhật lại danh sách phòng hoặc reload trang
-                            location.reload(); // Hoặc gọi lại DataTable reload
-                        });
-                    },
-                    error: function() {
-                        Swal.fire({
-                            title: "Lỗi!",
-                            text: "Không thể xoá phòng. Vui lòng thử lại sau.",
-                            icon: "error",
-                            confirmButtonText: "Đóng"
-                        });
-                    }
-                });
-            }
-        });
-    }
-
-
-
-    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
-        if (!roomToDelete) return;
-
-        fetch(`${BASE_URL}/room/delete/${roomToDelete}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ id: roomToDelete })
-        })
-        .then(response => response.json())
-        .then(data => {
-            deleteModal.hide();
-            roomToDelete = null;
-
-            if (data.success) {
-                showToast('Xoá thành công!', 'success');
-                $('#table1').DataTable().ajax.reload();  // Reload lại bảng
-            } else {
-                showToast('Xoá thất bại: ' + data.message, 'danger');
-            }
-        })
-        .catch(error => {
-            deleteModal.hide();
-            roomToDelete = null;
-            showToast('Đã có lỗi xảy ra khi xoá.', 'danger');
-            console.error('Error:', error);
-        });
-    });
 </script>
 
 <script>
@@ -375,10 +269,13 @@ $(document).on('click', '.btn-reset-pass', function () {
             }).then((result) => {
                 if (result.isConfirmed) {
                     const { newPassword, adminPassword } = result.value;
-                    fetch('<?= BASE_URL ?>/admin/user/reset_password.php', {
+                    fetch('<?= BASE_URL ?>/userAccess/reset_password', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ id: userId, newPassword, adminPassword })
+                        body: JSON.stringify({ 
+                            id: userId, newPassword, adminPassword ,
+                            csrf_token: '<?php echo $_SESSION['csrf_token']; ?>'
+                        })
                     })
                     .then(res => res.json())
                     .then(data => {
@@ -433,10 +330,13 @@ $(document).on('click', '.btn-toggle-ban', function () {
             }).then((result) => {
                 if (result.isConfirmed) {
                     const adminPassword = result.value;
-                    fetch('<?= BASE_URL ?>/admin/user/toggle_ban.php', {
+                    fetch('<?= BASE_URL ?>/userAccess/toggle_ban', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ id: userId, adminPassword })
+                        body: JSON.stringify({ 
+                            id: userId, adminPassword, 
+                            csrf_token: '<?php echo $_SESSION['csrf_token']; ?>'
+                        })
                     })
                     .then(res => res.json())
                     .then(data => {

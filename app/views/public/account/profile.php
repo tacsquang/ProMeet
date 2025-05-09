@@ -84,7 +84,7 @@ $user = [
     'name' => $username ?: '',
     'joined_year' => date("d-m-Y", strtotime($datetime)) ?: '' ,
     'birth_date' => $birth_date ?: '',
-    'gender' => $sex ?: '',
+    'gender' => $sex,
     'email' => $email ?: '',
     'phone' => $phone ?: '',
     'avatar' => $avatar_url ?: '/assets/images/avatar-default.png'
@@ -102,6 +102,7 @@ $user = [
           <div class="col-md-6 mb-4">
             <div class="text-center">
               <form id="avatarForm" action="upload_avatar.php" method="POST" enctype="multipart/form-data" class="mb-3">
+                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                 <div class="text-center position-relative mt-4">
                   <img id="avatarPreview" src="<?= BASE_URL ?><?= $user['avatar'] ?>" class="avatar mb-2"
                        alt="avatar" onclick="document.getElementById('avatarInput').click();">
@@ -122,35 +123,55 @@ $user = [
           <!-- Cột phải: Thông tin cá nhân -->
           <div class="col-md-6">
             <form id="profileForm">
+            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+
               <h5 class="section-title"><i class="fas fa-user-circle"></i> Thông tin cá nhân</h5>
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Họ tên</label>
-                  <input type="text" class="form-control" name="name" id="name" value="<?= $user['name'] ?>" disabled>
+                  <input type="text" class="form-control" name="name" id="name" value="<?= $user['name'] ?>" disabled required>
                 </div>
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Ngày sinh</label>
-                  <input type="date" class="form-control" name="birth_date" id="birth_date" value="<?= $user['birth_date'] ?>" disabled>
+                  <input type="date" class="form-control" name="birth_date" id="birth_date" value="<?= $user['birth_date'] ?>" disabled required>
                 </div>
+
+
+                
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Giới tính</label>
-                  <select class="form-select" name="gender" id="gender" disabled>
-                    <option value="male" <?= $user['gender'] === 'male' ? 'selected' : '' ?>>Nam</option>
-                    <option value="female" <?= $user['gender'] === 'female' ? 'selected' : '' ?>>Nữ</option>
-                    <option value="other" <?= $user['gender'] === 'other' ? 'selected' : '' ?>>Khác</option>
+
+
+                  <!-- Chế độ xem -->
+                  <select class="form-select" id="gender_view" disabled>
+                    <option value="" <?= is_null($user['gender']) ? 'selected' : '' ?>>Chưa có</option>
+                    <option value="0" <?= $user['gender'] === 0 ? 'selected' : '' ?>>Nam</option>
+                    <option value="1" <?= $user['gender'] === 1 ? 'selected' : '' ?>>Nữ</option>
                   </select>
+
+                  <!-- Chế độ chỉnh sửa -->
+                  <select class="form-select d-none" name="gender" id="gender_edit">
+                    <option value="0" <?= $user['gender'] === 0 ? 'selected' : '' ?>>Nam</option>
+                    <option value="1" <?= $user['gender'] === 1 ? 'selected' : '' ?>>Nữ</option>
+                  </select>
+
+
+
                 </div>
+
+
+
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Email</label>
-                  <input type="email" class="form-control" name="email" id="email" value="<?= $user['email'] ?>" disabled>
+                  <input type="email" class="form-control" name="email" id="email" value="<?= $user['email'] ?>" disabled required>
                 </div>
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Số điện thoại</label>
-                  <input type="text" class="form-control" name="phone" id="phone" value="<?= $user['phone'] ?>" disabled>
+                  <input type="text" class="form-control" name="phone" id="phone" value="<?= $user['phone'] ?>" disabled required>
                 </div>
               </div>
 
-              <button type="button" class="btn btn-outline-primary btn-sm btn-edit" onclick="editProfile()">
+              <button type="button" class="btn btn-outline-primary btn-sm btn-edit" onclick="editProfile()" >
                 <i class="fas fa-pen"></i> Chỉnh sửa hồ sơ
               </button>
               </form>
@@ -168,18 +189,19 @@ $user = [
           </h5>
           <div id="changePassword" class="toggle-section">
             <form method="POST" action="change_password.php" id="changePasswordForm">
+              <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Mật khẩu hiện tại</label>
-                  <input type="password" class="form-control" name="current_password" placeholder="Nhập mật khẩu hiện tại">
+                  <input type="password" class="form-control" name="current_password" placeholder="Nhập mật khẩu hiện tại" required>
                 </div>
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Mật khẩu mới</label>
-                  <input type="password" class="form-control" name="new_password" placeholder="Nhập mật khẩu mới">
+                  <input type="password" class="form-control" name="new_password" placeholder="Nhập mật khẩu mới" required>
                 </div>
                 <div class="col-md-12 mb-3">
                   <label class="form-label">Xác nhận mật khẩu mới</label>
-                  <input type="password" class="form-control" name="confirm_password" placeholder="Nhập lại mật khẩu mới">
+                  <input type="password" class="form-control" name="confirm_password" placeholder="Nhập lại mật khẩu mới" required>
                 </div>
               </div>
               <div class="text-end">
@@ -192,7 +214,7 @@ $user = [
         <hr class="section-divider">
 
         <!-- Xoá tài khoản -->
-        <div>
+        <!-- <div>
           <h5 class="section-title text-danger toggle-btn" onclick="toggleSection('deleteAccount')">
             <i class="fas fa-trash-alt"></i> Xoá tài khoản
           </h5>
@@ -207,54 +229,23 @@ $user = [
               <button type="submit" class="btn btn-danger" id="deleteBtn" disabled>Xoá tài khoản</button>
             </form>
           </div>
-        </div>
+        </div> -->
+
+
       </div>
     </div>
   </div>
 </div>
 
-<script src="<?= BASE_URL ?>/mazer/assets/extensions/sweetalert2/sweetalert2.min.js"></script>
+
+
+
+<script src="<?= BASE_URL ?>/assets/js/toast.js"></script>
+
+
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    // Hàm toast success theo chuẩn Mazer
-    function showToastSuccess(message) {
-        Swal.fire({
-            icon: 'success',
-            title: message,
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true
-        });
-    }
-
-    function showToastWarning(message) {
-            Swal.fire({
-                icon: 'warning',
-                title: message,
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 3000,
-                timerProgressBar: true
-            });
-        }
-
-
-    // Hàm toast error theo chuẩn Mazer
-    function showToastError(message) {
-        Swal.fire({
-            icon: 'error',
-            title: message,
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true
-        });
-    }
 
     // Xử lý form cập nhật avatar
     const avatarForm = document.getElementById('avatarForm');
@@ -356,45 +347,50 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 
+
+
 <script>
-    function editProfile() {
-      // Bật tất cả các trường để chỉnh sửa
-      ["name", "birth_date", "gender", "phone"].forEach(id => {
-        document.getElementById(id).disabled = false;
-      });
-  
-      // Thay đổi nút "Chỉnh sửa hồ sơ" thành "Lưu"
-      let editButton = document.querySelector(".btn-edit");
-      editButton.innerHTML = '<i class="fas fa-save"></i> Lưu hồ sơ';
-      editButton.setAttribute("onclick", "saveProfile()");
-  
-      // Hiện nút Hủy (nếu chưa có)
-      let cancelBtn = document.querySelector(".btn-cancel");
-      if (!cancelBtn) {
-        let cancelButton = document.createElement("button");
-        cancelButton.className = "btn btn-outline-secondary btn-sm btn-cancel ms-2";
-        cancelButton.innerHTML = '<i class="fas fa-times"></i> Hủy';
-        cancelButton.setAttribute("onclick", "cancelEdit()");
-        editButton.parentNode.appendChild(cancelButton);
-      }
+  function editProfile() {
+    ["name", "birth_date", "phone"].forEach(id => {
+      document.getElementById(id).disabled = false;
+    });
+
+    // Ẩn select xem, hiện select edit
+    document.getElementById("gender_view").classList.add("d-none");
+    document.getElementById("gender_edit").classList.remove("d-none");
+
+    // Còn lại giữ nguyên như cũ
+    let editButton = document.querySelector(".btn-edit");
+    editButton.innerHTML = '<i class="fas fa-save"></i> Lưu hồ sơ';
+    editButton.setAttribute("onclick", "saveProfile()");
+
+    let cancelBtn = document.querySelector(".btn-cancel");
+    if (!cancelBtn) {
+      let cancelButton = document.createElement("button");
+      cancelButton.className = "btn btn-outline-secondary btn-sm btn-cancel ms-2";
+      cancelButton.innerHTML = '<i class="fas fa-times"></i> Hủy';
+      cancelButton.setAttribute("onclick", "cancelEdit()");
+      editButton.parentNode.appendChild(cancelButton);
     }
+  }
   
     function saveProfile() {
       document.getElementById("profileForm").requestSubmit();
     }
   
     function cancelEdit() {
-      // Khóa lại các trường
-      ["name", "birth_date", "gender", "email", "phone"].forEach(id => {
+      ["name", "birth_date", "email", "phone"].forEach(id => {
         document.getElementById(id).disabled = true;
       });
-  
-      // Khôi phục nút
+
+      // Ẩn select edit, hiện lại select view
+      document.getElementById("gender_view").classList.remove("d-none");
+      document.getElementById("gender_edit").classList.add("d-none");
+
       let editButton = document.querySelector(".btn-edit");
       editButton.innerHTML = '<i class="fas fa-pen"></i> Chỉnh sửa hồ sơ';
       editButton.setAttribute("onclick", "editProfile()");
-  
-      // Ẩn nút hủy
+
       const cancelBtn = document.querySelector(".btn-cancel");
       if (cancelBtn) cancelBtn.remove();
     }
@@ -443,19 +439,19 @@ document.addEventListener("DOMContentLoaded", function () {
     section.style.display = section.style.display === 'none' || section.style.display === '' ? 'block' : 'none';
   }
 
-  function toggleDeleteButton() {
-    const checkbox = document.getElementById("confirmDeleteCheckbox");
-    const deleteBtn = document.getElementById("deleteBtn");
-    deleteBtn.disabled = !checkbox.checked;
-  }
+  // function toggleDeleteButton() {
+  //   const checkbox = document.getElementById("confirmDeleteCheckbox");
+  //   const deleteBtn = document.getElementById("deleteBtn");
+  //   deleteBtn.disabled = !checkbox.checked;
+  // }
 
-  function confirmDelete() {
-    if (confirm("Bạn có chắc chắn muốn xóa tài khoản?")) {
-        alert("Tài khoản đã bị xóa!");
-        return true; // Cho phép form submit (hoặc AJAX gửi đi)
-    }
-    return false; // Hủy hành động submit
-    }
+  // function confirmDelete() {
+  //   if (confirm("Bạn có chắc chắn muốn xóa tài khoản?")) {
+  //       alert("Tài khoản đã bị xóa!");
+  //       return true; // Cho phép form submit (hoặc AJAX gửi đi)
+  //   }
+  //   return false; // Hủy hành động submit
+  //   }
 </script>
 
 </body>

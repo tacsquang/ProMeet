@@ -5,47 +5,46 @@
   $canonicalUrl = BASE_URL . "/rooms"; 
 ?>
     
-    <style>
+<style>
+    .room-card img {
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+    }
 
-        .room-card img {
-        aspect-ratio: 16 / 9;
-        object-fit: cover;
-        border-top-left-radius: 0.5rem;
-        border-top-right-radius: 0.5rem;
-        }
+    .room-card {
+        border-radius: 0.5rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
 
-        .room-card {
-            border-radius: 0.5rem;
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            transition: transform 0.25s ease, box-shadow 0.25s ease;
-        }
-
-        .room-card:hover {
-            transform: scale(1.03) translateY(-4px);
-            box-shadow: 0 0.75rem 1.5rem rgba(0, 123, 255, 0.15);
-        }
-
-
-        .filter-bar select,
-        .filter-bar input {
-            border-radius: 0.5rem;
-            transition: all 0.2s ease;
-        }
-        .filter-bar input:focus,
-        .filter-bar select:focus {
-            box-shadow: 0 0 0 0.15rem rgba(0,123,255,.25);
-        }
-
-        .line-clamp-2 {
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
+    .room-card:hover {
+        transform: scale(1.03) translateY(-4px);
+        box-shadow: 0 0.75rem 1.5rem rgba(0, 123, 255, 0.15);
+    }
 
 
+    .filter-bar select,
+    .filter-bar input {
+        border-radius: 0.5rem;
+        transition: all 0.2s ease;
+    }
+    .filter-bar input:focus,
+    .filter-bar select:focus {
+        box-shadow: 0 0 0 0.15rem rgba(0,123,255,.25);
+    }
 
-    </style>
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+
+
+</style>
 
 
 <div class="container py-4">
@@ -107,6 +106,7 @@
             </div>
         </div>
     </div>
+
 
     <!-- NƠI HIỂN THỊ PHÒNG -->
     <div class="row g-4" id="roomList">

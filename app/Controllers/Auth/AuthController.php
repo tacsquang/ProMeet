@@ -42,11 +42,11 @@ class AuthController
                 $expiryTime = time() + (86400 * 30);  // Cập nhật lại thời gian hết hạn của token
                 $this->userModel->updateRememberTokenExpiry($user->id, $expiryTime);
     
-                $this->log->logInfo("User '{$user->username}' (ID: {$user->id}) logged in automatically via remember me.");
+                $this->log->logInfo("User '{$user->name}' (ID: {$user->role}) logged in automatically via remember me.");
     
                 // Redirect về trang chính hoặc trang đã lưu trong session
                 $redirectUrl = BASE_URL . '/home/index';  // URL mặc định
-                if ($user->role === 'admin') {
+                if ($user->role === 1) {
                     $redirectUrl = BASE_URL . '/admin/dashboard';  // Trang admin
                 } elseif (isset($_SESSION['redirect_url'])) {
                     $redirectUrl = $_SESSION['redirect_url'];
@@ -62,7 +62,42 @@ class AuthController
         // Log thông tin đăng nhập nếu không phải cookie "remember me"
         $this->log->logInfo("Login attempt | Method: {$_SERVER['REQUEST_METHOD']} | URL: {$_SERVER['REQUEST_URI']}");
     
+        // Kiểm tra số lần đăng nhập sai
+        if (isset($_SESSION['login_attempts']) && $_SESSION['login_attempts'] >= 5) {
+            $lockoutTime = $_SESSION['lockout_time'] ?? 0;
+
+            if (time() - $lockoutTime < 1800) { // 30 phút
+                $remainingTime = 1800 - (time() - $lockoutTime);
+                $minutes = ceil($remainingTime / 60);
+
+                $view = new View();
+                $view->setLayout(null);
+                $view->render('public/auth/login', [
+                    'pageTitle' => 'Đăng nhập | ProMeet',
+                    'error' => "Tài khoản bị tạm khóa do đăng nhập sai quá nhiều lần. Vui lòng thử lại sau {$minutes} phút."
+                ]);
+                return;
+            } else {
+                unset($_SESSION['login_attempts']);
+                unset($_SESSION['lockout_time']);
+            }
+        }
+
+    
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Kiểm tra CSRF token
+            if (empty($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+                $this->log->logError("Invalid CSRF token.");
+            
+                $view = new View();
+                $view->setLayout(null);
+                $view->render('public/auth/login', [
+                    'pageTitle' => 'Đăng nhập | ProMeet',
+                    'error' => 'Token CSRF không hợp lệ.'
+                ]);
+                return;
+            }
+    
             $email = trim($_POST['email'] ?? '');
             $password = $_POST['password'] ?? '';
             $remember = isset($_POST['remember']);
@@ -71,7 +106,7 @@ class AuthController
             // Tìm người dùng theo email
             $user = $this->userModel->findByEmail($email);
     
-            if ($user && password_verify($password, $user->password_hash)) {
+            if ($user && password_verify($password, $user->password_hash) && $user->is_ban === 0) {
                 // Lưu thông tin người dùng vào session
                 $_SESSION['user'] = [
                     'id' => $user->id,
@@ -91,11 +126,15 @@ class AuthController
                     setcookie('remember_token', $rememberToken, $expiryTime, '/', null, true, true); // Secure & HttpOnly
                 }
     
-                $this->log->logInfo("User '{$user->username}' (ID: {$user->id}) logged in successfully.");
+                // Reset số lần đăng nhập sai
+                unset($_SESSION['login_attempts']);
+                unset($_SESSION['lockout_time']);
+    
+                $this->log->logInfo("User '{$user->name}' (ID: {$user->id}) logged in successfully.");
     
                 // Chuyển hướng tùy thuộc vào vai trò của người dùng
                 $redirectUrl = BASE_URL . '/home/index';  // URL mặc định
-                if ($user->role === 'admin') {
+                if ($user->role === 1) {
                     $redirectUrl = BASE_URL . '/home/index';  // Trang admin
                 } elseif (isset($_SESSION['redirect_url'])) {
                     $redirectUrl = $_SESSION['redirect_url'];
@@ -106,6 +145,17 @@ class AuthController
                 header("Location: $redirectUrl");
                 exit;
             } else {
+                // Tăng số lần đăng nhập sai
+                $_SESSION['login_attempts'] = ($_SESSION['login_attempts'] ?? 0) + 1;
+    
+                // Nếu số lần đăng nhập sai >= 5, khóa tài khoản
+                if ($_SESSION['login_attempts'] >= 5) {
+                    $_SESSION['lockout_time'] = time();
+                    $this->log->logWarning("User '{$email}' reached maximum login attempts.");
+                    echo json_encode(['error' => 'Tài khoản bị khóa do thử đăng nhập sai quá nhiều lần. Vui lòng thử lại sau 30 phút.']);
+                    return;
+                }
+    
                 $this->log->logWarning("Login failed for email: '{$email}'");
     
                 // Render lại form đăng nhập với thông báo lỗi
@@ -130,37 +180,50 @@ class AuthController
         }
     }
     
+    
 
     public function register() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    
+            // Kiểm tra CSRF token
+            if (empty($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+                $this->log->logError("Invalid CSRF token.");
+                http_response_code(403);
+                echo json_encode(['error' => 'Token CSRF không hợp lệ']);
+                return;
+            }
+    
             $username = trim($_POST['username'] ?? '');
             $email = trim($_POST['email'] ?? '');
             $password = $_POST['password'] ?? '';
             $confirm = $_POST['confirm_password'] ?? '';
     
-    
             $this->log->logInfo("Register attempt for email: {$email}");
     
-            // Kiểm tra hợp lệ
+            // Kiểm tra hợp lệ dữ liệu
             if (!$username || !$email || !$password || !$confirm) {
                 $error = 'Vui lòng điền đầy đủ thông tin.';
-            } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            } elseif (!Utils::checkEmailValidity($email)) {
                 $error = 'Email không hợp lệ.';
+            } elseif (!preg_match('/^[\p{L}0-9\s_-]{3,50}$/u', $username)) {
+                $error = 'Tên không hợp lệ (3–50 ký tự, không chứa ký tự lạ).';
             } elseif ($password !== $confirm) {
                 $error = 'Mật khẩu xác nhận không khớp.';
             } else {
-                
-    
-                if ($this->userModel->findByEmail($email)) {
+                $passwordCheck = Utils::checkPasswordStrength($password);
+                if ($passwordCheck !== true) {
+                    $error = $passwordCheck;
+                } elseif ($this->userModel->findByEmail($email)) {
                     $error = 'Email đã được sử dụng.';
                 } else {
+                    // Tạo tài khoản
                     $created = $this->userModel->create([
-                        'username' => $username,
+                        'name' => $username,
                         'email' => $email,
                         'password_hash' => password_hash($password, PASSWORD_ARGON2ID),
-                        'role' => 'user'
+                        'role' => 0
                     ]);
-                    
+    
                     if ($created) {
                         $_SESSION['success_message'] = 'Tạo tài khoản thành công. Hãy đăng nhập để khám phá ProMeet.';
                         $this->log->logInfo("New user '{$username}' registered successfully.");
@@ -173,6 +236,7 @@ class AuthController
                 }
             }
     
+            // Render lại view với lỗi
             $view = new View();
             $view->setLayout(null);
             $view->render('public/auth/register', [

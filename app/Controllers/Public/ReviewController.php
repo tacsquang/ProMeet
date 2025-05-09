@@ -92,7 +92,7 @@ class ReviewController
         $rating = isset($_POST['rating']) ? (int)$_POST['rating'] : 0;
         $comment = trim($_POST['comment'] ?? '');
     
-        if (!$roomId || !$bookingId || $rating < 1 || $rating > 5 || $comment === '') {
+        if (!$roomId || !$bookingId || $rating < 1 || $rating > 5) {
             http_response_code(400);
             echo json_encode(['error' => 'Vui lòng điền đầy đủ thông tin đánh giá.']);
             return;

@@ -173,7 +173,7 @@
           const lat = parseFloat(mapDiv.getAttribute('data-lat'));
           const lng = parseFloat(mapDiv.getAttribute('data-lng'));
 
-          mapboxgl.accessToken = 'k.eyJ1IjoidGFjc3F1YW5nIiwiYSI6ImNtYThiMjdrbTFhbXkyanM2dHl5NWFyMWEifQ.nG4gzYh02w2N_t2VR6UUtw';
+          mapboxgl.accessToken = 'pk.eyJ1IjoidGFjc3F1YW5nIiwiYSI6ImNtYThiMjdrbTFhbXkyanM2dHl5NWFyMWEifQ.nG4gzYh02w2N_t2VR6UUtw';
           const map = new mapboxgl.Map({
               container: 'map',
               style: 'mapbox://styles/mapbox/streets-v11',
@@ -354,14 +354,17 @@
       
   </script>
 
-  <script src="<?= BASE_URL ?>/assets/js/booking.js?v=<?= time() ?>"></script>
-  <script src="<?= BASE_URL ?>/assets/js/review.js?v=<?= time() ?>"></script>
+  
+  <script src="<?= BASE_URL ?>/assets/js/toast.js"></script>
+
+  <script src="<?= BASE_URL ?>/assets/js/booking.js"></script>
+  <script src="<?= BASE_URL ?>/assets/js/review.js"></script>
 
 
 <script>
   function loadSuggestedRooms(roomId, roomType, location) {
       $.ajax({
-          url: BASE_URL + '/rooms/getSmartSuggestedRoomsApi',  // ✅ Đổi API mới
+          url: BASE_URL + '/rooms/getSmartSuggestedRoomsApi',  
           type: 'GET',
           dataType: 'json',
           data: {

@@ -3,9 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const timeSlotButtons = document.querySelectorAll('.time-slot');
     const totalAmount = document.getElementById('total-amount');
     const bookBtn = document.getElementById('book-btn');
-    const errorBox = document.getElementById('booking-error');
-    const warningBox = document.getElementById('booking-warning');
-    const successBox = document.getElementById('successBox');
+
     const csrfToken = document.getElementById('csrf_token').value;
     const roomId = window.CURRENT_ROOM_ID;
 
@@ -116,29 +114,30 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     bookBtn.addEventListener('click', function(event) {
+        console.log("Vaof nef ");
         const checkbox = document.getElementById('agreePolicy');
-        
+        console.log("Hi checkbox: %s", checkbox.checked);
       
-        if (!checkbox.checked) {
-            event.preventDefault();// chặn điều hướng
-            warningBox.textContent = 'Bạn cần đồng ý với chính sách trước khi đặt phòng.';
+        if (!checkbox || !checkbox.checked) {
+            console.log("hI");
+            event.preventDefault();
+            console.log("hEEELOO ");
+            showToastWarning("Bạn cần đồng ý với chính sách trước khi đặt phòng.");
+                        console.log("hEEELOO ");
             return;
-        } else {
-          warningBox.textContent = '';
         }
+
+        console.log("hEAAAAAAAAAA ");
 
         event.preventDefault();
         console.log("Total Price: %s", totalAmount.textContent);
 
 
         if (selectedTimeSlots.length === 0) {
-            warningBox.textContent = '* Vui lòng chọn ít nhất một khung giờ.';
+            showToastWarning("Vui lòng chọn ít nhất một khung giờ.");
             return;
         }
 
-        if (warningBox) warningBox.textContent = '';
-
-        if (errorBox) errorBox.textContent = '';
 
         $.ajax({
             url: BASE_URL + '/booking/makeBooking',
@@ -155,9 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('Server Response:', response); // Kiểm tra toàn bộ dữ liệu từ server
             
                 if (response && response.success) {
-                    successBox.textContent = 'Đặt phòng thành công! Đang chuyển sang trang thanh toán...';
-                    successBox.classList.remove('hidden');
-                    errorBox.classList.add('hidden');
+                    showToastSuccess("Đặt phòng thành công! Đang chuyển sang trang thanh toán...");
 
                     setTimeout(function() {
                         window.location.href = `${BASE_URL}/rooms/payment/${response.booking_id}`;
@@ -165,7 +162,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // + response.booking_id;
                 } else {
                     // Nếu không có success hoặc có lỗi khác
-                    errorBox.textContent = 'Có lỗi xảy ra khi đặt phòng. Vui lòng thử lại.';
+                    showToastError("Có lỗi xảy ra khi đặt phòng. Vui lòng thử lại.");
                 }
             },            
             error: function(xhr, status, error) {
@@ -173,13 +170,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     try {
                         const response = JSON.parse(xhr.responseText);
                         if (response.error) {
-                            errorBox.textContent = response.error;
+                            showToastWarning(response.error);
                         } else {
-                            errorBox.textContent = "Bạn chưa đăng nhập!";
+                            showToastWarning("Bạn chưa đăng nhập!");
                         }
                     } catch (e) {
-                        errorBox.textContent = "Bạn chưa đăng nhập!";
+                        showToastWarning("Bạn chưa đăng nhập!");
                     }
+
+                    showToastWarning("Bạn chưa đăng nhập!");
 
                     saveRedirectUrl()
             
@@ -192,15 +191,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     try {
                         const response = JSON.parse(xhr.responseText);
                         if (response.error) {
-                            errorBox.textContent = response.error;
+                            showToastWarning(response.error);
                         } else {
-                            errorBox.textContent = "Khung giờ đã bị người khác đặt, vui lòng chọn lại.";
+                            showToastWarning("Khung giờ đã bị người khác đặt, vui lòng chọn lại.");
                         }
                     } catch (e) {
-                        errorBox.textContent = "Đã xảy ra lỗi khi kiểm tra khung giờ.";
+                        showToastError("Đã xảy ra lỗi khi kiểm tra khung giờ.");
                     }
                 } else {
-                    errorBox.textContent = "Có lỗi xảy ra khi đặt phòng. Vui lòng thử lại.";
+                    showToastError("Có lỗi xảy ra khi đặt phòng. Vui lòng thử lại.");
                 }
             }
             

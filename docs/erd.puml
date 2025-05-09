@@ -1,82 +1,132 @@
-@startuml ERD
-entity "users" as U {
-  + id : UUID [PK]
+
+@startuml
+' Title
+title ERD - ProMeet Database
+
+skinparam roundcorner 20
+skinparam linetype ortho
+skinparam HorizontalAlignment Left
+
+entity users {
+  * id : CHAR(36)
   --
-  username : string
-  email : string [UNIQUE]
-  password_hash : string
-  name : string
-  phone : string
-  birth_date : date
-  sex : enum(male, female)
-  address : string
-  avatar_url : string
-  otp_secret : string
-  is_email_verified : boolean
-  role : enum(admin, user)
-  created_at : timestamp
-  updated_at : timestamp
+  email : VARCHAR(191)
+  password_hash : VARCHAR(255)
+  name : VARCHAR(100)
+  phone : VARCHAR(20)
+  birth_date : DATE
+  sex : BOOLEAN
+  address : VARCHAR(255)
+  avatar_url : VARCHAR(255)
+  role : TINYINT
+  is_ban : BOOLEAN
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
 }
 
-entity "rooms" as R {
-  + id : UUID [PK]
+entity rooms {
+  * id : CHAR(36)
   --
-  name : string
-  description  : string
-  html_description : string
-  price : float
-  capacity : int
-  location_name : string
-  latitude : float
-  longitude : float
-  created_at : timestamp
-  updated_at : timestamp
+  name : VARCHAR(255)
+  html_description : TEXT
+  price : FLOAT
+  capacity : INT
+  location_name : VARCHAR(255)
+  latitude : DOUBLE
+  longitude : DOUBLE
+  category : TINYINT
+  average_rating : FLOAT
+  review_count : INT
+  is_active : BOOLEAN
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
 }
 
-entity "bookings" as B {
-  + id : UUID [PK]
+entity bookings {
+  * id : CHAR(36)
   --
-  room_id  : UUID [FK -> rooms.id]
-  user_id  : UUID [FK -> users.id]
-  start_date  : timestamp
-  end_date  : timestamp
-  status : enum('pending', 'confirmed', 'cancelled', 'checked_in', 'checked_out', 'no_show')
-  created_at : timestamp
-  updated_at : timestamp
+  room_id : CHAR(36)
+  user_id : CHAR(36)
+  booking_code : CHAR(14)
+  total_price : INT
+  contact_email : VARCHAR(191)
+  contact_name : VARCHAR(100)
+  contact_phone : VARCHAR(20)
+  payment_method : TINYINT
+  status : TINYINT
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
 }
 
-entity "booking_status_history" as BS {
-  + id : UUID [PK]
+entity booking_slots {
+  * id : CHAR(36)
   --
-  booking_id : UUID [PK] [FK -> bookings.id]
-  status : enum('pending', 'confirmed', 'cancelled', 'checked_in', 'checked_out', 'no_show')
-  changed_at : timestamp
-  note : string
+  booking_id : CHAR(36)
+  booking_date : DATE
+  time_slot : TIME
 }
 
-entity "reviews" as RE {
-  + id : UUID [PK]
+entity booking_status_history {
+  * id : CHAR(36)
   --
-  room_id  : UUID [FK -> rooms.id]
-  user_id  : UUID [FK -> users.id]
-  rating : int
-  comment : string
-  created_at : timestamp
+  booking_id : CHAR(36)
+  status : TINYINT
+  changed_at : TIMESTAMP
+  note : TEXT
+  label : VARCHAR(255)
 }
 
-entity "images" as I {
-  + id : UUID [PK]
+entity reviews {
+  * id : CHAR(36)
   --
-  room_id  : UUID [FK -> rooms.id]
-  image_url : string
-  is_primary : boolean
-  created_at : timestamp
+  room_id : CHAR(36)
+  user_id : CHAR(36)
+  booking_id : CHAR(36)
+  rating : TINYINT
+  comment : TEXT
+  created_at : TIMESTAMP
 }
 
-U ||--o{ B : "has"
-R ||--o{ B : "has"
-R ||--o{ I : "has"
-U ||--o{ RE : "writes"
-R ||--o{ RE : "has"
-B ||--o{ BS : "status history"
+entity images {
+  * id : CHAR(36)
+  --
+  room_id : CHAR(36)
+  image_url : VARCHAR(255)
+  is_primary : BOOLEAN
+  created_at : TIMESTAMP
+}
+
+entity remember_tokens {
+  * id : CHAR(36)
+  --
+  user_id : CHAR(36)
+  remember_token : CHAR(64)
+  expiry_time : INT
+  created_at : TIMESTAMP
+}
+
+entity room_stats {
+  * room_id : CHAR(36)
+  --
+  view_count : INT
+  favorite_count : INT
+  booking_count : INT
+  total_hours : INT
+  updated_at : TIMESTAMP
+}
+
+' Relationships
+users ||--o{ bookings : has
+users ||--o{ reviews : writes
+users ||--o{ remember_tokens : has
+
+rooms ||--o{ bookings : has
+rooms ||--o{ reviews : receives
+rooms ||--o{ images : has
+rooms ||--o{ room_stats : has
+
+bookings ||--o{ booking_slots : has
+bookings ||--o{ booking_status_history : logs
+bookings ||--o{ reviews : gets
+
 @enduml

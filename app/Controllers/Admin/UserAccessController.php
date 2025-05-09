@@ -76,5 +76,96 @@ class UserAccessController {
         header('Content-Type: application/json');
         echo json_encode($jsonData);
     }
+
+    public function reset_password() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->log->logError("Invalid request method: " . $_SERVER['REQUEST_METHOD']);
+            echo json_encode(['success' => false, 'message' => 'Invalid request method']);
+            exit;
+        }
+
+        $data = json_decode(file_get_contents('php://input'), true);
+        $csrf = $data['csrf_token'] ?? '';
+        if (empty($csrf) || $csrf !== $_SESSION['csrf_token']) {
+            echo json_encode(['success' => false, 'message' => 'Token CSRF không hợp lệ']);
+            return;
+        }
+
+        // Lấy dữ liệu từ request
+        $userId = $data['id'] ?? null;
+        $newPassword = $data['newPassword'] ?? '';
+        $adminPassword = $data['adminPassword'] ?? '';
+
+        // Kiểm tra các dữ liệu đầu vào
+        if (!$userId || !$newPassword || !$adminPassword) {
+            echo json_encode(['success' => false, 'message' => 'Vui lòng nhập đầy đủ thông tin.']);
+            return;
+        }
+
+        // Kiểm tra mật khẩu admin
+        $adminId = $_SESSION['user']['id'] ?? null;
+        if (!$adminId || !$this->userModel->checkAdminPassword($adminId, $adminPassword)) {
+            echo json_encode(['success' => false, 'message' => 'Mật khẩu admin không đúng.']);
+            return;
+        }
+
+        // Cập nhật mật khẩu mới vào cơ sở dữ liệu
+        $result = $this->userModel->updatePassword($userId, $newPassword);
+
+        if ($result) {
+            echo json_encode(['success' => true, 'message' => 'Mật khẩu đã được cập nhật.']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Đã có lỗi xảy ra khi đặt lại mật khẩu.']);
+        }
+    }
+
+    public function toggle_ban()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->log->logError("Invalid request method: " . $_SERVER['REQUEST_METHOD']);
+            echo json_encode(['success' => false, 'message' => 'Invalid request method']);
+            exit;
+        }
+    
+        $data = json_decode(file_get_contents('php://input'), true);
+        $csrf = $data['csrf_token'] ?? '';
+        if (empty($csrf) || $csrf !== $_SESSION['csrf_token']) {
+            echo json_encode(['success' => false, 'message' => 'Token CSRF không hợp lệ']);
+            return;
+        }
+    
+        $userId = $data['id'] ?? null;
+        $adminPassword = $data['adminPassword'] ?? '';
+    
+        if (!$userId || !$adminPassword) {
+            echo json_encode(['success' => false, 'message' => 'Thiếu dữ liệu']);
+            return;
+        }
+    
+        // Kiểm tra mật khẩu admin
+        $adminId = $_SESSION['user']['id'] ?? null;
+        if (!$adminId || !$this->userModel->checkAdminPassword($adminId, $adminPassword)) {
+            echo json_encode(['success' => false, 'message' => 'Mật khẩu admin không chính xác']);
+            return;
+        }
+    
+        // Lấy trạng thái hiện tại
+        $user = $this->userModel->findById($userId);
+        if (!$user) {
+            echo json_encode(['success' => false, 'message' => 'Người dùng không tồn tại']);
+            return;
+        }
+    
+        $newStatus = $user->is_ban ? 0 : 1;
+    
+        $updated = $this->userModel->updateUserBanStatus($userId, $newStatus);
+        if ($updated) {
+            $statusText = $newStatus ? 'đã bị khóa' : 'đã được mở khóa';
+            echo json_encode(['success' => true, 'message' => "Tài khoản $statusText."]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Không thể cập nhật trạng thái.']);
+        }
+    }
+    
     
 }

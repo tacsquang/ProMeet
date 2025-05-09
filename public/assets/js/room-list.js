@@ -1,5 +1,6 @@
 $(document).ready(function() {
     loadRooms();  // gọi lần đầu khi trang load
+    lazyLoadImages();  // Khởi động lazy loading
 });
 
 function showSkeleton(count = 8) {
@@ -39,8 +40,6 @@ function loadRooms(page = 1) {
     const location = $('#filterLocation').val();
     const roomType = $('#advancedFilters select').eq(0).val(); // loại phòng
     const sortBy = $('#advancedFilters select').eq(2).val();   // sắp xếp
-    //console.log("[DEBUG] LoadRooms Params:");
-    //console.log("[DEBUG] LoadRooms Params:", {page, keyword, location, roomType, sortBy});
 
     showSkeleton();
 
@@ -61,19 +60,17 @@ function loadRooms(page = 1) {
                 renderPagination(1, 1);
                 return;
             }
-        
+
             let html = '';
             response.rooms.forEach(function(room) {
                 let stars = '';
                 let reviewText = '';
-        
-                // Kiểm tra nếu phòng có đánh giá
+
                 if (room.review && room.review > 0) {
-                    let fullStars = Math.floor(room.review);  // số sao đầy
-                    let hasHalfStar = (room.review - fullStars) >= 0.5;  // nửa sao
-                    let emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);  // số sao rỗng
-        
-                    // Hiển thị sao đầy, nửa sao và sao rỗng
+                    let fullStars = Math.floor(room.review);
+                    let hasHalfStar = (room.review - fullStars) >= 0.5;
+                    let emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
                     for (let i = 0; i < fullStars; i++) {
                         stars += '<i class="bi bi-star-fill text-warning me-1"></i>';
                     }
@@ -87,14 +84,15 @@ function loadRooms(page = 1) {
                 } else {
                     reviewText = '<small class="text-muted ms-1" style="font-style: italic;">Chưa có đánh giá</small>';
                 }
-        
+
                 room.image = BASE_URL + room.image;
-        
+
                 html += `
                 <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
                     <div class="card room-card position-relative">
                         <span class="badge rounded-pill bg-${room.badgeColor} position-absolute m-2">${room.type}</span>
-                        <img src="${room.image}" class="card-img-top" alt="${room.name}" />
+                        <!-- Thêm data-src thay vì src -->
+                        <img data-src="${room.image}" class="card-img-top lazy-load" alt="${room.name}" />
                         <div class="card-body">
                             <h5 class="card-title text-truncate" style="max-width: 100%;">${ room.name }</h5>
                             <div class="d-flex align-items-center mb-2">
@@ -119,58 +117,18 @@ function loadRooms(page = 1) {
                         </div>
                     </div>
                 </div>`;
+                
             });
-        
+
             $('#roomList').html(html);
             renderPagination(response.totalPages, page);
-        
+            lazyLoadImages();
+
             window.scrollTo({ top: 0, behavior: 'smooth' });
-        
-            // Sau khi render xong, thêm sự kiện cho các nút "tym"
-            document.querySelectorAll('.wishlist-btn').forEach(btn => {
-                btn.addEventListener('click', function () {
-                    const icon = this.querySelector('i');
-                    const roomId = this.getAttribute('data-room-id');
-                    let likedRooms = JSON.parse(localStorage.getItem('likedRooms')) || [];
-            
-                    let action;
-                    if (icon.classList.contains('bi-heart')) {
-                        likedRooms.push(roomId);
-                        localStorage.setItem('likedRooms', JSON.stringify(likedRooms));
-                        icon.classList.replace('bi-heart', 'bi-heart-fill');
-                        icon.classList.add('text-danger');
-                        action = 'add';
-                    } else {
-                        likedRooms = likedRooms.filter(id => id !== roomId);
-                        localStorage.setItem('likedRooms', JSON.stringify(likedRooms));
-                        icon.classList.replace('bi-heart-fill', 'bi-heart');
-                        icon.classList.remove('text-danger');
-                        action = 'remove';
-                    }
-            
-                    fetch((BASE_URL + '/rooms/toggle_favorite'), {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ room_id: roomId, action: action })
-                    });
-                });
-            });
-            
-        
-            // Kiểm tra trạng thái yêu thích khi tải lại trang
-            document.querySelectorAll('.wishlist-btn').forEach(btn => {
-                const roomId = btn.getAttribute('data-room-id');
-                let likedRooms = JSON.parse(localStorage.getItem('likedRooms')) || [];
-        
-                if (likedRooms.includes(roomId)) {
-                    const icon = btn.querySelector('i');
-                    icon.classList.remove('bi-heart');
-                    icon.classList.add('bi-heart-fill', 'text-danger');
-                }
-            });
+
+            handleWishlist();
         },
         error: function(xhr, status, error) {
-            //console.error("[DEBUG] AJAX Error:", { status: status, error: error, xhr: xhr });
             $('#roomList').html('<div class="col-12 text-center text-danger">Không thể tải phòng, vui lòng thử lại sau!</div>');
         }
     });
@@ -178,18 +136,13 @@ function loadRooms(page = 1) {
 
 function renderPagination(totalPages, currentPage) {
     let pagination = '';
-
-    // Nút "Trang đầu"
     pagination += `<li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
         <a class="page-link" href="#" onclick="loadRooms(1); return false;">Đầu</a>
     </li>`;
-
-    // Nút "Trang trước"
     pagination += `<li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
         <a class="page-link" href="#" onclick="loadRooms(${currentPage - 1}); return false;">Trước</a>
     </li>`;
 
-    // Hiển thị các trang xung quanh trang hiện tại (ví dụ: từ currentPage - 2 đến currentPage + 2)
     let startPage = Math.max(1, currentPage - 2);
     let endPage = Math.min(totalPages, currentPage + 2);
 
@@ -199,15 +152,79 @@ function renderPagination(totalPages, currentPage) {
         </li>`;
     }
 
-    // Nút "Trang sau"
     pagination += `<li class="page-item ${currentPage == totalPages ? 'disabled' : ''}">
         <a class="page-link" href="#" onclick="loadRooms(${currentPage + 1}); return false;">Sau</a>
     </li>`;
-
-    // Nút "Trang cuối"
     pagination += `<li class="page-item ${currentPage == totalPages ? 'disabled' : ''}">
         <a class="page-link" href="#" onclick="loadRooms(${totalPages}); return false;">Cuối</a>
     </li>`;
 
     $('#paginationList').html(pagination);
+}
+
+// Lazy load images
+function lazyLoadImages() {
+    const lazyImages = document.querySelectorAll('.lazy-load');
+    
+    const imageObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const image = entry.target;
+                console.log("Loading image:", image.getAttribute('data-src')); // Thêm log để kiểm tra ảnh
+                image.src = image.getAttribute('data-src');
+                image.onload = () => {
+                    console.log("Image loaded:", image.src); // Log khi ảnh đã tải
+                    image.classList.remove('lazy-load');
+                };
+                observer.unobserve(image);
+            }
+        });
+    });
+
+    lazyImages.forEach(image => {
+        imageObserver.observe(image);
+    });
+}
+
+
+function handleWishlist() {
+    document.querySelectorAll('.wishlist-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const icon = this.querySelector('i');
+            const roomId = this.getAttribute('data-room-id');
+            let likedRooms = JSON.parse(localStorage.getItem('likedRooms')) || [];
+
+            let action;
+            if (icon.classList.contains('bi-heart')) {
+                likedRooms.push(roomId);
+                localStorage.setItem('likedRooms', JSON.stringify(likedRooms));
+                icon.classList.replace('bi-heart', 'bi-heart-fill');
+                icon.classList.add('text-danger');
+                action = 'add';
+            } else {
+                likedRooms = likedRooms.filter(id => id !== roomId);
+                localStorage.setItem('likedRooms', JSON.stringify(likedRooms));
+                icon.classList.replace('bi-heart-fill', 'bi-heart');
+                icon.classList.remove('text-danger');
+                action = 'remove';
+            }
+
+            fetch((BASE_URL + '/rooms/toggle_favorite'), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ room_id: roomId, action: action })
+            });
+        });
+    });
+
+    document.querySelectorAll('.wishlist-btn').forEach(btn => {
+        const roomId = btn.getAttribute('data-room-id');
+        let likedRooms = JSON.parse(localStorage.getItem('likedRooms')) || [];
+
+        if (likedRooms.includes(roomId)) {
+            const icon = btn.querySelector('i');
+            icon.classList.remove('bi-heart');
+            icon.classList.add('bi-heart-fill', 'text-danger');
+        }
+    });
 }

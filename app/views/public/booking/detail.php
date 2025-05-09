@@ -418,7 +418,7 @@
 
           <div class="mb-3">
             <label class="form-label">Nhận xét:</label>
-            <textarea name="comment" class="form-control" rows="3" placeholder="Bạn thấy phòng như thế nào?" required></textarea>
+            <textarea name="comment" class="form-control" rows="3" placeholder="Bạn thấy phòng như thế nào?" ></textarea>
           </div>
 
           <input type="hidden" name="room_id" value="<?= $roomId?>">
@@ -463,25 +463,9 @@
 </div>
 
 
-<script>
-      function showNotification(message, type = 'primary') {
-        const toastEl = document.getElementById('notification-toast');
-        const toastMessage = document.getElementById('notification-message');
+<script src="<?= BASE_URL ?>/assets/js/toast.js"></script>
 
-        // Đổi màu theo loại thông báo (Bootstrap)
-        toastEl.className = `toast align-items-center text-white bg-${type} border-0`;
 
-        toastMessage.textContent = message;
-
-        const toast = new bootstrap.Toast(toastEl, {
-            animation: true,
-            autohide: true,
-            delay: 4000 // 4 giây
-        });
-
-        toast.show();
-    }
-</script>
 
 <script>
   document.querySelectorAll('input[name="cancel_reason"]').forEach(radio => {
@@ -513,17 +497,17 @@
     .then(res => res.json())
     .then(data => {
       if (data.success) {
-        showNotification("Đánh giá đã được gửi thành công!", 'success');
+        showToastSuccess("Đánh giá đã được gửi thành công!");
         setTimeout(function() {
           location.reload();  // Sau 1 giây, reload trang để lấy dữ liệu mới
         }, 1000); 
       } else {
-        showNotification(data.error || "Đã có lỗi xảy ra khi gửi đánh giá.", 'danger');
+        showToastError(data.error || "Đã có lỗi xảy ra khi gửi đánh giá.");
       }
     })
     .catch(err => {
       console.error(err);
-      showNotification("Có lỗi xảy ra. Vui lòng thử lại.", 'danger');
+      showToastError("Có lỗi xảy ra. Vui lòng thử lại.");
     });
   });
 </script>
@@ -536,7 +520,7 @@
     const customText = document.getElementById('custom_reason').value.trim();
 
     if (selectedReason.value === 'Khác' && !customText) {
-      showNotification("Vui lòng nhập lý do chi tiết!", 'warning');
+      showToastWarning("Vui lòng nhập lý do chi tiết!");
       return;
     }
 
@@ -554,17 +538,17 @@
     .then(res => res.json())
     .then(data => {
       if (data.success) {
-        showNotification("Hủy thành công!", 'success');
+        showToastSuccess("Hủy thành công!");
         setTimeout(function() {
           location.reload();  
         }, 1000); 
       } else {
-        showNotification(data.error || "Đã có lỗi xảy ra!", 'danger');
+        showToastError(data.error || "Đã có lỗi xảy ra!");
       }
     })
     .catch(err => {
       console.error(err);
-      showNotification("Có lỗi xảy ra. Vui lòng thử lại.", 'danger');
+      showToastError("Có lỗi xảy ra. Vui lòng thử lại.");
     });
   });
 </script>

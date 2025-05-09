@@ -94,6 +94,8 @@
                         <?php endif; ?>
 
                         <form action="<?php echo BASE_URL; ?>/auth/login" method="post">
+                            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+
                             <div class="mb-3">
                                 <label for="email" class="form-label text-muted">Email</label>
                                 <input type="email" id="email" name="email" class="form-control" required>
