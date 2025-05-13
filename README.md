@@ -1,5 +1,4 @@
-# <center>ProMeet - Nền Tảng Đặt Phòng Họp & Quản Trị Doanh Nghiệp</center>
-
+# <p align = 'center'>**ProMeet - Nền Tảng Đặt Phòng Họp & Quản Trị Doanh Nghiệp**</p>
 
 ## Mục lục
 - [Giới thiệu](#giới-thiệu)
